@@ -1,0 +1,10 @@
+node_modules/
+.next/
+media/
+.env
+*.tsbuildinfo
+next-env.d.ts
+payload-types.ts
+# 工具状态目录（archify / impeccable 的运行产物，不是项目源码）
+.archify/
+.impeccable/

@@ -1,0 +1,38 @@
+services:
+  app:
+    build: .
+    ports:
+      - '3100:3100'
+    environment:
+      DATABASE_URI: postgres://postgres:postgres@database:5432/card_market_payload
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET:-change-me-in-production}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3100}
+      # 上传：留空走本地卷；填了就走 S3 兼容对象存储（R2 / S3 / Spaces）
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_REGION: ${S3_REGION:-auto}
+      S3_KEY: ${S3_KEY:-}
+      S3_SECRET: ${S3_SECRET:-}
+    volumes:
+      - media:/app/media
+    depends_on:
+      database:
+        condition: service_healthy
+
+  database:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: card_market_payload
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
+  media:
