@@ -1,0 +1,445 @@
+@import 'tailwindcss';
+
+/* 手动切换 dark 模式：以 html.dark 类为唯一真相来源（配合无闪烁脚本与切换按钮）。
+   默认跟随系统偏好，用户手动选择后用 localStorage 覆盖。 */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ===== 语义化设计令牌（Design Tokens）=====
+   组件只使用以下语义色，主题切换在单一处完成，便于长期维护。 */
+@theme {
+  /* 页面底色：设计图实测 #f5f7fa（冷灰，不是纯白）。页面必须退到卡片后面。 */
+  --color-bg: #f5f7fa; /* 页面底色 */
+  --color-surface: #ffffff; /* 卡片 / 头部 / 底部 / 输入框 */
+  --color-surface-2: #f1f5f9; /* 次级填充（原 slate-100） */
+
+  --color-fg: #0f172a; /* 主文字 */
+  --color-body: #334155; /* 正文 */
+  --color-muted: #475569; /* 次要文字 */
+  --color-subtle: #64748b; /* 三级文字 */
+
+  /* 分两级，各自有不可跨越的下限（括号内为对白卡片 / 页底的实测对比度）：
+     faint  —— 一定读得到的弱化文字：卡牌编号、日期、计数、占位提示（≥4.7:1）
+     hint   —— 只在「空缺」时才出现的文字：暂无图、空状态（仅装饰，≥3:1）
+     之前只有一个 #94a3b8，被同时当作两者用，实测 2.56:1，是整站最大的可读性缺陷。 */
+  --color-faint: #5b6b82; /* 弱化文字（6.20:1 白 / 5.93:1 页底） */
+  --color-hint: #5b6b82; /* 空缺提示：在白卡片 5.43:1、在凹陷图位 4.95:1（占位文字也是文字） */
+
+  --color-border: #e2e8f0; /* 主边框 */
+  --color-border-strong: #cbd5e1; /* 强边框 / 输入框 */
+
+  /* ===== 品牌红 =====
+     设计图实测 #db261d（顶栏底色、通知红条、选中 tab、页码方块、页脚以外的
+     全部品牌面）。它是这个站的识别色，因此主按钮也从「墨黑」改成这支红：
+     白字压在 #db261d 上实测 4.89:1，仍过正文级 4.5:1。 */
+  --color-brand: #db261d;
+  --color-brand-hover: #c11d16; /* 悬停压深一档，只在按钮/页码上用 */
+
+  /* ===== 页脚 =====
+     设计图实测底色 #0d0e15（近黑，带一层世界地图底纹——底纹不还原，
+     它属于图片素材而非样式）。页脚是唯一使用这三支色的区域。 */
+  --color-footer: #0d0e15;
+  --color-footer-fg: #ffffff;
+  --color-footer-muted: #999999; /* 页脚链接：实测 #999999，在近黑底上 5.3:1 */
+
+  --color-accent: #db261d; /* 主按钮底色：与品牌红同一支 */
+  --color-on-accent: #ffffff; /* 主按钮文字 */
+
+  /* 语义强调色。原来在组件里直接写 Tailwind 调色板名（text-rose-600 等），
+     换主题时只有带 dark: 前缀的那些会跟着变，容易漏。统一成令牌后
+     组件只写一次 `text-price`，两套主题各给一值。
+     下限：价格在白卡片上 5.06:1、页底 4.83:1（大字号按 3:1），徽章在 15% 底色上 4.8:1。
+     原来的 #ec003f 在白卡片上实测 4.53:1、页底 4.33:1——正文级阈值 4.5 只差 0.03，
+     而价格现在还会出现在粘性条与凹陷面上。换成同一支红的略深一档，视觉几乎不可辨，
+     但把余量从「擦线」变成「稳过」。 */
+  --color-price: #dc0a3c; /* 价格：同一支红压深一档，5.06:1 白 / 4.83:1 页底 */
+  --color-high-value: #9a5b00; /* 高价买取徽章文字（4.84:1 在 15% 琥珀底上） */
+  --color-high-value-bg: rgb(254 154 0 / 0.15);
+  --color-pinned: #c70036; /* 置顶徽章文字（4.84:1 在 15% 玫红底上） */
+  --color-pinned-bg: rgb(255 32 86 / 0.15);
+  --color-link: #0084d1; /* 富文本里的链接 */
+  --color-success: #047857; /* 提交成功（5.48:1 白 / 4.7:1 在 15% 底色上） */
+  --color-danger: #c70036; /* 提交失败（与置顶同色：同一支红，只是换用途） */
+  --color-danger-bg: rgb(255 32 86 / 0.15);
+
+  /* 柜藏级（card_status = packaged）：评级壳 / 密封 / 收藏柜里的卡。
+     全站只有一支红（钱）与一支琥珀（高价买取），再加一支紫只表达这一件事：
+     「这张卡值得跑一趟店里」。作用面极小——4px 签名条 + 徽章文字——
+     所以它不会变成第二支「品牌色」，也不会与价格抢视线。
+     浅色 #7c3aed 在白卡片 6.4:1；深色 #c4b5fd 在夜卡片 9.0:1。 */
+  --color-vault: #7c3aed;
+  --color-vault-bg: rgb(124 58 237 / 0.08);
+}
+
+/* 浅色为默认（:root 已由 @theme 注入对应值），这里只显式声明 color-scheme。 */
+:root {
+  color-scheme: light;
+}
+
+/* 深色主题：覆盖语义令牌。html.dark 比 :root 特异性更高，确保覆盖生效。 */
+html.dark {
+  color-scheme: dark;
+
+  --color-bg: #0b1120;
+  --color-surface: #1e293b;
+  --color-surface-2: #0f172a;
+
+  --color-fg: #f8fafc;
+  --color-body: #e2e8f0;
+  --color-muted: #cbd5e1;
+  --color-subtle: #94a3b8;
+  --color-faint: #8494ad; /* 4.75:1 在夜卡片 #1e293b 上 */
+  --color-hint: #8fa0b8; /* 5.50:1 在夜卡片上，比 faint 更亮一档：黑底上「空缺」要更弱于正文但不是更暗 */
+
+  --color-border: #334155;
+  --color-border-strong: #475569;
+
+  /* 深色下品牌红不变：它是品牌识别色，不是随主题走的语义色，
+     且白字压在其上 4.89:1 与浅色态一致。 */
+  --color-brand: #db261d;
+  --color-brand-hover: #ef3630; /* 深色下「压深」反而更暗，改为提亮一档 */
+  --color-footer: #07080d; /* 深色下比页面再暗一档，页脚仍读作「底」 */
+  --color-footer-fg: #f8fafc;
+  --color-footer-muted: #9aa3b2;
+
+  --color-accent: #db261d;
+  --color-on-accent: #ffffff;
+
+  /* 深色下强调色统一提亮一档：黑底上原色太重，小字会糊。 */
+  --color-price: #ff637e; /* 5.11:1 在夜卡片上 */
+  --color-high-value: #ffb900; /* 6.52:1 在 15% 琥珀底上 */
+  --color-high-value-bg: rgb(254 154 0 / 0.15);
+  --color-pinned: #ff8fa2; /* 6.09:1 在 15% 玫红底上 */
+  --color-pinned-bg: rgb(255 32 86 / 0.15);
+  --color-link: #38bdf8;
+  --color-success: #34d399;
+  --color-danger: #ff8fa2;
+  --color-danger-bg: rgb(255 32 86 / 0.15);
+
+  /* 黑底上紫色要提亮两档才读得到；同色相，不换成另一个色。 */
+  --color-vault: #c4b5fd;
+  --color-vault-bg: rgb(196 181 253 / 0.14);
+}
+
+/* 基础样式放进 @layer base：确保 Tailwind 的 utilities 层（如 text-on-accent）
+   优先级高于这些全局规则，否则 unlayered 的 `a{color:inherit}` 会覆盖工具类，
+   导致强调链接（<a>）文字继承 body 深色而“看不见”。 */
+@layer base {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family:
+      system-ui,
+      -apple-system,
+      'Segoe UI',
+      'PingFang SC',
+      'Hiragino Sans GB',
+      'Microsoft YaHei',
+      sans-serif;
+    background: var(--color-bg);
+    color: var(--color-fg);
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}
+
+/* 富文本（公告正文）：限制最大宽度并让链接/图片在深色下协调 */
+.prose {
+  line-height: 1.75;
+  /* 后台正文里的超长 URL / 无空格串不应该把整页撑宽 */
+  overflow-wrap: break-word;
+}
+.prose img {
+  max-width: 100%;
+}
+/* 富文本里的裸链接同理：允许在任意位置断行 */
+.prose a {
+  overflow-wrap: anywhere;
+}
+/* 公告正文的首段是读者真正开始读的地方，提到 18px（Title 档）。
+   不引入 17px 这种中间档：Four-Size Rule 要求一个屏幕最多四个字号，
+   17 会是第五个。只作用于富文本作用域，不改全站 body。 */
+.prose > p:first-of-type {
+  font-size: 1.125rem;
+  line-height: 1.7;
+  color: var(--color-fg);
+}
+
+/* ===== 运动 =====
+   这本目录的运动命题只有一条：**从列表翻到卡片本身**。
+   共享元素转场（列表缩略图 → 详情大图）承担「你点的就是这一张」；
+   其余全部是操作反馈，不编排进场，也不做逐区块滚入。
+   时长/曲线来自同一处：距离越远越长，出场永远比进场快。 */
+:root {
+  --ease-out-quart: cubic-bezier(0.16, 1, 0.3, 1); /* 自信的到达 */
+  --ease-out-soft: cubic-bezier(0.22, 0.61, 0.36, 1); /* 常规状态变化 */
+  --dur-feedback: 140ms; /* 悬停 / 按下：必须像即时 */
+  --dur-state: 220ms; /* 选中 / 开合 */
+  --dur-continuity: 380ms; /* 跨页转场 */
+}
+
+/* 共享元素：卡牌图位。名字按卡牌 id 生成（内联 style 写 --vt-name），
+   列表页与详情页用同一个名字，浏览器才会把它当成同一个元素做形变。 */
+.vt-card {
+  view-transition-name: var(--vt-name);
+  /* 图位本身是裁剪容器，转场时让浏览器按图位形状做圆角裁剪 */
+  contain: paint;
+}
+
+::view-transition-group(*) {
+  animation-duration: var(--dur-continuity);
+  animation-timing-function: var(--ease-out-quart);
+}
+/* 转场期间旧页面不该被读屏读到两次，也不该拦截点击。 */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--dur-continuity);
+}
+
+/* 结果网格换页/换筛选：整块淡入 + 6px 上移，不逐格 stagger
+   （12–24 个格子逐格延迟会读成「加载慢」，而不是「列表换了」）。
+   只在用户改过筛选/翻过页之后加这个类（见各路由的 `changed` 状态）：
+   首屏不播，页面加载时的整块淡入属于加载编排。 */
+@keyframes grid-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.grid-enter {
+  animation: grid-enter 240ms var(--ease-out-soft) both;
+}
+
+/* 横条右缘渐隐：告诉人「还能往右」，而不画箭头。
+   只在内容真的溢出时才该出现，但 CSS 无法判断溢出——用 mask 始终生效，
+   代价是最后一张卡贴边时右缘略微发虚，比「裁半个卡」可接受。 */
+.strip-fade {
+  -webkit-mask-image: linear-gradient(
+      to right,
+      #000 0,
+      #000 calc(100% - 28px),
+      transparent 100%
+    );
+  mask-image: linear-gradient(
+    to right,
+    #000 0,
+    #000 calc(100% - 28px),
+    transparent 100%
+  );
+}
+
+/* 状态横幅（留言成功/失败）出现时淡入，避免整块突然插进版面把下面的内容顶走。
+   详情页主图换图时也复用它（那是用户点击的结果，属于状态变化）。 */
+@keyframes banner-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.banner-enter {
+  animation: banner-enter 200ms var(--ease-out-soft) both;
+}
+
+/* 右侧筛选面板：面板整块从右滑入，遮罩同时淡入。
+   时长取跨页转场那一档，曲线用常规状态变化——它是「打开一个控件」，
+   不是「换了一页」，不该和列表页转场抢戏。 */
+@keyframes sheet-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+.sheet-in {
+  animation: sheet-in var(--dur-state) var(--ease-out-soft) both;
+}
+@keyframes sheet-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.sheet-fade {
+  animation: sheet-fade var(--dur-feedback) var(--ease-out-soft) both;
+}
+
+/* 卡牌弹窗：整块轻微放大 + 淡入。缩放幅度刻意很小（0.96→1），
+   它要读成「内容出现了」，不是「弹出一个广告」。 */
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.modal-in {
+  animation: modal-in var(--dur-state) var(--ease-out-quart) both;
+}
+
+/* ===== 浏览器自己的界面也要跟主题走 =====
+   选中文字、滚动条、数字列宽这些不属于任何设计系统，默认值在深色页面里
+   会突兀地亮一下。用同一套令牌喂它们，成本最低、辨识度最高。 */
+::selection {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+html {
+  scrollbar-color: var(--color-border-strong) transparent;
+  scrollbar-width: thin;
+}
+
+/* 表格化的数字（价格、编号、日期、计数）用等宽数字，列才对得齐。 */
+.tabular-nums,
+.font-black {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== 地图在深色主题下的瓦片 =====
+   OpenStreetMap 只有浅色瓦片。深色页里它是一块亮斑，且和周围的夜卡片
+   对比强烈到抢视线。反转 + 色相回旋是这类瓦片的常规处理：陆地变深、
+   水系保持蓝、道路仍亮。marker 是独立 DOM 层，不受 filter 影响。 */
+html.dark .map-tiles {
+  filter: invert(0.92) hue-rotate(180deg) brightness(0.92) contrast(0.9)
+    saturate(0.7);
+}
+
+/* 尊重系统的「减少动态效果」：不是把动画砍到 0.01ms（那会让状态变化
+   完全消失），而是保留「有没有变」这件事，只去掉位移与缩放。
+   转场直接关掉——跨页形变是纯空间运动，没有可保留的信息。 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* 位移类反馈（卡片图片轻微放大、网格上移）改为不位移，颜色/边框变化仍然保留。 */
+  .group:hover img {
+    transform: none !important;
+  }
+  .grid-enter,
+  .banner-enter,
+  /* 面板仍要出现，只是不再位移滑入——滑入是纯空间运动，关掉不丢信息。 */
+  .sheet-in,
+  .sheet-fade,
+  /* 弹窗同理：仍要出现，只是不再位移缩放。 */
+  .modal-in {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+}
+
+/* ===== 首页 Banner 轮播 =====
+   桌面（hover:hover and pointer:fine）走「全屏出血 + 居中聚光」：激活卡片居中放大，
+   左右相邻两张缩到约 84% 并半透明压暗，点击任意侧图即切换到它；移动/触摸端维持现状
+   （单图交叉淡入 + 左右滑动，aspect-[21/9] 圆角容器）。布局切换完全由 CSS 媒体查询决定，
+   不依赖 JS 的 matchMedia，避免「服务端渲染移动布局、客户端水合后再跳成桌面」的跳动。
+   每张幻灯的偏移/缩放/透明度/亮度由 JS 写入下面这组 CSS 变量，只在桌面媒体下被消费。 */
+.banner-stage {
+  position: relative;
+  aspect-ratio: 21 / 9;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-accent);
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.banner-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s var(--ease-out-soft);
+}
+.banner-slide[data-active="true"] {
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (hover: hover) and (pointer: fine) {
+  .banner-stage {
+    /* 整段 100vw 满屏铺开（左右出血顶到视口边）；
+       中间激活 banner 固定 1232px（内容列宽），两侧暗场露出虚化相邻图。 */
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+    aspect-ratio: auto;
+    height: clamp(320px, 42vw, 520px);
+    border-radius: 0;
+    border: none;
+    background: #0b0c12;
+    overflow: hidden;
+  }
+  .banner-stage .banner-slide {
+    inset: auto;
+    top: 50%;
+    left: 50%;
+    width: min(1232px, 100%);
+    height: 100%;
+    transform: translate(-50%, -50%) translateX(var(--bx, 0%)) scale(var(--bs, 1));
+    opacity: var(--bo, 1);
+    filter: brightness(var(--bb, 1));
+    z-index: var(--bz, 10);
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+    pointer-events: none;
+    transition: transform 0.55s var(--ease-out-soft),
+      opacity 0.55s var(--ease-out-soft), filter 0.55s var(--ease-out-soft);
+  }
+  .banner-stage .banner-slide[data-active="true"] {
+    pointer-events: auto;
+  }
+  /* 两侧相邻图可点击切换。 */
+  .banner-stage .banner-slide.is-near {
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  /* 离激活图超过两张（环形）的幻灯：隐藏且不可点。 */
+  .banner-stage .banner-slide.is-hidden {
+    pointer-events: none;
+    opacity: 0 !important;
+  }
+  /* 只有一张 banner（n===1）：桌面也铺满整段，不要居中浮出一张小卡。 */
+  .banner-stage[data-single="true"] .banner-slide {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform: none;
+    opacity: 1;
+    filter: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
