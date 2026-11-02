@@ -1,0 +1,933 @@
+/* =============================================================================
+   后台主题：Linear 的克制（近黑中性色阶 + 1px 发丝线 + 单一品牌红）
+
+   **为什么换掉孟菲斯**：孟菲斯的圆 / 三角 / 波浪线 + 四个高饱和色，是给
+   「一眼被认出来」的落地页用的。后台是另一种场合——运营者每天在这里待
+   几十分钟盯表单和列表，装饰色会和内容抢注意力，还会和状态色（成功绿、
+   警示琥珀、错误红）打架。孟菲斯的红 #db261d 与「错误」红是同一支色，
+   它铺在背景上时，真正的错误提示反而被稀释了。
+
+   **现在的分工**：
+   - 颜色只做一件事：**强调**。中性色阶负责结构，品牌红只出现在
+     主按钮、当前选中项、待处理计数这些「要你看这里」的位置。
+   - 层级靠 **1px 描边 + 底色一档之差**，不用投影。投影在密集表格里会让
+     界面发脏，也是最容易过时的那一种「精致」。
+   - 圆角统一 6 / 8 / 10px：控件偏方，卡片略圆。
+
+   **实现方式**（与上一版一致，这点不动）：Payload 的 CSS 变量集中在
+   `:root` / `html[data-theme]` 上，且 Payload 自己的样式都在
+   `@layer payload-default` 里；本文件在 `@payloadcms/next/css` 之后加载、
+   未进 @layer，因此不去猜 Payload 的内部 class 名也能覆盖它。
+   ========================================================================== */
+
+/* ---------- 1. 基线：字体、圆角、节奏、品牌色 ---------- */
+:root {
+  --font-body:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    'Noto Sans SC', 'Hiragino Sans', Arial, sans-serif;
+  --font-mono: 'Geist Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+
+  /* Linear 的圆角：控件 6px，卡片 10px */
+  --style-radius-s: 6px;
+  --style-radius-m: 8px;
+  --style-radius-l: 10px;
+
+  /* 唯一强调色 = 站点识别色（深色下提亮一档，见第 3 节） */
+  --color-brand: #db261d;
+  --color-brand-hover: #c11d16;
+  --color-brand-bg: rgb(219 38 29 / 0.12);
+
+  --accessibility-outline: 2px solid var(--color-brand);
+  --accessibility-outline-offset: 2px;
+
+  /* 按钮：同一支红的四个浓度（见第 5 节） */
+  --btn-solid-bg: var(--color-brand);
+  --btn-tint-bg: rgb(219 38 29 / 0.1);
+  --btn-tint-bg-hover: rgb(219 38 29 / 0.16);
+  --btn-tint-fg: #b1231b;
+  --btn-tint-border: rgb(219 38 29 / 0.28);
+
+  /* 标识（graphics.Logo / Icon）的渐变两端与内部线条色 */
+  --brand-mark-from: #f0554c;
+  --brand-mark-to: #d21f17;
+  --brand-mark-ink: var(--color-brand);
+
+  /* 内容区左右留白：Payload 默认 60px 偏空，收到 40px */
+  --gutter-h: 40px;
+
+  /* 侧栏宽度：275px → 248px */
+  --nav-width: 248px;
+}
+
+/* ---------- 2. 浅色：白卡片 + 冷灰底 ---------- */
+html[data-theme='light'] {
+  /* 页面底色比卡片暗一档，且这一档要**看得出来**：
+     之前是 #f6f7f8（与白卡片只差 2%），配上 Payload 没有容器的列表与表单，
+     整页读起来就是一片白。压到 #edeff2 之后，白卡片与表格才有边界。 */
+  --theme-bg: #f2f5f8;
+  --theme-bg-color: #f2f5f8;
+  /* 三级表面（页面 < 栏 < 面板）。浅色下越靠内容越亮：页面灰 → 栏深灰 → 面板纯白。
+     面板单独用一个令牌，不动 --theme-elevation-* 那支灰阶（它还管卡片、输入框等）。 */
+  /* 栏与面板同色（白）：页面底色只出现在它们之间的间隙里 */
+  --rail-bg: #ffffff;
+  --panel-bg: #ffffff;
+  /* 输入框比页面亮一档、比卡片同色：浅色下靠描边区分，因此描边要够实 */
+  --theme-input-bg: #ffffff;
+
+  --theme-elevation-0: #ffffff;
+  --theme-elevation-50: #fafafb;
+  --theme-elevation-100: #f4f5f6;
+  --theme-elevation-150: #eef0f2;
+  --theme-elevation-200: #e7e9ec;
+  --theme-elevation-250: #e0e3e7;
+  --theme-elevation-300: #d8dbe0;
+  --theme-elevation-350: #ced2d8;
+  --theme-elevation-400: #c1c6cd;
+  --theme-elevation-450: #b1b7c0;
+  --theme-elevation-500: #9aa0a9;
+  --theme-elevation-550: #868c95;
+  --theme-elevation-600: #6f757e; /* 白底 5.2:1，正文级可读 */
+  --theme-elevation-650: #5f646d;
+  --theme-elevation-700: #4e535b;
+  --theme-elevation-750: #3f444c;
+  --theme-elevation-800: #2f333a;
+  --theme-elevation-850: #22262c;
+  --theme-elevation-900: #171a20;
+  --theme-elevation-950: #101216;
+  --theme-elevation-1000: #0d0e11;
+
+  --theme-text: #17181c;
+  --theme-border-color: #dbe0e7;
+  --theme-input-border: #c4cad5;
+  /* 聚焦环：品牌红的 18% 外扩，键盘落点一眼可见 */
+  --focus-ring: rgb(219 38 29 / 0.18);
+  /* 状态胶囊：只给语义，不给装饰。红留给错误。
+     三档：绿 = 生效中/已处理；琥珀 = 需要留意（新、定时未到点）；中性 = 未生效或已终止。 */
+  --status-published-bg: rgb(5 150 105 / 0.14);
+  --status-published-fg: #04624a;
+  --status-scheduled-bg: rgb(217 119 6 / 0.16);
+  --status-scheduled-fg: #92400e;
+  --theme-overlay: rgb(9 9 11 / 0.45);
+}
+
+/* ---------- 3. 深色（后台默认）：近黑底 + 略亮的卡片 ---------- */
+html[data-theme='dark'] {
+  --theme-bg: #08090a;
+  --theme-bg-color: #08090a;
+  /* 深色下同样「越靠内容越亮」：页面 #08090a → 栏 #13151a → 面板 #1b1e24。
+     每级差 11/255：第一版只差 6/255，肉眼读不出来（被当成「没有背景」），
+     深色里比例看着小（约 1.07），但绝对差在暗背景上是分得出来的。 */
+  --rail-bg: #1b1e24;
+  --panel-bg: #1b1e24;
+  /* 输入框比卡片（elevation-0 = #101113）再亮一档：
+     Payload 默认让输入框与卡片同色，深色下等于没有边界。 */
+  --theme-input-bg: #191b1e;
+
+  --theme-elevation-0: #101113;
+  --theme-elevation-50: #151618;
+  --theme-elevation-100: #191b1e;
+  --theme-elevation-150: #1f2124;
+  --theme-elevation-200: #25272b;
+  --theme-elevation-250: #2b2e33;
+  --theme-elevation-300: #33363c;
+  --theme-elevation-350: #3b3e45;
+  --theme-elevation-400: #464950;
+  --theme-elevation-450: #52555c;
+  --theme-elevation-500: #5f636b;
+  --theme-elevation-550: #6e727a;
+  --theme-elevation-600: #7f838b;
+  --theme-elevation-650: #9296a0;
+  --theme-elevation-700: #a6aab3;
+  --theme-elevation-750: #babec6;
+  --theme-elevation-800: #d0d3d9;
+  --theme-elevation-850: #e2e4e8;
+  --theme-elevation-900: #eff0f3;
+  --theme-elevation-950: #f7f8f9;
+  --theme-elevation-1000: #fbfbfc;
+
+  --theme-text: #f7f8f8;
+  --theme-border-color: rgb(255 255 255 / 0.13);
+  --theme-input-border: rgb(255 255 255 / 0.22);
+  --focus-ring: rgb(219 38 29 / 0.32);
+  --status-published-bg: rgb(16 185 129 / 0.16);
+  --status-published-fg: #34d399;
+  --status-scheduled-bg: rgb(245 158 11 / 0.18);
+  --status-scheduled-fg: #fbbf24;
+  --theme-overlay: rgb(0 0 0 / 0.7);
+
+  /* 深色下红色仍然是 #db261d：它是品牌识别色，且白字压在上面 4.87:1 已过
+     正文级。刻意不为深色提亮——提亮会把白字的对比度推到 4.5:1 以下
+     （#e4372d 只有 4.3:1）。真正需要提亮的只有「淡红底上的红字」
+     （--primary-soft-fg）与 Logo 渐变（--brand-mark-*），它们上面不压白字。 */
+  --color-brand: #db261d;
+  --color-brand-hover: #c01f18;
+  --color-brand-bg: rgb(228 55 45 / 0.16);
+  --brand-mark-from: #f4665d;
+  --brand-mark-to: #dc2a20;
+
+  /* 深色下淡底要更浓、红字要更亮，才能在近黑底上把按钮读出来 */
+  --btn-tint-bg: rgb(219 38 29 / 0.16);
+  --btn-tint-bg-hover: rgb(219 38 29 / 0.24);
+  --btn-tint-fg: #f4645c;
+  --btn-tint-border: rgb(219 38 29 / 0.38);
+}
+
+/* ---------- 4. 排版 ----------
+   Payload 的默认基准是 13px / 20px，在 1440 宽的屏幕上偏小，长列表扫读
+   时眼睛要额外用力。这里只动 body 的继承值，不动 --base-px /
+   --base-body-size——那两个量撑着 Payload 自己的间距节奏，动了整页都会漂。 */
+html[data-theme] body {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---------- 5. 控件：按钮 / 输入框 ---------- */
+/*
+ * 后台所有按钮都带品牌红，区别只在**填充浓度**：
+ *   solid（主操作：保存 / 发布 / 创建）— 实心红底白字
+ *   tint（次要：取消 / 筛选 / 切换）— 10~16% 红底 + 红字 + 红描边
+ *   ghost（幽灵：行内图标按钮）— 透明底 + 红字
+ *
+ * 为什么连次要按钮也要带红：后台是低彩度的中性界面，一支红只出现在主按钮上时，
+ * 「可点」这件事在视觉上就不成系统——用户得靠位置去猜哪个能点。
+ * 浓度分级保证层级仍然清楚：实心一处，淡填充若干，透明若干。
+ *
+ * 对比度：浅色下红字 #b1231b 在 10% 红底上 5.4:1，悬停（16%）5.1:1；
+ * 深色下 #f4645c 在 16% 红底上 4.9:1、悬停（24%）4.7:1——都在 4.5:1 之上。
+ */
+.btn--style-primary {
+  --color: #ffffff;
+  --bg-color: var(--btn-solid-bg);
+  --hover-bg: var(--color-brand-hover);
+  --hover-color: #ffffff;
+  --btn-border: 1px solid transparent;
+  --hover-btn-border: 1px solid transparent;
+}
+
+.btn--style-secondary,
+.btn--style-subtle {
+  --color: var(--btn-tint-fg);
+  --hover-color: var(--btn-tint-fg);
+  --bg-color: var(--btn-tint-bg);
+  --hover-bg: var(--btn-tint-bg-hover);
+  --btn-border: 1px solid var(--btn-tint-border);
+  --hover-btn-border: 1px solid var(--btn-tint-border);
+}
+
+.btn--style-pill {
+  --color: var(--btn-tint-fg);
+  --hover-color: var(--btn-tint-fg);
+  --bg-color: var(--btn-tint-bg);
+  --hover-bg: var(--btn-tint-bg-hover);
+}
+
+.btn--style-dashed {
+  --color: var(--btn-tint-fg);
+  --hover-color: var(--btn-tint-fg);
+  --btn-border: 1px dashed var(--btn-tint-border);
+  --hover-btn-border: 1px dashed var(--btn-tint-border);
+}
+
+/*
+ * 幽灵与图标按钮：底色不上，只有字与图标带红。
+ * 这里同时写 `--color` 与 `color`：前者是 Payload 按钮的变量约定（有其它规则
+ * 会读它），后者是因为这两个档位的按钮常常从父级继承 `color`，
+ * 只改变量在那些位置上不会生效（实测「添加过滤条件」就是这一类）。
+ */
+.btn--style-none,
+.btn--style-icon,
+.btn--style-icon-label {
+  --color: var(--btn-tint-fg);
+  --hover-color: var(--btn-tint-fg);
+  color: var(--btn-tint-fg);
+}
+
+/* tab 结构是「当前在哪一页」的指示，不是动作，保持中性——
+   给它上红会和真正的操作按钮抢注意力。 */
+.btn--style-tab {
+  --color: var(--theme-elevation-700);
+}
+
+.btn {
+  border-radius: var(--style-radius-s);
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  transition:
+    background-color 120ms ease-out,
+    border-color 120ms ease-out,
+    color 120ms ease-out;
+}
+
+input,
+textarea,
+select {
+  border-radius: var(--style-radius-s);
+}
+
+/* 搜索框：Payload 默认带一层 2px 投影，与「平」的基调冲突，去掉 */
+.search-filter__input,
+.search-filter__input:not(:disabled):hover {
+  box-shadow: none;
+}
+
+/*
+ * 整页横向滚动兜底。
+ * Payload 的模板里侧栏那个 `nav__header` 是 100vw 的绝对定位块，
+ * 在 `grid-template-columns: <nav> auto` 里会多出几像素，
+ * 于是整页出现一条 6px 的横向滚动条（实测 Payload 默认侧栏也是 6）。
+ * `overflow-x: clip` 只裁剪、**不**产生滚动容器，因此 `position: sticky`
+ * 的顶栏与侧栏不受影响（实测滚动后 app-header 仍贴在 top: 0）。
+ */
+.template-default {
+  overflow-x: clip;
+}
+
+/* ---------- 5b. 三级表面：页面 < 栏 < 面板 ----------
+ *
+ * 之前这块后台只有两样东西：**灰色页面**和**画在页面上的内容**，区域之间靠一条
+ * 1px 分割线——线能标出边界，但标不出「哪些控件属于哪一块」，于是每块内容都糊在一起。
+ *
+ * 现在每一层都有自己的底色，且方向一致（浅色越靠内容越亮，深色越靠内容越亮）：
+ *
+ *   页面  --theme-bg           浅色 #eef1f4 / 深色 #08090a
+ *   栏    --rail-bg            顶栏与侧栏，铺满、无圆角（圆角留给面板）
+ *   面板  --theme-elevation-0  工作区：列表页一整块、详情页主/侧字段区各一块
+ *
+ * 「栏是直角、面板是圆角」本身就是一个信号：直角 = 一条栏，圆角 = 一块内容。
+ */
+
+/* --- 栏级：顶栏与侧栏铺满，不参与圆角；与面板同色，分隔靠间隙 --- */
+.app-header {
+  background-color: var(--rail-bg);
+  border-bottom: 0;
+}
+
+.nav {
+  background-color: var(--rail-bg);
+  border-right: 0;
+}
+
+/* --- 面板：工作区 --- */
+
+/* 列表页：标题、筛选工具条、表格收进同一张面板。
+   上一轮给 `.table-wrap` 单独包过一张——现在外层有了面板，内部的边框/圆角/底色
+   必须去掉，否则就是面板套面板，层级反而读不出来。 */
+.collection-list__wrap {
+  background-color: var(--panel-bg);
+  border: 1px solid var(--theme-border-color);
+  border-radius: var(--style-radius-l);
+  /* 四周留出间隙：页面底色从这里露出来，那些间隙就是分割线。
+     之前面板与栏同宽、贴着走，页面底色只在面板下方露了一道。 */
+  margin: 16px 24px 24px;
+  padding: 20px;
+  /* 圆角要能裁掉表头带子与末行的直角；用 clip 而不是 hidden，
+     因为它不产生滚动容器，不影响内部任何 sticky 行为。 */
+  overflow: clip;
+}
+
+.collection-list__tables .table-wrap {
+  background-color: transparent;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+
+/* 详情页：标题区、主字段区、侧字段区各一块面板。
+   这份模型里没有任何 group / tabs 字段（Payload 那两个会向两侧出血一个 gutter，
+   有的话就不能整块包），所以可以放心包。 */
+.doc-header,
+.document-fields__edit,
+.document-fields__sidebar {
+  background-color: var(--panel-bg);
+  border: 1px solid var(--theme-border-color);
+  border-radius: var(--style-radius-l);
+}
+
+.doc-header {
+  padding: 12px 16px;
+  margin: 16px 24px 12px;
+}
+
+/* 字段区两列整体也收进来，与上面的标题面板对齐 */
+.document-fields {
+  margin: 0 24px 24px;
+}
+
+/* 标题区下面那条 Payload 的 `::after` 分隔线现在是面板内部的一条，去掉 */
+.doc-header:after {
+  display: none;
+}
+
+/* 两块字段面板并排：面板自己的描边已经分隔了它们，
+   再留 Payload 那条 --main-border 就成了两三条并排的线。 */
+.document-fields--has-sidebar {
+  --main-border: none;
+  gap: 16px;
+}
+
+/* ---------- 6. 侧栏导航（自定义的一级菜单） ----------
+   侧栏组件已换成 `AdminNav`：集合与全局平铺成一列，没有分组标题、没有折叠。
+   这里只负责这一列怎么排、图标怎么放。 */
+.nav {
+  border-right: 1px solid var(--theme-border-color);
+}
+
+.admin-nav {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 链接：去掉 Payload 的 underline hover，换成 Linear 的浅底色块 */
+.nav a.nav__link:hover,
+.nav a.nav__link:focus-visible {
+  text-decoration: none;
+}
+
+.nav__link {
+  padding: 7px 10px;
+  border-radius: var(--style-radius-s);
+  /* 13px 在 1600px 屏幕上偏小（Payload 的根字号就是 13px，默认全站都跟着小）。
+     菜单是每天点十几次的东西，抬到 14px；行高同步放宽，热区也变高一点。 */
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--theme-elevation-700);
+  transition:
+    background-color 120ms ease-out,
+    color 120ms ease-out;
+}
+
+.nav__link:hover {
+  background-color: var(--theme-elevation-50);
+  color: var(--theme-elevation-1000);
+}
+
+.nav__link.active {
+  background-color: var(--color-brand-bg);
+  color: var(--theme-elevation-1000);
+}
+
+/* 键盘焦点：Payload 只给表格里的链接写了聚焦环（`.table a:focus-visible`），
+   侧栏与仪表盘里我们自己的链接落在它外面，聚焦时没有任何指示。
+   这里补上，用与 Payload 同一套令牌（品牌红 2px + 2px 偏移，实测 ≥4.8:1）。 */
+.nav a.nav__link:focus-visible,
+.nav button:focus-visible {
+  outline: var(--accessibility-outline);
+  outline-offset: var(--accessibility-outline-offset);
+}
+
+.admin-nav-wrap {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 集合筛选：13 项平铺之后唯一能降低扫读成本的东西（不改结构）。
+   输入框放在链接列上方，与链接同宽，键盘与读屏都能到（有 aria-label）。 */
+.admin-nav__search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 0 0 4px;
+}
+
+.admin-nav__search-icon {
+  position: absolute;
+  left: 9px;
+  display: block;
+  color: var(--theme-elevation-550);
+  pointer-events: none;
+}
+
+.admin-nav__search-input {
+  width: 100%;
+  height: 30px;
+  padding: 0 8px 0 28px;
+  border: 1px solid var(--theme-input-border);
+  border-radius: var(--style-radius-s);
+  background-color: var(--theme-input-bg);
+  color: var(--theme-text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  outline: none;
+}
+
+.admin-nav__search-input::placeholder {
+  color: var(--theme-elevation-650);
+}
+
+.admin-nav__search-input:focus-visible {
+  border-color: var(--color-brand);
+  outline: var(--accessibility-outline);
+  outline-offset: var(--accessibility-outline-offset);
+}
+
+.admin-nav__empty {
+  margin: 4px 0 0;
+  padding: 0 10px;
+  font-size: 13px;
+  color: var(--theme-elevation-650);
+}
+
+/* 登出：带文字、有热区、上面一条分隔线——它原先是一颗 22px 的裸图标，
+   贴在侧栏最底下，被读成装饰而不是功能。 */
+.nav__controls {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--theme-border-color);
+}
+
+.admin-nav__logout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: var(--style-radius-s);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--theme-elevation-700);
+  text-decoration: none;
+}
+
+.admin-nav__logout:hover {
+  background-color: var(--theme-elevation-50);
+  color: var(--theme-elevation-1000);
+}
+
+/* 图标：默认弱化到「结构」，悬停与当前项才跟着文字一起亮起来 */
+.admin-nav__icon {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  margin-right: 8px;
+  color: var(--theme-elevation-550);
+}
+
+.nav__link:hover .admin-nav__icon,
+.nav__link.active .admin-nav__icon {
+  color: var(--color-brand);
+}
+
+/* 当前项的指示条：2px 品牌红，贴在图标左侧 */
+.nav__link-indicator {
+  inset-inline-start: -18px;
+  width: 2px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--color-brand);
+}
+
+/* ---------- 7. 列表页 ---------- */
+/* 表头：大写字距 + 一条发丝线；不再靠浅灰底来「分栏」——
+   那层灰底在浅色主题下会和斑马纹混淆，也让表格看起来更重。 */
+.table thead th {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--theme-elevation-650);
+  border-bottom: 1px solid var(--theme-border-color);
+}
+
+.table thead {
+  color: var(--theme-elevation-650);
+}
+
+/* 单元格：Payload 默认纵向 padding 偏大且 min-width 150px，
+   一行只能放三列。收到 8px / 12px，并给窄列松绑最小宽度。 */
+.table table td {
+  padding: 8px 12px;
+  min-width: 0;
+}
+
+/* 奇数行的浅底色块是 Payload 的默认斑马纹，与 1px 分隔线重复，去掉 */
+.table tbody tr:nth-child(odd) {
+  background: transparent;
+}
+
+.table table tbody tr:hover {
+  background-color: var(--theme-elevation-50);
+}
+
+/* 列表标题：Payload 默认 h1 是 32px，放在列表页过重 */
+.list-header__title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* 列表视图切换 tabs */
+.pill {
+  border-radius: var(--style-radius-s);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* ---------- 7b. 列表与详情：把内容从背景里「托」出来 ----------
+ *
+ * 问题：Payload 的列表表格与编辑表单都是**直接画在页面底色上**的，没有自己的
+ * 表面。深色下近黑压近黑、浅色下白压白，只剩几根发丝线，内容与背景就混在一起了。
+ *
+ * 做法（三件事）：
+ *   1. 给表格一张表面：描边 + 圆角 + 与页面不同的底色，并收掉 Payload 让表格
+ *      出血到屏幕两端的那段负边距（要包在圆角里就不能出血）；
+ *   2. 表头做成一条独立的带子（底色更深一档 + 下边线），行与行之间补分隔线；
+ *   3. 表单控件抬到页面之上：输入框底色比卡片亮一档、描边加重、聚焦给品牌红环。
+ */
+
+/* --- 表格：收进一张表面 --- */
+.collection-list__tables .table {
+  left: 0;
+  width: 100%;
+  padding-left: 0;
+}
+
+.collection-list__tables .table:after {
+  padding-right: 0;
+}
+
+/* --- 表头：独立的一条带子 --- */
+.collection-list__tables .table thead th {
+  background-color: var(--theme-elevation-100);
+  border-bottom: 1px solid var(--theme-border-color);
+  white-space: nowrap;
+  /* 11px 是全站最小的一档，作为表头偏小；12px 仍明显弱于正文，但能读 */
+  font-size: 12px;
+}
+
+/* 行分隔线：之前只留 hover 态，静止时一行与下一行之间没有边界 */
+.collection-list__tables .table tbody tr + tr td {
+  border-top: 1px solid var(--theme-border-color);
+}
+
+/* 行与表头的间距留出来：贴太近时分隔线会读成「表格的边框」而不是「行与行」 */
+.collection-list__tables .table td {
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+/* 单元格里 Payload 自己按 13px 排版的部分（字段标签、本地化标记）一起抬上来，
+   否则同一行里会出现 14px 与 13px 混排 */
+.collection-list__tables .table td .field-label,
+.collection-list__tables .table td .localized,
+.collection-list__tables .table td .pill,
+/* 布尔单元格：Payload 用 <code class="bool-cell"> 渲染，自带 13px */
+.collection-list__tables .table td code,
+.collection-list__tables .table td code * {
+  font-size: 14px;
+}
+
+/* 可点的状态胶囊：加一条描边和一个 chevron——静态胶囊没有任何「可切换」的
+   标识，用户因此以为状态只能进详情页改。 */
+.admin-status--actionable {
+  cursor: pointer;
+  border-color: var(--theme-border-color);
+  gap: 4px;
+  padding-right: 6px;
+}
+
+.admin-status--actionable:hover {
+  border-color: var(--theme-elevation-550);
+  background-color: var(--theme-elevation-100);
+}
+
+.admin-status--actionable:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.admin-status__chevron {
+  width: 12px;
+  height: 12px;
+  opacity: 0.7;
+}
+
+/* 状态菜单：画在 body 上（portal），位置由按钮算出。
+   工作区面板是 overflow: clip，菜单留在单元格里会被裁掉。 */
+.admin-status-menu {
+  position: fixed;
+  z-index: 60;
+  min-width: 160px;
+  padding: 4px;
+  border: 1px solid var(--theme-border-color);
+  border-radius: var(--style-radius-m);
+  background-color: var(--theme-elevation-0);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.16);
+}
+
+.admin-status-menu__item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--style-radius-s);
+  background: transparent;
+  color: var(--theme-text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.admin-status-menu__item:hover {
+  background-color: var(--theme-elevation-100);
+}
+
+.admin-status-menu__item.is-current {
+  color: var(--color-brand);
+  font-weight: 600;
+}
+
+.admin-status__check {
+  width: 14px;
+  height: 14px;
+}
+
+/* 定时发布时状态胶囊旁边还会跟一枚「定时 · 日期」，两枚要排在同一行 */
+.admin-status__group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 状态胶囊（StatusCell）：22px 高、12px 字，横向扫列表时能一眼分出三档。
+   四档对比度：浅色 5.4:1 / 6.4:1，深色 9:1 上下，都在 4.5:1 之上。 */
+.admin-status {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.admin-status--published {
+  background-color: var(--status-published-bg);
+  color: var(--status-published-fg);
+}
+
+/* 琥珀 = 需要留意：留言工单的「新」、公告的「定时未到点」 */
+.admin-status--scheduled {
+  background-color: var(--status-scheduled-bg);
+  color: var(--status-scheduled-fg);
+}
+
+.admin-status--draft,
+.admin-status--archived,
+.admin-status--spam,
+.admin-status--muted {
+  background-color: var(--theme-elevation-100);
+  color: var(--theme-elevation-700);
+}
+
+/* 富文本（Lexical）：整块没有底色也没有描边，和面板同为白色——
+   看不出「这里可以输入」以及输入框到哪儿为止。给它一个容器：
+   输入框底色 + 描边 + 圆角，内容区留最小高度，顶部工具条做成一条带子。 */
+.rich-text-lexical__wrap {
+  background-color: var(--theme-input-bg);
+  border: 1px solid var(--theme-input-border);
+  border-radius: var(--style-radius-s);
+  overflow: clip;
+}
+
+.rich-text-lexical__wrap .editor-scroller {
+  min-height: 140px;
+  padding: 8px 12px;
+}
+
+.rich-text-lexical__wrap .editor {
+  min-height: 120px;
+  font-size: 14px;
+}
+
+.rich-text-lexical__wrap:focus-within {
+  border-color: var(--color-brand);
+}
+
+/* Lexical 的工具条（聚焦时出现）同样要有底和边界，否则它浮在白底上 */
+.fixed-toolbar {
+  background-color: var(--theme-elevation-50);
+  border-bottom: 1px solid var(--theme-border-color);
+}
+
+/* 占位符：Payload 给的是 elevation-400（实测 2.0:1 深色 / 1.6:1 浅色，
+   远低于 4.5:1）。占位符也是文字——「搜索 卡牌名称」这条提示要读得到。
+   抬到 650 档，两套主题都过阈值。 */
+.search-filter__input::-webkit-input-placeholder,
+.search-filter__input::-moz-placeholder,
+/* Payload 给输入控件的是 `font-size: 1rem`，在它自己 13px 的根下只有 13px */
+.field-type input,
+.field-type textarea,
+.field-type select,
+.rs__control,
+.rs__value-container {
+  font-size: 14px;
+}
+
+.field-type input::-webkit-input-placeholder,
+.field-type input::-moz-placeholder,
+.field-type textarea::-webkit-input-placeholder,
+.field-type textarea::-moz-placeholder {
+  color: var(--theme-elevation-650);
+}
+
+/* --- 编辑页：分区线与侧栏分隔加重 --- */
+.group-field,
+.tabs-field__tabs {
+  border-color: var(--theme-border-color);
+}
+
+/* 标题下的那条分隔线是 `background` 画的（不是 border），所以改背景色 */
+.doc-header:after {
+  background-color: var(--theme-border-color);
+}
+
+.document-fields--has-sidebar {
+  --main-border: 1px solid var(--theme-border-color);
+}
+
+/* --- 表单控件：抬到卡片之上 --- */
+.field-type input,
+.field-type textarea,
+.field-type select,
+.rs__control {
+  background-color: var(--theme-input-bg);
+  border: 1px solid var(--theme-input-border);
+  border-radius: var(--style-radius-s);
+  /* Payload 默认给控件一层 `0 2px 2px -1px` 投影，与「平」的基调冲突，
+     也让控件和卡片糊在一起；换成描边 + 底色差来表达层级。 */
+  box-shadow: none;
+}
+
+.field-type input:focus,
+.field-type textarea:focus,
+.rs__control--is-focused,
+.rs__control--menu-is-open {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+  outline: none;
+}
+
+/* 只读与禁用态：压回卡片色，并明确「不可编辑」 */
+.field-type input:disabled,
+.field-type textarea:disabled,
+.field-type input[readonly],
+.field-type textarea[readonly] {
+  background-color: var(--theme-elevation-50);
+  color: var(--theme-elevation-600);
+}
+
+/* --- 字段标签：加粗一档，和值明确分开 --- */
+label.field-label:not(.unstyled) {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--theme-elevation-900);
+}
+
+/* 必填标记「*」：Payload 用 error-500，浅色下实测 3.59:1（13px 正文）。
+   它承载信息（这个字段必填），不能当装饰；压深到 error-700（约 7:1）。 */
+label.field-label:not(.unstyled) .required {
+  color: var(--theme-error-700);
+}
+
+/* 字段说明：弱化但不消失（elevation-650 在两套主题下都过 4.5:1） */
+.field-description {
+  color: var(--theme-elevation-650);
+}
+
+/* 编辑页顶栏里「最后修改时间 / 已创建」这类元信息：Payload 给它的是
+   elevation-500，实测 3.31:1，14px 正文读不清。抬到 650 档（约 6.5:1）。 */
+.doc-controls__label,
+.doc-controls__value {
+  color: var(--theme-elevation-650);
+}
+
+/* ---------- 8. 编辑页标题 ---------- */
+.doc-header__title {
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* ---------- 9. 标识与登录页 ---------- */
+.admin-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-brand-mark {
+  display: block;
+  border-radius: 9px;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.18),
+    inset 0 1px 0 rgb(255 255 255 / 0.22);
+}
+
+.admin-brand__wordmark {
+  font-family: var(--font-body);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--theme-text);
+}
+
+.admin-login {
+  margin-bottom: 20px;
+}
+
+.admin-login__title {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--theme-text);
+}
+
+.admin-login__hint {
+  margin: 6px 0 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--theme-elevation-600);
+}
+
+/* ---------- 9a. 登录页：一层极淡的红晕 ----------
+   用 background-image 而不是伪元素：背景图永远画在元素背景之上、
+   内容之下，不需要 z-index 也不会盖住表单。
+   强度控制在 10% 以内——它是「气氛」，不是「设计元素」。 */
+html[data-theme='dark'] .template-minimal {
+  background-image:
+    radial-gradient(70vw 45vw at 15% -10%, rgb(219 38 29 / 0.1), transparent 70%),
+    radial-gradient(55vw 40vw at 105% 5%, rgb(255 255 255 / 0.045), transparent 70%);
+  background-repeat: no-repeat;
+}
+
+/* ---------- 10. 无障碍：尊重「减少动态效果」 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .nav__link {
+    transition: none !important;
+  }
+}

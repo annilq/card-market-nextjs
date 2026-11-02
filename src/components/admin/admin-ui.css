@@ -1,0 +1,234 @@
+/* =============================================================================
+   后台自家界面的样式入口（shadcn/ui 组件的令牌 + Tailwind 工具类）
+
+   两个刻意的取舍：
+
+   1. **只引入 Tailwind 的 `theme`（变量）与 `utilities`（工具类），不引入 `preflight`。**
+      Payload 后台自带一整套重置与组件样式；再叠一层 preflight 会把按钮、
+      边框、标题的默认样式一起抹掉。工具类只在我们自己的 DOM 上用，
+      不会碰到 Payload 的界面。
+
+   2. **令牌与 custom.scss 里的 Payload 令牌共用同一套中性色阶。**
+      同一个后台里出现两套灰是错误的来源：一处改了另一处不变，
+      界面就会开始「接缝」。所以这里定义的色值，就是 custom.scss
+      里 `--theme-elevation-*` 的同一支色阶。
+
+   注意：本文件未进 `@layer`，因此优先级高于 Payload 的 `@layer payload`
+   样式——这正是我们自己写的界面能盖住 Payload 默认值的原因。
+   ========================================================================== */
+
+@import 'tailwindcss/theme.css';
+@import 'tailwindcss/utilities.css';
+
+/* 孟菲斯点缀（叠加在令牌之上，只做装饰，不改令牌） */
+
+/* Tailwind 扫描范围：整个仓库（默认会跳过 .gitignore 里的 node_modules / .next）。 */
+@source '../../..';
+
+/* Payload 的主题开关是 `html[data-theme='dark']`（由 payload-theme cookie 决定），
+   不是系统偏好。Tailwind 默认的 `dark:` 走 prefers-color-scheme，在这里会失效——
+   于是 `dark:text-emerald-400` 这类写法在深色后台里根本不生效，深色态只能拿到
+   浅色那条颜色（实测 11px 徽章对比度掉到 4.37:1）。这里把变体重新绑定一次。 */
+@custom-variant dark (&:where(html[data-theme='dark'], html[data-theme='dark'] *));
+
+/* ---------- 1. 语义令牌（浅色） ---------- */
+:root {
+  --background: #f6f7f8; /* 页面底色：比卡片暗一档，卡片才浮得起来 */
+  --foreground: #0d0e11;
+  --card: #ffffff;
+  --card-foreground: #0d0e11;
+  --popover: #ffffff;
+  --popover-foreground: #0d0e11;
+
+  --primary: #db261d; /* 站点识别色，全站唯一强调色 */
+  --primary-foreground: #ffffff;
+  /* 淡红底 + 底上的红字。红字比主色再压深一档：
+     同色系 12% 底色会把白底上的对比度拉低近 1.5:1。 */
+  --primary-soft: rgb(219 38 29 / 0.12);
+  --primary-soft-fg: #b1231b;
+  --secondary: #f1f2f4;
+  --secondary-foreground: #0d0e11;
+  --muted: #e9edf2;
+  --muted-foreground: #5f636c; /* 白底 5.5:1，正文级可读 */
+  --accent: #e9edf2;
+  --accent-foreground: #0d0e11;
+  --destructive: #b42318;
+  --destructive-foreground: #ffffff;
+
+  --border: #e4e5e8;
+  --input: #dcdde1;
+  --ring: #db261d;
+
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 10px;
+  --r-xl: 12px;
+}
+
+/* ---------- 2. 语义令牌（深色，后台默认） ---------- */
+html[data-theme='dark'] {
+  --background: #08090a;
+  --foreground: #f7f8f8;
+  /* 与后台的三级表面对齐：card 就是「面板」那一层（= --panel-bg），
+     popover 再高半档。之前 card 是 #101113，比列表页面板暗一档——
+     同一个层级出现了两个值。 */
+  --card: #1b1e24;
+  --card-foreground: #f7f8f8;
+  --popover: #24272e;
+  --popover-foreground: #f7f8f8;
+
+  /* 深色下主色保持不变：它是品牌识别色，且白字压上去 4.87:1 已过正文级。
+     真正需要提亮的只有「淡红底上的红字」（--primary-soft-fg）——
+     同色系 18% 底色会把红字的对比度压到 3:1 出头。 */
+  --primary: #db261d;
+  --primary-foreground: #ffffff;
+  --primary-soft: rgb(219 38 29 / 0.18);
+  --primary-soft-fg: #f4645c;
+  --secondary: #1a1b1e;
+  --secondary-foreground: #f7f8f8;
+  --muted: #24272e;
+  --muted-foreground: #9aa0a8; /* 夜卡片上 5.4:1 */
+  --accent: #24272e;
+  --accent-foreground: #f7f8f8;
+  --destructive: #e5484d;
+  --destructive-foreground: #ffffff;
+
+  --border: rgb(255 255 255 / 0.09);
+  --input: rgb(255 255 255 / 0.16);
+  --ring: #f0564d;
+}
+
+/* ---------- 3. 把令牌接进 Tailwind 的工具类 ---------- */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-soft-fg: var(--primary-soft-fg);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-xl: var(--r-xl);
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    'Noto Sans SC', 'Hiragino Sans', Arial, sans-serif;
+  --font-mono: 'Geist Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+}
+
+/* ---------- 4. 浏览器默认界面：这些零件也归设计系统管 ----------
+   选中色、光标色、滚动条、聚焦环都属于「界面」，留着浏览器默认值
+   等于让一半界面不归我们管。只在后台页面生效（本文件只在后台加载）。 */
+html[data-theme] ::selection {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+html[data-theme] input,
+html[data-theme] textarea {
+  caret-color: var(--primary);
+}
+
+html[data-theme] * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+html[data-theme] ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+html[data-theme] ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html[data-theme] ::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+  background-color: var(--border);
+}
+
+html[data-theme] ::-webkit-scrollbar-thumb:hover {
+  background-color: var(--muted-foreground);
+}
+
+/* 工具类只在带 data-admin-ui 的容器里生效：避免 Tailwind 的
+   通用选择器（比如 `border-border` 之外的 reset 类）溢出到 Payload 的 DOM。 */
+[data-admin-ui] {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /*
+   * 关键修补：Payload 把 `html` 的字号设成了 13px，而 `rem` 永远以根元素为基准。
+   * 于是 Tailwind 的 rem 工具类在这套后台里按 81% 渲染：
+   *   `text-sm` = 0.875rem = 11.375px（比我们自己写的 13px 正文还小，
+   *     结果卡片标题比它自己的副标题还小）
+   *   `h-7`     = 1.75 * 0.25rem = 22.75px（低于 24px 的最小热区）
+   *   `size-4`  = 13px 图标
+   * 改 `html` 的字号会把 Payload 自己的间距一起放大 23%，风险太大；
+   * 这里只在**我们自己的子树**里把 spacing 与字号标尺重新钉到 16px 根的值。
+   */
+  --spacing: 4px;
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+}
+
+/* 键盘焦点：Payload 的聚焦环只覆盖表格里的链接，仪表盘里我们自己的
+   链接（卡名、留言行、内容集合索引）落在它外面，聚焦时没有任何指示。 */
+[data-admin-ui] a:focus-visible,
+[data-admin-ui] button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* 数字一律等宽对齐：统计卡与表格里的数字不该左右跳动。 */
+[data-admin-ui] .tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tooltip 的入场：Radix 提供 data-state，动画我们自己给一条即可。 */
+[data-slot='tooltip-content'] {
+  animation: admin-ui-fade-in 120ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes admin-ui-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot='tooltip-content'] {
+    animation: none;
+  }
+}
