@@ -123,6 +123,8 @@ export default buildConfig({
           s3Storage({
             collections: { media: { prefix: 'media' } },
             bucket: process.env.S3_BUCKET,
+            // 浏览器直传桶，绕开 Vercel serverless 4.5MB 请求体上限（后台上传大图用）
+            clientUploads: true,
             config: {
               endpoint: process.env.S3_ENDPOINT || undefined,
               region: process.env.S3_REGION || 'auto',
