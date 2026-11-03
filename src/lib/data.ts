@@ -32,6 +32,12 @@ const relId = (value: unknown): number | null => {
   return Number.isFinite(parsed) ? parsed : null
 }
 
+/** Payload 文档 id 在不同 API 下可能是 string 或 number，统一收成 number 以匹配视图模型。 */
+const toId = (value: unknown): number => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
 const relName = (value: unknown): string | null => {
   if (value && typeof value === 'object' && 'name' in (value as Record<string, unknown>)) {
     return String((value as { name: string }).name)
@@ -63,7 +69,7 @@ type Where = Record<string, any>
 
 function toCardView(doc: any): CardView {
   return {
-    id: doc.id,
+    id: toId(doc.id),
     name: doc.name,
     code: doc.code ?? null,
     price: doc.price ?? null,
@@ -113,7 +119,7 @@ export async function getBanners(): Promise<BannerView[]> {
     limit: 20,
   })
   return result.docs.map((doc) => ({
-    id: doc.id,
+    id: toId(doc.id),
     title: doc.title ?? null,
     description: doc.description ?? null,
     image: toImageView(doc.image),
@@ -141,7 +147,7 @@ export async function getAnnouncements(options: { limit?: number; page?: number 
   return {
     items: docs.map(
       (doc): AnnouncementView => ({
-        id: doc.id,
+        id: toId(doc.id),
         title: doc.title,
         bodyHtml: renderRichText(doc.body),
         publishedAt: doc.publishedAt ?? null,
@@ -163,7 +169,7 @@ export async function getAnnouncement(id: number): Promise<AnnouncementView | nu
       overrideAccess: false,
     })
     return {
-      id: doc.id,
+      id: toId(doc.id),
       title: doc.title,
       bodyHtml: renderRichText(doc.body),
       publishedAt: doc.publishedAt ?? null,
@@ -248,20 +254,20 @@ export async function getFacets(): Promise<{
     payload.find({ collection: 'rarities', depth: 0, overrideAccess: false, limit: 200, sort: 'sort' }),
   ])
   return {
-    ips: ips.docs.map((doc) => ({ id: doc.id, name: doc.name, sort: doc.sort ?? 0 })),
+    ips: ips.docs.map((doc) => ({ id: toId(doc.id), name: doc.name, sort: doc.sort ?? 0 })),
     series: series.docs.map((doc) => ({
-      id: doc.id,
+      id: toId(doc.id),
       name: doc.name,
       sort: doc.sort ?? 0,
       parentId: relId(doc.ip),
     })),
     subSeries: subSeries.docs.map((doc) => ({
-      id: doc.id,
+      id: toId(doc.id),
       name: doc.name,
       sort: doc.sort ?? 0,
       parentId: relId(doc.series),
     })),
-    rarities: rarities.docs.map((doc) => ({ id: doc.id, name: doc.name, sort: doc.sort ?? 0 })),
+    rarities: rarities.docs.map((doc) => ({ id: toId(doc.id), name: doc.name, sort: doc.sort ?? 0 })),
   }
 }
 
@@ -275,7 +281,7 @@ export async function getShops(): Promise<ShopView[]> {
     sort: 'sort',
   })
   return result.docs.map((doc) => ({
-    id: doc.id,
+    id: toId(doc.id),
     name: doc.name,
     address: doc.address ?? null,
     lat: doc.lat ?? null,
@@ -298,7 +304,7 @@ export async function getInfoPage(key: string): Promise<InfoPageView | null> {
   })
   const doc = result.docs[0]
   if (!doc) return null
-  return { id: doc.id, pageKey: doc.pageKey, title: doc.title, bodyHtml: renderRichText(doc.body) }
+  return { id: toId(doc.id), pageKey: doc.pageKey, title: doc.title, bodyHtml: renderRichText(doc.body) }
 }
 
 /** 首页「按 IP 浏览」只需要 IP 一层，不值得拉全套维度。 */
@@ -311,5 +317,5 @@ export async function getIps(): Promise<FacetView[]> {
     limit: 200,
     sort: 'sort',
   })
-  return result.docs.map((doc) => ({ id: doc.id, name: doc.name, sort: doc.sort ?? 0 }))
+  return result.docs.map((doc) => ({ id: toId(doc.id), name: doc.name, sort: doc.sort ?? 0 }))
 }
