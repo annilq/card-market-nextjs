@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { isAdmin, publishedAnnouncementOnly } from '@/access'
 import { sortField, statusField } from '@/fields/shared'
+import { revalidateHook } from '@/lib/revalidate'
 
 export const Announcements: CollectionConfig = {
   slug: 'announcements',
@@ -24,6 +25,11 @@ export const Announcements: CollectionConfig = {
     create: isAdmin,
     update: isAdmin,
     delete: isAdmin,
+  },
+  hooks: {
+    // 公告变动 → 公告缓存立即失效。
+    afterChange: [revalidateHook('announcements')],
+    afterDelete: [revalidateHook('announcements')],
   },
   fields: [
     { name: 'title', label: { zh: '标题', en: 'Title', ja: 'タイトル' }, type: 'text', required: true, index: true },

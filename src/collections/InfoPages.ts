@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { isAdmin, publishedOnly } from '@/access'
 import { sortField, statusField } from '@/fields/shared'
+import { revalidateHook } from '@/lib/revalidate'
 
 /** 网站审核要求的四个固定信息页标识（前端清单与页脚入口共用）。 */
 export const INFO_PAGE_KEYS = [
@@ -28,6 +29,11 @@ export const InfoPages: CollectionConfig = {
     },
   },
   access: { read: publishedOnly, create: isAdmin, update: isAdmin, delete: isAdmin },
+  hooks: {
+    // 信息页变动 → 信息页缓存立即失效。
+    afterChange: [revalidateHook('info-pages')],
+    afterDelete: [revalidateHook('info-pages')],
+  },
   fields: [
     {
       name: 'pageKey',

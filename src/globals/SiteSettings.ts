@@ -1,10 +1,16 @@
 import type { GlobalConfig } from 'payload'
 
+import { revalidateGlobalHook } from '@/lib/revalidate'
+
 export const SiteSettings: GlobalConfig = {
   slug: 'site-settings',
   label: { zh: '站点设置', en: 'Site settings', ja: 'サイト設定' },
   admin: { group: { zh: '设置', en: 'Settings', ja: '設定' } },
   access: { read: () => true },
+  hooks: {
+    // 站点设置变动 → 站点设置缓存立即失效（每个页面布局都用它）。
+    afterChange: [revalidateGlobalHook('site-settings')],
+  },
   fields: [
     {
       type: 'row',

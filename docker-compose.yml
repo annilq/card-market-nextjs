@@ -33,6 +33,28 @@ services:
       timeout: 5s
       retries: 10
 
+  # ---- 监控 ----
+  # 实时查看容器日志（只读 docker.sock，零代码改动）
+  logs:
+    image: amir20/dozzle:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - '127.0.0.1:8080:8080'
+    depends_on:
+      - app
+
+  # 存活 / 端口 / SSL 监控 + 告警（Telegram / Discord / 邮件）
+  uptime:
+    image: louislam/uptime-kuma:latest
+    volumes:
+      - uptime-kuma:/app/data
+    ports:
+      - '127.0.0.1:3001:3001'
+    depends_on:
+      - app
+
 volumes:
   pgdata:
   media:
+  uptime-kuma:

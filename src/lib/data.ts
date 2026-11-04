@@ -113,7 +113,9 @@ export const getSiteSettings = unstable_cache(
     }
   },
   ['site-settings'],
-  { revalidate: 600, tags: ['site-settings'] },
+  // 站点设置出现在每个页面布局里，改动极少；后台改完由 afterChange 钩子主动失效，
+  // 因此可以把缓存放到最长（1 天），大幅减少重复读取。
+  { revalidate: 86400, tags: ['site-settings'] },
 )
 
 /** 首页轮播（单槽位，按 sort 升序）。缓存 5 分钟。 */
@@ -136,7 +138,8 @@ export const getBanners = unstable_cache(
     }))
   },
   ['banners'],
-  { revalidate: 300, tags: ['banners'] },
+  // 轮播图改动极少，后台改完由 afterChange 钩子主动失效；缓存放到最长（1 天）。
+  { revalidate: 86400, tags: ['banners'] },
 )
 
 /** 公告列表：置顶优先，其次发布时间倒序（未设发布时间的按创建时间兜底）。缓存 2 分钟。 */
@@ -173,7 +176,9 @@ export const getAnnouncements = unstable_cache(
   },
   // unstable_cache 默认已把函数参数（options）纳入缓存键，不同 limit/page 组合各自独立缓存。
   undefined,
-  { revalidate: 120, tags: ['announcements'] },
+  // 公告列表按发布时间倒序、改动不频繁，后台改完由 afterChange 钩子主动失效；
+  // 缓存放 10 分钟足够，避免突发写入时旧列表停留太久。
+  { revalidate: 600, tags: ['announcements'] },
 )
 
 export const getAnnouncement = unstable_cache(
@@ -197,9 +202,9 @@ export const getAnnouncement = unstable_cache(
       return null
     }
   },
-  // unstable_cache 默认已把函数参数（id）纳入缓存键。
+  // unstable_cache 默认已把函数参数（id）纳入缓存键。后台改完由 afterChange 钩子主动失效。
   undefined,
-  { revalidate: 300, tags: ['announcements'] },
+  { revalidate: 86400, tags: ['announcements'] },
 )
 
 /** 卡牌列表：级联筛选 + 价格区间 + 关键词（卡名 / 编号）+ 排序 + 分页。
@@ -243,8 +248,9 @@ export const getCards = unstable_cache(
     }
   },
   // unstable_cache 默认已把函数参数（query）纳入缓存键，不同筛选/分页/关键词组合各自独立缓存。
+  // 列表筛选组合多、写频率低，后台改完由 afterChange 钩子主动失效；缓存放 1 小时。
   undefined,
-  { revalidate: 60, tags: ['cards'] },
+  { revalidate: 3600, tags: ['cards'] },
 )
 
 export const getCard = unstable_cache(
@@ -257,9 +263,9 @@ export const getCard = unstable_cache(
       return null
     }
   },
-  // unstable_cache 默认已把函数参数（id）纳入缓存键。
+  // unstable_cache 默认已把函数参数（id）纳入缓存键。后台改完由 afterChange 钩子主动失效。
   undefined,
-  { revalidate: 300, tags: ['cards'] },
+  { revalidate: 86400, tags: ['cards'] },
 )
 
 /** 首页「最新上架」。 */
@@ -308,7 +314,8 @@ export const getFacets = unstable_cache(
     }
   },
   ['facets'],
-  { revalidate: 300, tags: ['facets'] },
+  // 维度（IP/系列/子系列/稀有度）改动极少，后台改完由 afterChange 钩子主动失效；缓存放最长（1 天）。
+  { revalidate: 86400, tags: ['facets'] },
 )
 
 export const getShops = unstable_cache(
@@ -334,7 +341,8 @@ export const getShops = unstable_cache(
     }))
   },
   ['shops'],
-  { revalidate: 600, tags: ['shops'] },
+  // 门店列表改动极少，后台改完由 afterChange 钩子主动失效；缓存放最长（1 天）。
+  { revalidate: 86400, tags: ['shops'] },
 )
 
 export const getInfoPage = unstable_cache(
@@ -351,9 +359,9 @@ export const getInfoPage = unstable_cache(
     if (!doc) return null
     return { id: toId(doc.id), pageKey: doc.pageKey, title: doc.title, bodyHtml: renderRichText(doc.body) }
   },
-  // unstable_cache 默认已把函数参数（key）纳入缓存键。
+  // unstable_cache 默认已把函数参数（key）纳入缓存键。后台改完由 afterChange 钩子主动失效。
   undefined,
-  { revalidate: 300, tags: ['info-pages'] },
+  { revalidate: 86400, tags: ['info-pages'] },
 )
 
 /** 首页「按 IP 浏览」只需要 IP 一层，不值得拉全套维度。 */

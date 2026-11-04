@@ -2,6 +2,7 @@ import { APIError, type CollectionConfig, type Where } from 'payload'
 
 import { isAdmin, publishedOnly } from '@/access'
 import { statusField } from '@/fields/shared'
+import { revalidateHook } from '@/lib/revalidate'
 
 const relId = (value: unknown): string | number | null => {
   if (!value) return null
@@ -63,6 +64,9 @@ export const Cards: CollectionConfig = {
         return data
       },
     ],
+    // 卡牌变动 → 列表/详情缓存 + 筛选维度缓存立即失效（改完秒级生效）。
+    afterChange: [revalidateHook('cards', 'facets')],
+    afterDelete: [revalidateHook('cards', 'facets')],
   },
   fields: [
     { name: 'name', label: { zh: '卡牌名称', en: 'Card name', ja: 'カード名' }, type: 'text', required: true, index: true },

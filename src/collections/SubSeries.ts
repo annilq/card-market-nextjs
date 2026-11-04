@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { enabledOnly, isAdmin } from '@/access'
 import { enabledField, sortField } from '@/fields/shared'
+import { revalidateHook } from '@/lib/revalidate'
 
 export const SubSeries: CollectionConfig = {
   slug: 'sub-series',
@@ -20,6 +21,11 @@ export const SubSeries: CollectionConfig = {
     },
   },
   access: { read: enabledOnly, create: isAdmin, update: isAdmin, delete: isAdmin },
+  hooks: {
+    // 维度（子系列）变动 → 筛选维度缓存立即失效。
+    afterChange: [revalidateHook('facets')],
+    afterDelete: [revalidateHook('facets')],
+  },
   fields: [
     { name: 'name', label: { zh: '名称', en: 'Name', ja: '名称' }, type: 'text', required: true, index: true },
     {

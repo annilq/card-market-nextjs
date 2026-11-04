@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { enabledOnly, isAdmin } from '@/access'
 import { enabledField, sortField } from '@/fields/shared'
+import { revalidateHook } from '@/lib/revalidate'
 
 export const Series: CollectionConfig = {
   slug: 'series',
@@ -15,6 +16,11 @@ export const Series: CollectionConfig = {
     group: { zh: '分类', en: 'Taxonomy', ja: '分類' },
   },
   access: { read: enabledOnly, create: isAdmin, update: isAdmin, delete: isAdmin },
+  hooks: {
+    // 维度（系列）变动 → 筛选维度缓存立即失效。
+    afterChange: [revalidateHook('facets')],
+    afterDelete: [revalidateHook('facets')],
+  },
   fields: [
     { name: 'name', label: { zh: '名称', en: 'Name', ja: '名称' }, type: 'text', required: true, index: true },
     {

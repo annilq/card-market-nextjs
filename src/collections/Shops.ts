@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { isAdmin, publishedOnly } from '@/access'
 import { sortField, statusField } from '@/fields/shared'
+import { revalidateHook } from '@/lib/revalidate'
 
 export const Shops: CollectionConfig = {
   slug: 'shops',
@@ -28,6 +29,9 @@ export const Shops: CollectionConfig = {
         return data
       },
     ],
+    // 门店变动 → 门店缓存立即失效。
+    afterChange: [revalidateHook('shops')],
+    afterDelete: [revalidateHook('shops')],
   },
   fields: [
     { name: 'name', label: { zh: '门店名称', en: 'Shop name', ja: '店舗名' }, type: 'text', required: true, index: true },

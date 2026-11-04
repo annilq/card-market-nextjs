@@ -76,7 +76,10 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
   return (
     <header className="sticky top-0 z-99 bg-brand text-white">
       <div className="mx-auto max-w-[1200px] px-4">
-        <div className="flex h-12 items-center gap-3 md:h-24 md:gap-6 text-lg">
+        {/* 顶行右缘给右上角的辅助功能工具条（语言 + 主题，绝对定位贴视口边缘）
+            让出位置：仅在 1200px 内容列铺满视口时（≤1200px）保留，避免与同处
+            右上角的 X / 店铺图标重叠；更宽的屏幕里工具条落在外侧留白，无需预留。 */}
+        <div className="flex h-12 items-center gap-3 max-[1200px]:pr-[168px] md:h-24 md:gap-6 text-lg">
           <Link
             href={localizeHref('/', locale)}
             aria-label={siteName}
@@ -105,7 +108,9 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
 
           <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2 md:gap-4">
             {/* ≥1024：X 与 店铺信息 和搜索同组（源站同构）。
-                店铺文字只在 ≥lg 出现；再窄退化成方形图标、移到第二行。 */}
+                店铺文字只在 ≥lg 出现；再窄退化成方形图标、移到第二行。
+                语言切换与主题切换已移到顶栏右上角（绝对定位、贴视口边缘，
+                见下方 a11y 工具条），这里只留 X + 店铺。 */}
             <div className="hidden items-center gap-2 lg:flex">
               {xLink}
               <Link
@@ -119,8 +124,6 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
                 </span>
               </Link>
             </div>
-            <LocaleSwitcher />
-            <ThemeToggle />
           </div>
         </div>
 
@@ -134,6 +137,16 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
             <ShopIcon />
           </Link>
         </div>
+      </div>
+
+      {/* 辅助功能工具条：语言切换 + 主题切换。
+          脱离 1200px 内容列，绝对定位贴到视口右上角，与 logo 同一行。
+          宽屏（>1200px）它落在外侧留白里；窄于 1200px 时顶行已用
+          max-[1200px]:pr-[168px] 给这两颗控件让出位置，避免与同处右上角的
+          X / 店铺图标重叠。高度与顶行对齐（h-12 / md:h-24）。 */}
+      <div className="absolute right-0 top-0 z-10 flex h-12 items-center gap-1.5 px-4 sm:gap-2 md:h-24 md:gap-4">
+        <LocaleSwitcher />
+        <ThemeToggle />
       </div>
 
       {/* <1024：原生 `<details>` 折叠菜单。

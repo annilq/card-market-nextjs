@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { isAdmin, publishedOnly } from '@/access'
 import { sortField, statusField } from '@/fields/shared'
+import { revalidateHook } from '@/lib/revalidate'
 
 export const Banners: CollectionConfig = {
   slug: 'banners',
@@ -20,6 +21,11 @@ export const Banners: CollectionConfig = {
     },
   },
   access: { read: publishedOnly, create: isAdmin, update: isAdmin, delete: isAdmin },
+  hooks: {
+    // 轮播图变动 → 轮播缓存立即失效。
+    afterChange: [revalidateHook('banners')],
+    afterDelete: [revalidateHook('banners')],
+  },
   fields: [
     { name: 'title', label: { zh: '标题', en: 'Title', ja: 'タイトル' }, type: 'text' },
     { name: 'description', label: { zh: '描述', en: 'Description', ja: '説明' }, type: 'textarea' },

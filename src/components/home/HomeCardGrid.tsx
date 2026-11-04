@@ -24,8 +24,9 @@ export function HomeCardGrid({ cards, locale }: { cards: CardView[]; locale: Loc
     <>
       {/* 网格列数与列数断点同 /cards 与源站（2 / 3 / 4 / 5）。 */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-        {cards.map((c) => (
-          <CardCard key={c.id} card={c} locale={locale} onOpen={setOpen} />
+        {cards.map((c, i) => (
+          // 首屏第一行的卡片（最多 5 列）设 priority，让 next/image 直接预加载、优化 LCP。
+          <CardCard key={c.id} card={c} locale={locale} onOpen={setOpen} priority={i < 5} />
         ))}
       </div>
 

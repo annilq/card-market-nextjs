@@ -29,6 +29,7 @@ import { AdminIcon as AdminIcon_066c562e10ad4e70ff0de1a39f9b91f6 } from '@/compo
 import { AdminLogo as AdminLogo_066c562e10ad4e70ff0de1a39f9b91f6 } from '@/components/admin/Brand'
 import { LoginIntro as LoginIntro_a23c667f36096b0f05e649a6391dbaaf } from '@/components/admin/LoginIntro'
 import { AdminProviders as AdminProviders_f1687a21d4a9f2d81c356a10e59ecdc1 } from '@/components/admin/AdminProviders'
+import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
 import { DashboardView as DashboardView_8d5ccf53266e3797f61e9453e2f2d431 } from '@/components/admin/DashboardView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
@@ -65,6 +66,7 @@ export const importMap = {
   "@/components/admin/Brand#AdminLogo": AdminLogo_066c562e10ad4e70ff0de1a39f9b91f6,
   "@/components/admin/LoginIntro#LoginIntro": LoginIntro_a23c667f36096b0f05e649a6391dbaaf,
   "@/components/admin/AdminProviders#AdminProviders": AdminProviders_f1687a21d4a9f2d81c356a10e59ecdc1,
+  "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,
   "@/components/admin/DashboardView#DashboardView": DashboardView_8d5ccf53266e3797f61e9453e2f2d431,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

@@ -131,3 +131,43 @@ docs/                           分析与对比文档
 - [x] 四个审核信息页三语 200；未登记 key 404；未发布时仍 200 并提示「尚未发布」
 - [x] `/`、`/ja`、`/en` 三语首屏与 `<html lang>` 正确；未知语言段 404
 - [x] 门店地图可点选、坐标保存后 lat/lng 同步（种子数据已验证钩子镜像）
+
+## 监控（错误上报 / 日志 / 存活）
+
+部署到 VPS 后建议同时上三层监控，全部可跑在同一台机器、免费：
+
+### 1. 错误上报 — Sentry
+
+`@sentry/nextjs` 已接入，对 App Router 的 Server Actions、API Routes、SSR、
+客户端 `error.tsx` 背后的异常、未捕获 Promise 全部自动上报；Payload 跑在 Next 进程内，
+服务端异常也会被捕获。现有 `src/app/(frontend)/[locale]/error.tsx` 继续做用户可见兜底。
+
+- 配置入口：`sentry.client.config.ts` / `sentry.server.config.ts` / `sentry.edge.config.ts`（根目录）
+- 注入点：`src/instrumentation.ts`（项目用了 `src/`，所以放这里）
+- 构建包裹：`next.config.mjs` 用 `withSentryConfig(withPayload(nextConfig), …)` 包了一层
+- 环境变量（见 `.env.example`）：`NEXT_PUBLIC_SENTRY_DSN`、`SENTRY_ORG`、`SENTRY_PROJECT`、`SENTRY_AUTH_TOKEN`
+  - DSN 留空时 Sentry **自动降级为不发送**，不影响构建与运行；填上即用
+  - 免费版用 [Sentry Cloud](https://sentry.io)（5k events/月）；想自托管可用 [GlitchTip](https://glitchtip.com)（Sentry 兼容、更轻）
+  - `SENTRY_AUTH_TOKEN` 仅在「构建时上传 source map」时需要，可先不填（堆栈会是压缩后的）
+
+### 2. 日志 — Dozzle
+
+`node server.js` 的服务端日志打到容器 stdout，`docker-compose.yml` 已加 `logs` 服务
+（只读 `/var/run/docker.sock`），提供 Web UI 实时看 `app` 容器日志、可搜索、可回溯。零代码改动。
+访问 `http://127.0.0.1:8080`（已绑本地，见下方反代说明）。
+
+### 3. 存活 + 资源 — Uptime Kuma
+
+`docker-compose.yml` 已加 `uptime` 服务，监控公网域名和 `/api/health` 探针，
+挂了/证书过期/端口不通就推 **Telegram / Discord / 邮件 / Webhook**。
+访问 `http://127.0.0.1:3001`（已绑本地）。主机资源（CPU/内存/磁盘）可再加 Netdata 容器。
+
+健康检查端点：`src/app/api/health/route.ts` → `GET /api/health`，
+验证「Next + Payload + PostgreSQL」整条链路，正常 200、异常 500。
+
+### 反代与暴露
+
+`app` / `logs` / `uptime` 现在分别绑在 `3100` / `127.0.0.1:8080` / `127.0.0.1:3001`。
+`logs` 和 `uptime` 只绑本地，**务必用 VPS 上已有的 nginx/caddy 反代 + 鉴权**后再暴露公网，别裸奔。
+新服务上线：`docker compose up -d --build`（也会把 Sentry 的 instrumentation 编进 standalone 镜像）。
+

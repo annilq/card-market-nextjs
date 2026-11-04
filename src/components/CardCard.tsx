@@ -11,6 +11,7 @@
 // `onOpen` 是唯一的客户端副作用：给了它，普通左键点击才改成「就地弹窗」，
 // 因此整个组件必须是客户端组件。其余 props 与渲染结果一行未改——
 // 列表页 / 详情页 / 首页横条的用法都不需要动。
+import Image from 'next/image'
 import Link from 'next/link'
 
 import { formatYen } from '@/lib/format'
@@ -24,6 +25,7 @@ export function CardCard({
   locale,
   compact = false,
   onOpen,
+  priority = false,
 }: {
   card: CardView
   locale: Locale
@@ -35,6 +37,8 @@ export function CardCard({
    * 爬虫与读屏看到的也仍是一个真实链接——弹窗只是拦了普通左键。
    */
   onOpen?: (card: CardView) => void
+  /** 首屏第一行的卡片设为 true，让 next/image 直接预加载、不再 lazy，优化 LCP。 */
+  priority?: boolean
 }) {
   const t = getTranslator(locale)
   const img = card.images[0]
@@ -61,17 +65,20 @@ export function CardCard({
     >
       <div className={`relative aspect-[3/4] overflow-hidden rounded-lg bg-surface-2`}>
         {card.isHighValue && (
-          <span className="absolute left-1 top-1 rounded-xl bg-brand px-1.5 py-0.5 text-[11px] text-white">
+          // z-10：图片在 hover 时 scale 出 transform、自成一层，按 DOM 顺序会盖在
+          // 位于它之前的徽章上；抬一层保证「高价买取」悬停时不被放大的图遮住。
+          <span className="absolute left-1 top-1 z-10 rounded-xl bg-brand px-1.5 py-0.5 text-[11px] text-white">
             {t('highValue')}
           </span>
         )}
         {src ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={src}
             alt={img?.alt || card.name}
-            loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-200 ease-out group-hover:scale-[1.03] motion-reduce:transform-none"
+            fill
+            sizes="(min-width: 1024px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw"
+            priority={priority}
+            className="object-cover transition-transform duration-200 ease-out group-hover:scale-[1.03] motion-reduce:transform-none"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-sm text-hint">
@@ -79,10 +86,10 @@ export function CardCard({
           </div>
         )}
         {isVault && (
-          <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1 bg-vault" />
+          <span aria-hidden="true" className="absolute inset-y-0 left-0 z-10 w-1 bg-vault" />
         )}
         {isVault && (
-          <span className="absolute left-2 top-2 rounded bg-surface px-1.5 py-0.5 text-[11px] font-medium text-vault shadow-sm">
+          <span className="absolute left-2 top-2 z-10 rounded bg-surface px-1.5 py-0.5 text-[11px] font-medium text-vault shadow-sm">
             {t('statusPackaged')}
           </span>
         )}
