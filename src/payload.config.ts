@@ -111,7 +111,12 @@ export default buildConfig({
   }),
   secret: process.env.PAYLOAD_SECRET ?? '',
   sharp,
-  serverURL: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3100',
+  // serverURL 会被 Payload 的 url 字段 afterRead 钩子拼到 media 图的前面（/api/media/file/... → 绝对路径）。
+  // 因此线上必须是真实域名，否则图片 URL 会变成 localhost 而无法访问。
+  // 优先级：显式 NEXT_PUBLIC_SITE_URL → Vercel 自动注入的 VERCEL_URL → 本地兜底 localhost:3100。
+  serverURL:
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3100'),
   i18n: { supportedLanguages: { en, ja, zh }, fallbackLanguage: 'zh' },
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
   graphQL: { schemaOutputFile: path.resolve(dirname, '../schema.graphql') },

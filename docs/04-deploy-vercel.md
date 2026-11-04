@@ -135,6 +135,13 @@
 - 构建日志会警告 `The "middleware" file convention is deprecated. Please use "proxy" instead.`。
 - 本项目路由依赖 middleware 做语言段 rewrite（`/` → `/zh`）和设置 `x-locale` 头。目前在 Next 16 上仍可用（仅警告），但**未来升级可能移除**。届时需把 `src/middleware.ts` 迁移成 `src/proxy.ts`（matcher 逻辑可平移）。留意升级时不要只因为这条警告就删掉 middleware，否则 `/` 会 404。
 
+### 坑 7：`NEXT_PUBLIC_SITE_URL` 漏设 → 线上图片 URL 变成 `localhost`
+- **现象**：页面能开，但 `<img>` 的 src 是 `http://localhost:3100/api/media/file/...`，外网访问不到（本地 dev 看到 localhost 是正常的，线上看到就是坏了）。
+- **根因**：`payload.config.ts` 的 `serverURL` 由 `NEXT_PUBLIC_SITE_URL` 决定；它是 `NEXT_PUBLIC_*`，**构建期注入**。Vercel 没设（或设成 localhost）时，build 把 `localhost:3100` 烤进客户端包。
+  之后 Payload 的 `url` 字段 `afterRead` 钩子会用 `serverURL` 把相对路径 `/api/media/file/<filename>?prefix=media` 拼成绝对 URL，于是线上图全指向 localhost。
+- **修法**：Vercel 控制台加 `NEXT_PUBLIC_SITE_URL=https://<你的域名>`（无尾 `/`），**重新部署**才生效。
+  代码里已加 `VERCEL_URL` 兜底（Vercel 自动注入的部署域名），即使漏设也不会回退到 localhost；但显式设真实域名仍是首选（自定义域名、缓存一致性更稳）。
+
 ---
 
 ## 4. 部署后验证
