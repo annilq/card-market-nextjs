@@ -31,7 +31,7 @@ export function HomeNotices({
         <h2 className="text-xl font-bold text-white">{t('homeNotices')}</h2>
         <Link
           href={localizeHref('/announcements', locale)}
-          className="absolute right-4 inline-flex items-center py-1 text-xs text-white/90 transition-colors duration-150 hover:text-white hover:underline"
+          className="absolute right-4 inline-flex items-center py-1 text-xs text-white transition-colors duration-150 hover:text-white hover:underline"
         >
           {t('viewAll')}
         </Link>

@@ -12,6 +12,19 @@ import { DEFAULT_LOCALE, LOCALES, type Locale } from '@/lib/i18n/locales'
 import { getLocaleFromHeaders } from '@/lib/i18n/server'
 import { getOrigin, absUrl } from '@/lib/site-url'
 
+// 媒体走私有 S3（Backblaze B2）：签发的临时 URL 在 `s3.us-west-004.backblazeb2.com` 上。
+// 首屏 banner / 门店大图都从那里 302 过来，提前建好 TLS 连接能让 LCP 图少一次 RTT。
+// 取 endpoint 的主机名：端点可能带 https:// 前缀 或是裸主机名，两种都兼容。
+const S3_HOST = (() => {
+  const endpoint = process.env.S3_ENDPOINT
+  if (!endpoint) return null
+  try {
+    return new URL(endpoint).host
+  } catch {
+    return endpoint.replace(/^https?:\/\//, '').replace(/\/.*$/, '')
+  }
+})()
+
 // 在首屏绘制前同步主题，避免浅色闪一下。优先级：localStorage > 系统偏好。
 // 必须是**内联**脚本而不是 next/script：bundle 里的脚本最早也要等 HTML 解析到它
 // 才执行，那时首屏已经画出来了。
@@ -103,6 +116,10 @@ export default async function FrontendLayout({ children }: { children: ReactNode
     <html lang={LOCALES[locale].htmlLang} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: NO_FLASH_SCRIPT }} />
+        {/* 媒体主机提前建连：banner / 门店大图都从私有 S3 302 过来，预热 TLS 能省一次 RTT。 */}
+        {S3_HOST && (
+          <link rel="preconnect" href={`https://${S3_HOST}`} crossOrigin="anonymous" />
+        )}
       </head>
       <body className="flex min-h-screen flex-col">
         <I18nProvider locale={locale}>

@@ -44,7 +44,6 @@ function ShopRow({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      aria-label={label || shop.name}
       className={`group relative flex w-full gap-3 rounded-xl border bg-surface p-3 text-left transition-colors duration-150 ${
         active ? 'border-brand bg-surface-2' : 'border-border hover:border-border-strong'
       }`}

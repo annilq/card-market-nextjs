@@ -22,22 +22,25 @@ function XIcon() {
 // 店铺图标：源站同一张 shop.png（public/ 已随静态资源迁入）。
 function ShopIcon() {
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src="/shop.png" alt="" loading="lazy" aria-hidden="true" />
+  return <img src="/shop.png" alt="" width={29} height={27} loading="lazy" aria-hidden="true" className="h-7 w-auto" />
 }
 
 // 顶栏图标按钮共用同一套外壳尺寸，保证右侧一组在所有宽度下等高。
 const iconBtn =
-  'inline-flex h-9 shrink-0 items-center justify-center rounded text-white/90 transition hover:bg-white/15 hover:text-white'
+  'inline-flex h-9 shrink-0 items-center justify-center rounded text-white transition hover:bg-white/15 hover:text-white'
 const iconBtnSquare = `${iconBtn} w-9`
 
 /**
  * 站点顶栏（服务端组件）。
  *
- * 结构对齐源站 __root.tsx（实测版式）：
- *   ≥1024：logo + 全局搜索(flex-1) + [X + 店铺信息(带文字)] + [语言 + 主题]；
- *   <1024：第一行 logo + [语言 + 主题]，第二行搜索 + X + 店铺图标。
- * 「卡牌 / 公告」不放文字导航——源站刻意把主视线让给搜索（见源站注释），
- * 它们走折叠菜单与首页内容区；页脚「站内链接」兜底全站可达。
+ * 结构对齐参考项目 card-market 的 __root.tsx：
+ *   顶行 logo + 全局搜索(flex-1) + [X + 店铺信息] + [语言 + 主题]；
+ *   其中 [语言 + 主题] 在 <2xl 时留在内容列右端（与 X·店铺同行、靠 ml-auto 推到行尾，
+ *   不会重叠），≥2xl 才脱离文档流、钉到视口右缘——普通笔记本宽度下 1200 列几乎占满视口，
+ *   没有空间容纳边缘按钮，回退行内右端才能避免与 X·店铺重叠；
+ *   <1024：搜索 + X + 店铺图标移到第二行（顶行只留 logo + 语言 + 主题）。
+ * 「卡牌 / 公告」不放文字导航——参考项目刻意把主视线让给搜索，device 模式下
+ * 也去掉了移动菜单；它们走首页内容区，页脚「站内链接」兜底全站可达。
  *
  * 语言从请求头取（`x-locale`，由 middleware 写入）：根布局已经保证整棵树
  * 在「同一种语言」下渲染。所有站内链接先按「无语言前缀」的形态书写，
@@ -48,14 +51,10 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
   const t = getTranslator(locale)
   const siteName = settings.siteName?.trim() || t('defaultSiteName')
 
-  // 折叠菜单：源站的移动菜单只放 卡牌 / 公告，店铺有图标入口、留言在页脚；
-  // 这里四个都放——移动端没有首页大卡片可点，少了这两项会不可达。
-  const menu = [
-    { href: '/cards', label: t('navCards') },
-    { href: '/announcements', label: t('navAnnouncements') },
-    { href: '/shops', label: t('navShops') },
-    { href: '/message', label: t('navContact') },
-  ]
+  // 移动菜单：参考项目 card-market 在改版里已经把移动菜单的触发按钮移除、
+  // 实际不可达——也就是「device 模式下去掉了导航」。本站对齐参考，不再单独放
+  // 折叠菜单：移动端走首页「全部 →」链接 / 全局搜索进 /cards，店铺靠图标入口、
+  // 留言在页脚，与参考项目一致。
 
   // X 账号只在后台维护（形如 @cardmarket），没配就整颗图标不渲染，不留死链。
   const xHandle = settings.xAccount?.replace(/^@/, '').trim()
@@ -76,10 +75,10 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
   return (
     <header className="sticky top-0 z-99 bg-brand text-white">
       <div className="mx-auto max-w-[1200px] px-4">
-        {/* 顶行右缘给右上角的辅助功能工具条（语言 + 主题，绝对定位贴视口边缘）
-            让出位置：仅在 1200px 内容列铺满视口时（≤1200px）保留，避免与同处
-            右上角的 X / 店铺图标重叠；更宽的屏幕里工具条落在外侧留白，无需预留。 */}
-        <div className="flex h-12 items-center gap-3 max-[1200px]:pr-[168px] md:h-24 md:gap-6 text-lg">
+        {/* 顶行：语言 + 主题切换不再绝对定位贴视口边缘（那样在 1201–1535px 区间会
+            压到同处右上角的 X·店铺图标），改为行内右端、≥2xl 才绝对定位。这里无需
+            再为它预留 padding。 */}
+        <div className="flex h-12 items-center gap-3 max-md:gap-2 md:h-24 md:gap-6 text-lg">
           <Link
             href={localizeHref('/', locale)}
             aria-label={siteName}
@@ -93,6 +92,8 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
               <img
                 src={settings.logo.url}
                 alt={settings.logo.alt ?? siteName}
+                width={settings.logo.width ?? undefined}
+                height={settings.logo.height ?? undefined}
                 className="h-7 w-auto object-contain md:h-[57px]"
               />
             ) : (
@@ -111,8 +112,8 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
           <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2 md:gap-4">
             {/* ≥1024：X 与 店铺信息 和搜索同组（源站同构）。
                 店铺文字只在 ≥lg 出现；再窄退化成方形图标、移到第二行。
-                语言切换与主题切换已移到顶栏右上角（绝对定位、贴视口边缘，
-                见下方 a11y 工具条），这里只留 X + 店铺。 */}
+                语言切换与主题切换与 X·店铺同行显示（窄屏行内右端、
+                ≥2xl 才钉视口右缘）。 */}
             <div className="hidden items-center gap-2 lg:flex">
               {xLink}
               <Link
@@ -127,6 +128,16 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
                   {t('shopLabel')}
                 </span>
               </Link>
+            </div>
+
+            {/* 辅助功能控件：语言切换 + 主题切换。窄屏（<2xl）留在内容列右端、
+                 与 X·店铺同行（靠外层 ml-auto 推到行尾，不重叠）；≥2xl 才脱离文档流、
+                 钉到视口右缘。这修掉了「缩小窗口时国际化按钮压住店铺信息」——
+                 之前恒为绝对定位贴视口右上角 + ≤1200 预留 pr-[168px]，
+                 致 1201–1535px 区间工具条压到同处右上角的 X·店铺。 */}
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 md:gap-4 2xl:absolute 2xl:right-4 2xl:top-0 2xl:h-24">
+              <LocaleSwitcher />
+              <ThemeToggle />
             </div>
           </div>
         </div>
@@ -148,56 +159,6 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
         </div>
       </div>
 
-      {/* 辅助功能工具条：语言切换 + 主题切换。
-          脱离 1200px 内容列，绝对定位贴到视口右上角，与 logo 同一行。
-          宽屏（>1200px）它落在外侧留白里；窄于 1200px 时顶行已用
-          max-[1200px]:pr-[168px] 给这两颗控件让出位置，避免与同处右上角的
-          X / 店铺图标重叠。高度与顶行对齐（h-12 / md:h-24）。 */}
-      <div className="absolute right-0 top-0 z-10 flex h-12 items-center gap-1.5 px-4 sm:gap-2 md:h-24 md:gap-4">
-        <LocaleSwitcher />
-        <ThemeToggle />
-      </div>
-
-      {/* <1024：原生 `<details>` 折叠菜单。
-          源站的移动菜单是个 client 组件（menuOpen state，触发按钮已在改版中移除，
-          实际不可达）；本站保留一个可用的入口：同样键盘可达（summary 可聚焦、
-          回车展开），且在水合之前就能用。代价是点链接后不会自动收起——
-          需要时换成 `src/components/layout/MobileMenu.tsx`（client 组件）即可。 */}
-      <details className="border-t border-white/25 bg-brand lg:hidden">
-        <summary
-          className="flex h-12 cursor-pointer list-none items-center gap-2 px-4 text-sm text-white/90 outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-white [&::-webkit-details-marker]:hidden"
-          aria-label={t('openMenu')}
-        >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            className="shrink-0"
-            aria-hidden="true"
-          >
-            <path d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-          {t('openMenu')}
-        </summary>
-        <nav className="flex flex-col px-4 pb-3" aria-label={siteName}>
-          {menu.map((item) => (
-            <Link
-              key={item.href}
-              href={localizeHref(item.href, locale)}
-              // 移动端主要入口：进视口即预取整条路由（配合 [locale]/loading.tsx 边界），
-              // 点下去直接切到已准备好的页面，消除切换等待（见优化项 ②）。
-              prefetch
-              className="border-b border-white/25 py-2.5 text-sm text-white/85 transition hover:text-white last:border-0"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-      </details>
     </header>
   )
 }

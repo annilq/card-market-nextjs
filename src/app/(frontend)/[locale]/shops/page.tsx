@@ -50,8 +50,17 @@ export default async function ShopsPage({ params }: Props) {
   // 草稿 / 未发布门店在这一步已经被过滤掉，页面不再判断 status。
   const shops = await getShops()
 
+  // 首屏门店大图（LCP）：ShopList 默认展示第一家，预加载它等于预加载首屏主视觉。
+  // 图经私有 S3 302 过来，预加载配合根布局的 preconnect 能压一点 LCP。
+  const lcpShopImg =
+    shops[0]?.image?.bannerUrl || shops[0]?.image?.url || null
+
   return (
     <>
+      {/* 首屏门店主图预加载（见上方 lcpShopImg 计算）。 */}
+      {lcpShopImg && (
+        <link rel="preload" as="image" href={lcpShopImg} fetchPriority="high" />
+      )}
       {/* 内容语言说明：只有非默认语言的页面上才会出现（组件内部自行决定）。 */}
       <ContentLanguageNotice locale={locale} pathname={PATHNAME} />
       <ShopList shops={shops} />

@@ -126,7 +126,7 @@ export function HomeFilterSheet({
           series.length === 0 ? (
             // 该 IP 下还没有主系列。给一句话而不是两列空栏：空的两列会被读成
             // 「加载中」或「点不动」，说清楚是没数据。
-            <div className="min-h-0 flex-1 p-4 text-sm text-white/90">{t('noCategories')}</div>
+            <div className="min-h-0 flex-1 p-4 text-sm text-white">{t('noCategories')}</div>
           ) : (
             // 二级：左竖 tab 选主系列，右列选子系列。两列各自滚动——
             // 主系列或子系列都可能很长，整体滚动会把另一列顶出视野。
@@ -139,7 +139,7 @@ export function HomeFilterSheet({
                     onClick={() => setTabId(s.id)}
                     aria-current={s.id === tabId}
                     className={`${row} px-3 text-sm ${
-                      s.id === tabId ? 'bg-black/15 font-bold' : 'font-medium text-white/85'
+                      s.id === tabId ? 'bg-black/15 font-bold' : 'font-medium text-white'
                     }`}
                   >
                     <span className="line-clamp-2">{s.name}</span>

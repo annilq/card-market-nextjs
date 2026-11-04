@@ -100,8 +100,14 @@ export default async function Page({ params, searchParams }: Props) {
     getCards(query),
   ])
 
+  // 首屏主图（LCP）直接预取：banner 经私有 S3 302 过来，预加载让浏览器在解析
+  // 到 <img> 之前就发起请求，与建连（preconnect）配合能再压一点 LCP。
+  const lcpBanner = banners[0]?.image?.bannerUrl || banners[0]?.image?.url || null
+
   return (
     <div className="space-y-6">
+      {/* 首屏主图预加载（见上方 lcpBanner 计算）。 */}
+      {lcpBanner && <link rel="preload" as="image" href={lcpBanner} fetchPriority="high" />}
       {/* 非默认语言：后台内容（卡名 / 公告 / 门店）只有中文一份，切换语言只换界面文字，
           先说清楚再给内容，免得用户以为是翻译漏了。 */}
       {locale !== DEFAULT_LOCALE && <ContentLanguageNotice locale={locale} />}

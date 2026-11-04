@@ -232,3 +232,15 @@ html[data-theme] ::-webkit-scrollbar-thumb:hover {
     animation: none;
   }
 }
+
+/* ---------- 5. 关闭自助「忘记密码」入口 ----------
+   本 Payload 版本（3.92.x）的 auth.forgotPassword 是「配置对象」而非布尔开关，
+   且登录页「忘记密码？」链接由 Payload 无条件渲染、没有配置项可关。
+   当前也没接邮件适配器，找回邮件根本发不出去（功能本就失效）。
+   这行 CSS 只把登录页那个入口藏掉——唯一可取的重置路径 = 管理员在后台给该账号改密
+   （access 已收紧 + beforeChange 钩子把对方标记为需强制改密）。
+   日后若要从源头彻底移除，需要自定义登录视图覆盖 admin 默认 login view。
+   注意：选择器是全局的（登录页不在 [data-admin-ui] 子树内），靠 href 末段匹配。 */
+html[data-theme] a[href$='/forgot'] {
+  display: none !important;
+}

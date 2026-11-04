@@ -46,6 +46,8 @@ export async function SiteFooter({ settings }: { settings: SiteSettingsView }) {
               <img
                 src={settings.logo.url}
                 alt={settings.logo.alt ?? siteName}
+                width={settings.logo.width ?? undefined}
+                height={settings.logo.height ?? undefined}
                 className="h-16 w-auto max-w-[240px] object-contain"
                 loading="lazy"
               />

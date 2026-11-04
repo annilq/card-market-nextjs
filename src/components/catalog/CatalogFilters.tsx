@@ -588,8 +588,10 @@ export function CatalogFilters({
     return (
       <div role="group" aria-label={t('catalogFilters')}>
         {facets.ips.length > 0 && (
-          <div className="mb-4 flex flex-wrap items-center justify-between">
-            <div className="flex flex-wrap">
+          // IP 切换 tab：桌面(sm 及以上)左排 tab、右贴「全部 →」；
+          // 移动端改为「tab 横向滚动单行 + 全部 → 落到下方靠右」，不再折行错位。
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 gap-x-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:pb-0">
               <IpTab
                 active={ipSel.size === 0}
                 onClick={resetHome}
@@ -612,20 +614,20 @@ export function CatalogFilters({
                 />
               ))}
             </div>
-            <div className="mb-3 flex items-center gap-3">
-              <Link
-                href={localizeHref('/cards', locale)}
-                className="text-sm text-muted transition hover:text-fg hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted"
-              >
-                {t('viewAll')}
-              </Link>
-            </div>
+            {/* 「全部 →」在桌面贴右缘；移动端落到 tab 条下方、靠右对齐，不孤行错位。 */}
+            <Link
+              href={localizeHref('/cards', locale)}
+              className="shrink-0 self-end text-right text-sm text-muted transition hover:text-fg hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted sm:self-auto"
+            >
+              {t('viewAll')}
+            </Link>
           </div>
         )}
 
         {/* 三个筛选做成触发控件：点一下，右侧滑出选择面板。
-            仍是一行排列，但宽度还给了筛选值本身。 */}
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            移动端改为横向滚动单行，桌面(sm 及以上)换行；「重置」始终在行尾、不随滚动被推走。 */}
+        <div className="flex items-center gap-x-2 gap-y-1">
+          <div className="flex min-w-0 flex-1 gap-x-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:pb-0">
           <FilterButton
             label={t('filterSeries')}
             current={seriesText}
@@ -644,6 +646,8 @@ export function CatalogFilters({
 
           {/* 「重置」在这一排的末尾：改完筛选之后手就在这一带。
               没有可重置项时禁用而不是隐藏，按钮位置才不会在筛选前后跳动。 */}
+          </div>
+
           <button
             type="button"
             onClick={resetHome}
@@ -824,7 +828,7 @@ function IpTab({
       onClick={onClick}
       aria-pressed={active}
       className={
-        `inline-flex h-10 items-center px-5 text-xl transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted ` +
+        `inline-flex h-10 shrink-0 items-center px-5 text-xl transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted ` +
         (active
           ? 'bg-brand text-white'
           : 'bg-[#F2E2E3] text-muted hover:bg-[#f6dadc] hover:text-fg dark:bg-surface-2 dark:text-muted dark:hover:bg-border')
@@ -853,7 +857,7 @@ function FilterButton({
       type="button"
       onClick={onClick}
       aria-haspopup="dialog"
-      className="inline-flex h-10 min-w-0 max-w-full items-center gap-1.5 rounded px-3 text-sm transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted"
+      className="inline-flex h-10 shrink-0 min-w-0 max-w-full items-center gap-1.5 rounded px-3 text-sm transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted"
     >
       <span className="shrink-0 font-bold text-fg">{label}</span>
       <span className="min-w-0 truncate text-muted">{current}</span>

@@ -67,9 +67,13 @@ export function MapView({
         .map((s) => {
           const lat = toNum(s.lat)
           const lng = toNum(s.lng)
-          return Number.isFinite(lat) && Number.isFinite(lng) ? { id: s.id, lat, lng } : null
+          return Number.isFinite(lat) && Number.isFinite(lng)
+            ? { id: s.id, lat, lng, name: s.name }
+            : null
         })
-        .filter((p): p is { id: number; lat: number; lng: number } => p !== null)
+        .filter(
+          (p): p is { id: number; lat: number; lng: number; name: string } => p !== null
+        )
 
       const initKey = initedForRef.current
       if (!mapRef.current || initKey !== key) {
@@ -94,6 +98,7 @@ export function MapView({
 
         for (const p of points) {
           const marker = L.marker([p.lat, p.lng], {
+            title: p.name,
             icon: L.divIcon({
               className: '',
               html: PIN_HTML,

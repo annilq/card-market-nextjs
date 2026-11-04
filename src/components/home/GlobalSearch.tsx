@@ -42,7 +42,7 @@ export function GlobalSearch() {
         />
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 left-3.5 right-3.5 hidden items-center truncate text-sm text-subtle peer-placeholder-shown:flex"
+          className="pointer-events-none absolute inset-y-0 left-3.5 right-3.5 hidden items-center truncate text-sm text-slate-600 peer-placeholder-shown:flex"
         >
           <span className="xl:hidden">{t('searchPlaceholderShort')}</span>
           <span className="hidden xl:inline">{t('searchPlaceholder')}</span>

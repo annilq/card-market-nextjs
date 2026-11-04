@@ -15,6 +15,7 @@ import { zh } from '@payloadcms/translations/languages/zh'
 import { buildConfig } from 'payload'
 import sharp from 'sharp'
 
+import { migrations } from './migrations'
 import { Announcements } from '@/collections/Announcements'
 import { Banners } from '@/collections/Banners'
 import { Cards } from '@/collections/Cards'
@@ -92,6 +93,14 @@ export default buildConfig({
     // （实测：手建的 pg_trgm GIN 索引在每次 dev 启动后被 DROP）。
     // 关掉之后，schema 变更一律走 `payload migrate:create && payload migrate`。
     push: false,
+    // 关键：把迁移数组挂到 postgresAdapter 的 prodMigrations 上。
+    // 否则生产环境（NODE_ENV=production）启动时 connect.js 里的
+    // `if (NODE_ENV==='production' && this.prodMigrations) migrate(...)` 永远为假，
+    // 迁移不会执行，Users.avatar 需要的 users.avatar_id 列就一直不存在 ——
+    // 后台一查 users 表就报 "column users.avatar_id does not exist"，
+    // SSR 抛错后浏览器侧表现为 React #441（后台进不去）。
+    // 挂上后，Vercel 的 serverless 冷启动会自动跑一遍尚未应用的迁移（幂等）。
+    prodMigrations: migrations,
   }),
   /*
    * 富文本编辑器：Lexical（所见即所得），**内容存的是结构化 JSON，不是 markdown**

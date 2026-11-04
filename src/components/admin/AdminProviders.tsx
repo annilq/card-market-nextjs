@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 
 import { RichTextToolbarLabels } from './RichTextToolbarLabels'
+import { ForcePasswordChangeGuard } from './ForcePasswordChangeGuard'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
 import './admin-ui.css'
@@ -22,6 +23,8 @@ export function AdminProviders({ children }: { children: ReactNode }) {
       {/* 富文本工具条是「聚焦编辑器才挂载」的，这个组件跟着给它补名字
           （Payload 的按钮只有图标，没有 aria-label 也没有 title） */}
       <RichTextToolbarLabels />
+      {/* 首次登录强制改密守卫：遮罩式，必须先改密才能进入后台（见组件注释）。 */}
+      <ForcePasswordChangeGuard />
       {children}
     </TooltipProvider>
   )

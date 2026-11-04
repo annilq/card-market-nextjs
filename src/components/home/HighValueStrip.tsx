@@ -34,7 +34,9 @@ export function HighValueStrip({
         <img
           src="/high_price.png"
           alt={t('highValueBuys')}
-          className="h-10 md:h-20"
+          width={205}
+          height={86}
+          className="h-10 w-auto md:h-20"
         />
         <Link
           href={localizeHref('/cards?hv=1', locale)}

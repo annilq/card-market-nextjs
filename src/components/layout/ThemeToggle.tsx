@@ -37,7 +37,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
       onClick={toggle}
       aria-label={dark ? t('themeToLight') : t('themeToDark')}
       aria-pressed={dark}
-      className={`inline-flex h-9 w-9 items-center justify-center rounded text-white/90 transition hover:bg-white/15 hover:text-white ${className}`}
+      className={`inline-flex h-9 w-9 items-center justify-center rounded text-white transition hover:bg-white/15 hover:text-white ${className}`}
     >
       {/* 月亮：深色时显示。两个图标同时渲染，由 CSS 决定可见性，
           因此没有「首帧图标不对、水合后跳变」的问题。 */}

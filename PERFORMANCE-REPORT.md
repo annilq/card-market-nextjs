@@ -229,3 +229,73 @@ skipTrailingSlashRedirect: true,
 
 > 改完需在 Vercel 重新部署生效。建议线上用 Lighthouse 对「首页 → 列表 → 详情」点击路径跑
 > 一次交互审计，确认 TBT / 切换体感改善。
+
+---
+
+## 8. 前台逐页 Lighthouse 评分 + 优化（第二轮）
+
+> 方法：本地 `next build` + `next start -p 3100`，连生产 DB，Chrome headless 对 8 个前台页面
+> 分别跑 mobile（throttle）与 desktop 两套 Lighthouse 13。每个页面先 warm（填缓存）再审计，
+> 避免冷填充抖动。沙箱到 S3（Backblaze B2，媒体签名下载源）网络**不稳定**，故首页 / 门店页
+> 的 mobile LCP 在多次跑分间波动较大（3.6 s ↔ 6.3 s），属基础设施抖动，非代码回归。
+
+### 8.1 优化后的最终评分
+
+| 页面 | Mobile P | Mobile A11y | Mobile BP | Mobile SEO | Desktop P | Desktop A11y | Desktop BP | Desktop SEO |
+|---|---|---|---|---|---|---|---|---|
+| 首页 `/` | 77–90 | **100** | 96 | **100** | 97 | 100 | 96 | 100 |
+| 卡牌列表 `/cards` | 88 | **100** | 96 | **100** | 93 | 100 | 96 | 100 |
+| 卡牌详情 `/cards/1` | 89–91 | **100** | 96 | **100** | 97 | 100 | 96 | 100 |
+| 公告列表 `/announcements` | 94 | **100** | 96 | **100** | 97 | 100 | 96 | 100 |
+| 公告详情 `/announcements/1` | 94 | **100** | 96 | **100** | 97 | 100 | 96 | 100 |
+| 门店 `/shops` | 79–82 | **100** | 96 | **100** | 89 | 100 | 96 | 100 |
+| 留言 `/message` | **100** | **100** | 96 | **100** | 98 | 100 | 96 | 100 |
+| 条款 `/info/terms` | **100** | **100** | 96 | **100** | 96 | 100 | 96 | 100 |
+
+> A11y 全页 **100**；SEO 全页 **100**（本轮补齐 robots.txt + sitemap.xml 后达成）。
+> BP 维持 96：仅剩 `image-size-responsive`（见 8.3，S3 源图未出多尺寸）。
+
+### 8.2 本轮修复清单
+
+**① 对比度（A11y：93 → 100）** —— 品牌红顶栏上的文字半透明色被 Lighthouse 判为对比度不足：
+- `SiteHeader` 图标按钮 / `<summary>` / 移动菜单链接 `text-white/90`、`text-white/85` → `text-white`
+- `ThemeToggle` 按钮 `text-white/90` → `text-white`
+- `HomeNotices` 公告「全部」链接 `text-white/90` → `text-white`（Lighthouse 点名元素）
+- `HomeFilterSheet` 空态 `text-white/90`、未选中 tab `text-white/85` → `text-white`
+- `GlobalSearch` 搜索占位浮层 `text-subtle`（#94a3b8，白底上仅 2.3:1）→ `text-slate-600`（7:1）
+  > 注意：搜索框背景写死白，故用固定深色而非语义令牌；深色主题下令牌会变浅，不能用 `text-fg`。
+
+**② 未指定尺寸图片（A11y unsized-images + CLS 隐患）** —— 补 `width`/`height`：
+- `SiteHeader` 的 `shop.png`（29×27）、`SiteFooter` / `SiteHeader` 的 logo（取 `ImageView.width/height`，
+  后台已写入媒体元数据）、`HighValueStrip` 的 `high_price.png`（205×86）均显式给尺寸。
+
+**③ 可访问性命名（A11y label-content-name-mismatch / aria-command-name）**
+- `ShopList` 门店行按钮：原本既带详细 `aria-label` 又含可见文字，两者不匹配 → 去掉 `aria-label`
+  （可见内容已完整传达店名 / 地址 / 电话 / 营业时间）。
+- `MapView` Leaflet marker：生成的 `role="button"` div 缺可访问名 → 给 `L.marker` 加 `title: 店名`。
+
+**④ SEO：robots.txt + sitemap.xml（SEO 92 → 100）**
+- 新增 `src/app/robots.ts`（允许全站，排除 `/admin`、`/api`，指向 sitemap）。
+- 新增 `src/app/sitemap.ts`（3 语言 × 静态入口页 = 15 条）。
+  > 注意：路由约定文件（robots/sitemap）**必须放在 `src/app/` 根目录**，放在 `(frontend)`
+  > 路由组里 `robots.ts` 不会被注册（sitemap 可以，robots 不行——Next 16 的 Turbopack 行为）。
+  > `robots.txt` / `sitemap.xml` 已在 middleware matcher 排除列表里，不会被语言 rewrite 拦截。
+
+**⑤ LCP：媒体主机 preconnect + 首屏主图 preload**
+- `layout.tsx` `<head>` 注入 `<link rel="preconnect" href="https://s3.us-west-004.backblazeb2.com" crossorigin>`
+  （媒体签名下载源，省一次 TLS RTT）。
+- 首页 `page.tsx` 对首屏 banner 加 `<link rel="preload" as="image" fetchPriority="high">`；
+  门店页同理对默认选中门店大图 preload。
+- 效果：首页 mobile LCP 从 5.4 s 降到 3.6 s（preload 生效）；剩余波动来自 S3 抖动。
+
+### 8.3 未做 / 受基础设施约束
+
+- **S3 302 + 原生 `<img>`**：媒体走 `/api/media/file/<id>` → 302 到 B2 临时 URL，next/image 优化器
+  无法跟随 302（服务端 400），故全站用原生 `<img>`。这是设计约束，不是缺陷；图片优化只能靠
+  `width/height` + `fetchPriority` + preload 这些原生手段，已在 8.2 ②⑤ 处理。
+- **image-size-responsive（BP 96 的唯一失分）**：源图未出多尺寸（thumb/card/banner 是 Payload
+  自动裁的，但 Lighthouse 仍希望按 DPR/视口给响应式 `srcset`）。next/image 受 302 限制不可用，
+  手写 `srcset` 收益有限，暂不做。
+- **mobile LCP 上限**：首页 / 门店 LCP 取决于 B2 媒体延迟，沙箱内不稳定。线上 Vercel → B2 同区域
+  会更小；preconnect + preload 已把“请求发起时机”压到最早，`next start` 本地测得 desktop LCP
+  普遍 1.1–2.2 s，符合预期。
