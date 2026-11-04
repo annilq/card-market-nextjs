@@ -83,6 +83,8 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
           <Link
             href={localizeHref('/', locale)}
             aria-label={siteName}
+            // 顶栏 logo：最高频的返回首页入口，进视口即预取整条路由（见优化项 ②）。
+            prefetch
             className="flex min-w-0 shrink-0 items-center truncate"
           >
             {/* 后台设了站点 logo 就优先用图，没设才回落到站点名文字。 */}
@@ -116,6 +118,8 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
               <Link
                 href={localizeHref('/shops', locale)}
                 aria-label={t('shopLabel')}
+                // 店铺入口：进视口即预取（见优化项 ②）。
+                prefetch
                 className={`${iconBtnSquare} lg:w-auto lg:gap-1.5 lg:px-2.5`}
               >
                 <ShopIcon />
@@ -133,7 +137,12 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
             <GlobalSearch />
           </div>
           {xLink}
-          <Link href={localizeHref('/shops', locale)} aria-label={t('shopLabel')} className={iconBtnSquare}>
+          <Link
+            href={localizeHref('/shops', locale)}
+            aria-label={t('shopLabel')}
+            prefetch
+            className={iconBtnSquare}
+          >
             <ShopIcon />
           </Link>
         </div>
@@ -179,6 +188,9 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
             <Link
               key={item.href}
               href={localizeHref(item.href, locale)}
+              // 移动端主要入口：进视口即预取整条路由（配合 [locale]/loading.tsx 边界），
+              // 点下去直接切到已准备好的页面，消除切换等待（见优化项 ②）。
+              prefetch
               className="border-b border-white/25 py-2.5 text-sm text-white/85 transition hover:text-white last:border-0"
             >
               {item.label}

@@ -44,7 +44,7 @@ export function Pagination({
     <nav aria-label={t('paginationAria')} className="mt-8 flex justify-center">
       <div className="flex items-center justify-center gap-1 max-w-full">
         {page > 1 ? (
-          <Link href={href(page - 1)} aria-label={t('prevPage')} className={arrow}>
+          <Link href={href(page - 1)} aria-label={t('prevPage')} prefetch className={arrow}>
             ‹
           </Link>
         ) : (
@@ -77,7 +77,7 @@ export function Pagination({
         )}
 
         {page < totalPages ? (
-          <Link href={href(page + 1)} aria-label={t('nextPage')} className={arrow}>
+          <Link href={href(page + 1)} aria-label={t('nextPage')} prefetch className={arrow}>
             ›
           </Link>
         ) : (

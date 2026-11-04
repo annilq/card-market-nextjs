@@ -24,9 +24,11 @@ import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { StatusCell as StatusCell_ff32efc137541c6552ed42594a323755 } from '@/components/admin/StatusCell'
 import { MapPickerField as MapPickerField_d25e7d6048f8e84a9a4fd68f2fe40387 } from '@/collections/Shops/MapPickerField'
+import { AdminAccountAvatar as AdminAccountAvatar_cf75d5cf4dcb8e029646575cda15327f } from '@/components/admin/AdminAccountAvatar'
 import { AdminNav as AdminNav_2623bc737c612ce9420322f2210a7f19 } from '@/components/admin/AdminNav'
 import { AdminIcon as AdminIcon_066c562e10ad4e70ff0de1a39f9b91f6 } from '@/components/admin/Brand'
 import { AdminLogo as AdminLogo_066c562e10ad4e70ff0de1a39f9b91f6 } from '@/components/admin/Brand'
+import { AdminThemeToggle as AdminThemeToggle_e9d2c96263c126e37765894bd4e8a4bd } from '@/components/admin/AdminThemeToggle'
 import { LoginIntro as LoginIntro_a23c667f36096b0f05e649a6391dbaaf } from '@/components/admin/LoginIntro'
 import { AdminProviders as AdminProviders_f1687a21d4a9f2d81c356a10e59ecdc1 } from '@/components/admin/AdminProviders'
 import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
@@ -61,9 +63,11 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@/components/admin/StatusCell#StatusCell": StatusCell_ff32efc137541c6552ed42594a323755,
   "@/collections/Shops/MapPickerField#MapPickerField": MapPickerField_d25e7d6048f8e84a9a4fd68f2fe40387,
+  "@/components/admin/AdminAccountAvatar#AdminAccountAvatar": AdminAccountAvatar_cf75d5cf4dcb8e029646575cda15327f,
   "@/components/admin/AdminNav#AdminNav": AdminNav_2623bc737c612ce9420322f2210a7f19,
   "@/components/admin/Brand#AdminIcon": AdminIcon_066c562e10ad4e70ff0de1a39f9b91f6,
   "@/components/admin/Brand#AdminLogo": AdminLogo_066c562e10ad4e70ff0de1a39f9b91f6,
+  "@/components/admin/AdminThemeToggle#AdminThemeToggle": AdminThemeToggle_e9d2c96263c126e37765894bd4e8a4bd,
   "@/components/admin/LoginIntro#LoginIntro": LoginIntro_a23c667f36096b0f05e649a6391dbaaf,
   "@/components/admin/AdminProviders#AdminProviders": AdminProviders_f1687a21d4a9f2d81c356a10e59ecdc1,
   "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,

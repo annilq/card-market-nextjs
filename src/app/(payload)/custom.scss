@@ -517,9 +517,17 @@ select {
   color: var(--color-brand);
 }
 
-/* 当前项的指示条：2px 品牌红，贴在图标左侧 */
+/* 当前项的指示条：2px 品牌红。
+   原值 inset-inline-start:-18px 把指示条贴到链接左侧「留白之外」；在窄屏（侧栏收成抽屉、
+   --gutter-h 变小）会被 .nav{overflow:hidden} 裁掉，于是 dashboard 这种「默认激活」项看起来
+   像图标被切了一刀。改成落在链接自身的左内边距里（2px），任何宽度都不会被裁；
+   同时覆盖 Payload 的 .nav__link:has(.nav__link-indicator){padding-left:0}，让激活项图标
+   和普通项保持同一左缩进，不被往左顶导致错位。 */
+.nav__link:has(.nav__link-indicator) {
+  padding-left: 10px;
+}
 .nav__link-indicator {
-  inset-inline-start: -18px;
+  inset-inline-start: 2px;
   width: 2px;
   height: 14px;
   border-radius: 2px;
@@ -922,6 +930,53 @@ html[data-theme='dark'] .template-minimal {
     radial-gradient(70vw 45vw at 15% -10%, rgb(219 38 29 / 0.1), transparent 70%),
     radial-gradient(55vw 40vw at 105% 5%, rgb(255 255 255 / 0.045), transparent 70%);
   background-repeat: no-repeat;
+}
+
+/* ---------- 9b. 后台账户头像（admin.avatar 自定义组件） ----------
+   右上角账户图标：有上传头像时显示圆形缩略图，加载失败 / 没传时退回首字母圆，
+   绝不再出现裂图（原来是 gravatar，内网 / 离线环境常加载失败且无兜底）。 */
+.admin-account-avatar__img,
+.admin-account-avatar__initials {
+  display: block;
+  width: 25px;
+  height: 25px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+.admin-account-avatar__initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-brand);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* ---------- 9c. 后台深色模式切换（admin.components.actions） ----------
+   放在顶栏右侧 actions 区；配色跟随后台令牌，亮 / 暗两套都清晰可读。 */
+.admin-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--theme-border-color);
+  border-radius: var(--style-radius-s);
+  background-color: transparent;
+  color: var(--theme-elevation-700);
+  cursor: pointer;
+  transition: background-color 120ms ease-out, color 120ms ease-out, border-color 120ms ease-out;
+}
+.admin-theme-toggle:hover {
+  background-color: var(--theme-elevation-50);
+  color: var(--theme-elevation-1000);
+}
+.admin-theme-toggle:focus-visible {
+  outline: var(--accessibility-outline);
+  outline-offset: var(--accessibility-outline-offset);
 }
 
 /* ---------- 10. 无障碍：尊重「减少动态效果」 ---------- */

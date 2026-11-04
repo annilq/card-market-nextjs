@@ -46,6 +46,9 @@ export default buildConfig({
     // 后台默认深色（新访客的 payload-theme cookie 由 src/middleware.ts 种下），
     // 但仍保留「跟随系统 / 手动切换」两条路，所以这里不写死成 'dark'。
     theme: 'all',
+    // 账户头像：默认是 gravatar（按邮箱去 gravatar.com 取图，内网/离线常裂图且无兜底）。
+    // 改成自定义组件——优先显示用户在「账户」页上传的头像，失败/没传则退回首字母圆，绝不裂图。
+    avatar: { Component: '@/components/admin/AdminAccountAvatar#AdminAccountAvatar' },
     components: {
       // 标识：登录页大 Logo + 导航小图标（同一枚「卡堆」标记）
       graphics: {
@@ -57,6 +60,9 @@ export default buildConfig({
       providers: ['@/components/admin/AdminProviders#AdminProviders'],
       // 登录页标题（原来的四色条已删，只留站名）
       beforeLogin: ['@/components/admin/LoginIntro#LoginIntro'],
+      // 顶栏右侧 actions 区：把「后台深色模式切换」从账户下拉里拎出来，直接放右上角。
+      // 注意这是后台主题（data-theme + payload-theme cookie），与前台 dark class 无关。
+      actions: ['@/components/admin/AdminThemeToggle#AdminThemeToggle'],
       // 侧栏换成自定义的一级菜单：集合与全局平铺，不再按 admin.group 折成二级
       Nav: '@/components/admin/AdminNav#AdminNav',
       views: {

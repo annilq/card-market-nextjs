@@ -48,6 +48,9 @@ export function CardCard({
   return (
     <Link
       href={localizeHref(`/cards/${card.id}`, locale)}
+      // 卡牌详情是全站最高频的跳转入口：进视口即预取整条路由
+      // （配合 [locale]/loading.tsx 边界，见优化项 ②），点下去直接切到已就绪页面。
+      prefetch
       onClick={(e) => {
         if (!onOpen) return
         // 修饰键与中键留给浏览器：那是在要求「开新标签 / 新窗口」，

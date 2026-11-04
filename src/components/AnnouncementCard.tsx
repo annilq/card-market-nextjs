@@ -17,6 +17,8 @@ export function AnnouncementCard({ announcement, locale }: AnnouncementCardProps
   return (
     <Link
       href={localizeHref(`/announcements/${announcement.id}`, locale)}
+      // 公告详情入口：进视口即预取（见优化项 ②）。
+      prefetch
       className="group flex min-h-14 items-center gap-3 px-4 py-3.5 transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-muted"
     >
       <span
