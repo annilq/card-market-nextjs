@@ -8,11 +8,11 @@ import { LOCALES, localizeHref } from '@/lib/i18n/locales'
 import type { Locale } from '@/lib/i18n/locales'
 import { getTranslator } from '@/lib/i18n/t'
 import { pageWindow } from '@/lib/pagination'
+import { getOrigin } from '@/lib/site-url'
 
 export const dynamic = 'force-dynamic'
 
 const PAGE_SIZE = 20
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3100'
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -41,7 +41,8 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const t = getTranslator(locale)
   const query = (await searchParams) ?? {}
   const page = parsePage(query.page)
-  const canonical = new URL(announcementsHref(locale, page), SITE_URL).toString()
+  const origin = await getOrigin()
+  const canonical = new URL(announcementsHref(locale, page), origin).toString()
   const title = t('announcementsTitle')
   const description = LOCALES[locale].description
 

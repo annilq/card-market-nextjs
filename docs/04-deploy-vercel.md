@@ -27,7 +27,7 @@
 |---|---|---|
 | `DATABASE_URI` | ✅ | Vercel Postgres 的连接串（带 `?sslmode=require`）。代码读的就是它，**不是** `POSTGRES_URL` |
 | `PAYLOAD_SECRET` | ✅ | **随机长字符串**（`openssl rand -base64 32` 生成）。⚠️ 见第 3 节，漏了会整页 500 |
-| `NEXT_PUBLIC_SITE_URL` | ✅ | 真实域名，**不含末尾 `/`**，如 `https://card-market-nextjs.vercel.app`。构建期注入前端 bundle，改了必须重新部署 |
+| `SITE_URL` | ⬜ 可选 | **线上无需设置**。代码在 `VERCEL=1` 时把 `serverURL` 留空、改用请求 host（见坑 7），任意域名/preview 自动正确。仅当你想覆盖默认行为时才设。本地 dev 用不到它（`.env` 的 `NEXT_PUBLIC_SITE_URL` 兜 localhost） |
 | `NEXT_PUBLIC_DEFAULT_LOCALE` | ✅ | `zh` |
 | `S3_BUCKET` | ✅（用 S3 时） | 桶名 |
 | `S3_ENDPOINT` | ✅ | **必须带 `https://` 前缀**，如 `https://s3.us-west-004.backblazeb2.com` |
@@ -135,12 +135,42 @@
 - 构建日志会警告 `The "middleware" file convention is deprecated. Please use "proxy" instead.`。
 - 本项目路由依赖 middleware 做语言段 rewrite（`/` → `/zh`）和设置 `x-locale` 头。目前在 Next 16 上仍可用（仅警告），但**未来升级可能移除**。届时需把 `src/middleware.ts` 迁移成 `src/proxy.ts`（matcher 逻辑可平移）。留意升级时不要只因为这条警告就删掉 middleware，否则 `/` 会 404。
 
-### 坑 7：`NEXT_PUBLIC_SITE_URL` 漏设 → 线上图片 URL 变成 `localhost`
-- **现象**：页面能开，但 `<img>` 的 src 是 `http://localhost:3100/api/media/file/...`，外网访问不到（本地 dev 看到 localhost 是正常的，线上看到就是坏了）。
-- **根因**：`payload.config.ts` 的 `serverURL` 由 `NEXT_PUBLIC_SITE_URL` 决定；它是 `NEXT_PUBLIC_*`，**构建期注入**。Vercel 没设（或设成 localhost）时，build 把 `localhost:3100` 烤进客户端包。
-  之后 Payload 的 `url` 字段 `afterRead` 钩子会用 `serverURL` 把相对路径 `/api/media/file/<filename>?prefix=media` 拼成绝对 URL，于是线上图全指向 localhost。
-- **修法**：Vercel 控制台加 `NEXT_PUBLIC_SITE_URL=https://<你的域名>`（无尾 `/`），**重新部署**才生效。
-  代码里已加 `VERCEL_URL` 兜底（Vercel 自动注入的部署域名），即使漏设也不会回退到 localhost；但显式设真实域名仍是首选（自定义域名、缓存一致性更稳）。
+### 坑 7：`serverURL`（站点域名）配错 → 图片 localhost / 后台打不开
+`serverURL` 同时影响两件事：
+1. Payload 的 `url` 字段 `afterRead` 钩子用它把相对路径 `/api/media/file/<filename>?prefix=media` 拼成**图片绝对 URL**；
+2. `/admin` 后台加载自身资源（JS/CSS）和调接口时的**主机基址**。
+
+#### 最终解法（已写入代码）：线上 `serverURL` 留空，走「请求 host」
+Vercel 注入 `VERCEL=1` 时，`payload.config.ts` 刻意把 `serverURL` 设成**空串**。
+源码验证（`node_modules/payload/dist/utilities/formatAdminURL.js`）：当 `serverURL` 为空时，URL 直接返回**相对路径**，
+admin 前端和媒体 URL 都按「用户实际访问的域名」（`window.location.origin` / 服务端 `req.headers.host`）同源解析。
+于是无论访问主域名、部署专属域名还是 preview，**后台都不会再去一个不匹配的 host 拉资源**——空白/跨域问题从根上消失，
+而且**线上不再需要配置任何「站点域名」变量**（Vercel 现在也不让新建 `NEXT_PUBLIC_` 变量，正好契合）。
+
+本地 dev 时 `VERCEL` 未注入，`serverURL` 回退 `localhost:3100`，保证本地 SSR 的媒体绝对 URL 正确：
+```
+serverURL =
+  VERCEL === '1' ? ''
+  : SITE_URL || NEXT_PUBLIC_SITE_URL || 'http://localhost:3100'
+```
+
+前台 canonical / OG / `metadataBase` 同理统一走 `src/lib/site-url.ts` 的 `getOrigin()`（读 `x-forwarded-host`/`host`），
+不再硬编码 localhost，线上自动用请求域名。
+
+#### 7a. 历史坑：线上图片 URL 变成 `localhost`（图片侧）
+- **现象**：页面能开，但 `<img>` 的 src 是 `http://localhost:3100/api/media/file/...`，外网访问不到。
+- **根因**（已修复）：历史上 `serverURL` 解析成 localhost（没配域名变量 / 误用 `VERCEL_URL` 兜底）。
+  现在线上 `serverURL` 留空 → 相对路径，本坑不再出现。
+
+#### 7b. 历史坑：后台 `/admin` 打不开（后台侧，更隐蔽）
+- **现象**：图片能正常显示（302 到 B2 签名 URL，主机无关），但访问 `https://<你的域名>/admin` 时后台空白/跨域。
+- **根因**（已修复）：`serverURL` 指向了一个**和用户访问域名不是同一个 host** 的值——最典型就是旧代码的 `VERCEL_URL` 兜底：
+  `VERCEL_URL` 是 Vercel **每次部署专属域名**（形如 `card-market-nextjs-6bvpqrk94-annilqs-projects.vercel.app`），
+  与访问的主域名 `card-market-nextjs.vercel.app` **不匹配**，于是图能用（主机无关）但后台崩（主机相关）。
+- **修法**（已写入代码）：线上 `serverURL` 留空 + 请求 host，见本坑开头。切勿再加 `VERCEL_URL` 兜底。
+
+> ⚠️ **关于 `NEXT_PUBLIC_` 变量**：Vercel 现在不允许新建 `NEXT_PUBLIC_` 前缀的环境变量。本项目线上**不再依赖任何域名变量**，
+> 全靠「请求 host」自动同源。`NEXT_PUBLIC_SITE_URL` 仅作为本地 dev 的兜底（`.env` 里用）。
 
 ---
 
@@ -148,7 +178,7 @@
 
 1. `GET /api/health` 应返回 **200**（它验证 `Next + Payload + PostgreSQL` 整条链路；连不上库会 500）。
 2. 打开首页 `https://<域名>/` 应 200，能看到 banner / 公告 / 卡牌。若报 500 且 Sentry 是 `column "prefix" does not exist`，见坑 4（S3 迁移没跑）。
-3. 后台 `https://<域名>/admin` 可登录（默认本地账号仅本地有效，生产需用种子或自建管理员）。
+3. 后台 `https://<域名>/admin` 可登录（默认本地账号仅本地有效，生产需用种子或自建管理员）。线上 `serverURL` 留空、走请求 host，访问**任意**主域名 / 部署域名 / preview 都能正常打开后台（见坑 7）。
 4. 后台传一张图，前台卡片图能正常显示（验证 B2 + CORS + allPublic）。
 5. Sentry 项目 `card-market-nextjs` 能收到错误与 trace（验证 DSN 指向正确项目）。
 
@@ -160,7 +190,7 @@
 |---|---|---|
 | 数据库 | 无 `DATABASE_URI`；靠 `PG*` 变量（`.env` 模板自带）让 `pg` 回退连接本地库 | 必须显式加 `DATABASE_URI=<Neon 串>`，否则读不到（自动注入的 `POSTGRES_URL` 名对不上） |
 | Payload 密钥 | `PAYLOAD_SECRET=dev-only-...` | `PAYLOAD_SECRET=<另一随机串>` |
-| 站点域名 | `NEXT_PUBLIC_SITE_URL=http://localhost:3100` | `NEXT_PUBLIC_SITE_URL=https://<域名>`（无尾 `/`） |
+| 站点域名 | `NEXT_PUBLIC_SITE_URL=http://localhost:3100`<br>（本地 dev 用；线上由「请求 host」自动同源，无需配置） | **无需配置**。`VERCEL=1` 时 `serverURL` 留空 + 请求 host，任意域名/preview 自动正确（见坑 7） |
 | S3 | `S3_ENDPOINT=https://s3.us-west-004.backblazeb2.com` 等 | 同左（值一样，因为都连同一个 B2 桶） |
 | Sentry | `NEXT_PUBLIC_SENTRY_DSN=...card-market-nextjs...` | 同左（DSN 指向 `card-market-nextjs` 项目） |
 

@@ -10,6 +10,7 @@ import { getSiteSettings } from '@/lib/data'
 import { I18nProvider } from '@/lib/i18n/client'
 import { DEFAULT_LOCALE, LOCALES, type Locale } from '@/lib/i18n/locales'
 import { getLocaleFromHeaders } from '@/lib/i18n/server'
+import { getOrigin, absUrl } from '@/lib/site-url'
 
 // 在首屏绘制前同步主题，避免浅色闪一下。优先级：localStorage > 系统偏好。
 // 必须是**内联**脚本而不是 next/script：bundle 里的脚本最早也要等 HTML 解析到它
@@ -17,12 +18,11 @@ import { getLocaleFromHeaders } from '@/lib/i18n/server'
 const NO_FLASH_SCRIPT = `(function(){try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark',d);}catch(e){}})();`
 
 /** 部署后的站点地址。hreflang / canonical 必须是绝对地址，写相对路径爬虫会直接忽略。 */
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3100').replace(/\/$/, '')
+// 线上走「请求 host」（见 src/lib/site-url），不依赖任何域名变量；本地 dev 回退 localhost。
 
 /** 某种语言下「站点根」的绝对地址：默认语言不带前缀。 */
-function rootUrl(locale: Locale): string {
-  const prefix = LOCALES[locale].prefix
-  return `${SITE_URL}${prefix ? `/${prefix}` : '/'}`
+async function rootUrl(locale: Locale): Promise<string> {
+  return absUrl('/', locale)
 }
 
 // generateMetadata 与布局本体都要读站点设置，用 React 的 cache 合并成一次查询。
@@ -52,16 +52,17 @@ export async function generateMetadata(): Promise<Metadata> {
   const meta = LOCALES[locale]
   const siteName = settings.siteName?.trim() || meta.title
 
+  const origin = await getOrigin()
   const languages: Record<string, string> = {}
   for (const key of Object.keys(LOCALES) as Locale[]) {
-    languages[LOCALES[key].htmlLang] = rootUrl(key)
+    languages[LOCALES[key].htmlLang] = await rootUrl(key)
   }
   // 未匹配语言的访客（浏览器语言不在 zh/ja/en 内）落到默认语言。
-  languages['x-default'] = rootUrl(DEFAULT_LOCALE)
+  languages['x-default'] = await rootUrl(DEFAULT_LOCALE)
 
   return {
     // 有了 metadataBase，子页面里写相对路径的 og:image / alternates 也会变成绝对地址。
-    metadataBase: new URL(SITE_URL),
+    metadataBase: new URL(origin),
     title: {
       default: meta.title,
       template: `%s | ${siteName}`,
@@ -70,7 +71,7 @@ export async function generateMetadata(): Promise<Metadata> {
     // 卡牌编号容易被 iOS 识别成电话号码。
     formatDetection: { telephone: false },
     alternates: {
-      canonical: rootUrl(locale),
+      canonical: await rootUrl(locale),
       languages,
     },
     openGraph: {
@@ -79,7 +80,7 @@ export async function generateMetadata(): Promise<Metadata> {
       locale: meta.intl,
       title: meta.title,
       description: meta.description,
-      url: rootUrl(locale),
+      url: await rootUrl(locale),
     },
     twitter: {
       card: 'summary',

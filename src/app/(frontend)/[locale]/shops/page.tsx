@@ -6,12 +6,12 @@ import { ShopList } from '@/components/shops/ShopList'
 import { getShops } from '@/lib/data'
 import { getTranslator } from '@/lib/i18n/t'
 import { LOCALES, localizeHref, type Locale } from '@/lib/i18n/locales'
+import { getOrigin } from '@/lib/site-url'
 
 // 门店列表要跟着后台的发布状态走，不做构建期静态化。
 export const dynamic = 'force-dynamic'
 
-// canonical / og:url 必须是绝对地址：相对路径搜索引擎会直接忽略。
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3100'
+// canonical / og:url 必须是绝对地址：相对路径搜索引擎会直接忽略。主机取请求 host（见 src/lib/site-url）。
 
 const PATHNAME = '/shops'
 
@@ -32,7 +32,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = t('shopsIntro')
   // 分享地址要带语言段（默认语言不带）：三种语言是三个 URL，不能撞成同一个。
   const path = localizeHref(PATHNAME, locale)
-  const canonical = new URL(path, SITE_URL).toString()
+  const origin = await getOrigin()
+  const canonical = new URL(path, origin).toString()
 
   return {
     title,

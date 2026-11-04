@@ -30,6 +30,7 @@ import {
 } from '@/lib/data'
 import { parseCardSearch, type CardSearchParams } from '@/lib/card-search'
 import { DEFAULT_LOCALE, LOCALES, localizeHref, type Locale } from '@/lib/i18n/locales'
+import { absUrl, getOrigin } from '@/lib/site-url'
 import { getTranslator } from '@/lib/i18n/t'
 
 /** 首页卡牌网格每页数量：上面要露出 banner 与公告，因此比列表页的 24 少。 */
@@ -54,8 +55,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale: raw } = await params
   if (!(raw in LOCALES)) notFound()
   const locale = raw as Locale
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3100'
-  const url = new URL(localizeHref('/', locale), base).toString()
+  const origin = await getOrigin()
+  const url = await absUrl('/', locale)
   const { title, description } = LOCALES[locale]
   const [first] = await loadBanners()
   const cover = first?.image?.bannerUrl || first?.image?.url
@@ -69,7 +70,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       url,
       // 分享图优先取第一条 banner；没有 banner 时不给 image（比给一张空图好）。
-      images: cover ? [new URL(cover, base).toString()] : undefined,
+      images: cover ? [new URL(cover, origin).toString()] : undefined,
     },
   }
 }

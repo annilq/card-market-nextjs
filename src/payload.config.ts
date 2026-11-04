@@ -111,12 +111,20 @@ export default buildConfig({
   }),
   secret: process.env.PAYLOAD_SECRET ?? '',
   sharp,
-  // serverURL 会被 Payload 的 url 字段 afterRead 钩子拼到 media 图的前面（/api/media/file/... → 绝对路径）。
-  // 因此线上必须是真实域名，否则图片 URL 会变成 localhost 而无法访问。
-  // 优先级：显式 NEXT_PUBLIC_SITE_URL → Vercel 自动注入的 VERCEL_URL → 本地兜底 localhost:3100。
+  // serverURL 是后台 /admin 与媒体 URL 的主机基址。
+  // 关键决策（根治「后台空白/跨域」）：
+  //   - 线上（Vercel 注入 VERCEL=1）：**刻意留空**。Payload 在 serverURL 为空时会改用
+  //     相对路径（formatAdminURL: !serverURL → 返回相对 path），admin 前端与媒体 URL
+  //     都按「用户实际访问的域名」同源解析。于是无论访问主域名、部署专属域名还是 preview，
+  //     后台都不会再去一个不匹配的 host 拉资源——彻底不依赖任何域名变量。
+  //   - 本地 dev：回退 localhost:3100，保证本地 SSR 的媒体绝对 URL 正确。
+  // 注意：绝不能用 VERCEL_URL 兜底——它指向「每次部署专属域名」，与用户访问的主域名不是同一 host。
   serverURL:
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3100'),
+    process.env.VERCEL === '1'
+      ? ''
+      : process.env.SITE_URL ||
+        process.env.NEXT_PUBLIC_SITE_URL ||
+        'http://localhost:3100',
   i18n: { supportedLanguages: { en, ja, zh }, fallbackLanguage: 'zh' },
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
   graphQL: { schemaOutputFile: path.resolve(dirname, '../schema.graphql') },

@@ -8,10 +8,10 @@ import { getAnnouncement, getAnnouncements } from '@/lib/data'
 import { LOCALES, localizeHref } from '@/lib/i18n/locales'
 import type { Locale } from '@/lib/i18n/locales'
 import { formatDate, getTranslator } from '@/lib/i18n/t'
+import { getOrigin } from '@/lib/site-url'
 
 export const dynamic = 'force-dynamic'
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3100'
 
 type Props = {
   params: Promise<{ locale: string; id: string }>
@@ -43,9 +43,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const t = getTranslator(locale)
   const numericId = Number(id)
   const item = await getAnnouncement(numericId)
+  const origin = await getOrigin()
   const canonical = new URL(
     localizeHref(`/announcements/${encodeURIComponent(id)}`, locale),
-    SITE_URL,
+    origin,
   ).toString()
 
   if (!item) {

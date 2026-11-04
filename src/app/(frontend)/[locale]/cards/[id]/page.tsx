@@ -17,12 +17,12 @@ import { formatYen } from '@/lib/format'
 import { LOCALES, localizeHref } from '@/lib/i18n/locales'
 import type { Locale } from '@/lib/i18n/locales'
 import { formatDate, getTranslator } from '@/lib/i18n/t'
+import { getOrigin } from '@/lib/site-url'
 
 // 卡牌可随时上下架，且描述是后台富文本：不做静态化，每次请求都读库。
 export const dynamic = 'force-dynamic'
 
-/** canonical / og:image 必须是绝对地址，写相对路径爬虫会直接忽略。 */
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3100').replace(/\/$/, '')
+/** canonical / og:image 必须是绝对地址，写相对路径爬虫会直接忽略。主机取请求 host（见 src/lib/site-url）。 */
 
 type Props = {
   params: Promise<{ locale: string; id: string }>
@@ -41,8 +41,9 @@ function requireId(raw: string): number {
   return id
 }
 
-function absoluteUrl(path: string): string {
-  return new URL(path, SITE_URL).toString()
+async function absoluteUrl(path: string): Promise<string> {
+  const origin = await getOrigin()
+  return new URL(path, origin).toString()
 }
 
 /** 富文本转纯文本摘要，供 meta description 使用。 */
@@ -65,7 +66,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const locale = requireLocale(raw)
   const t = getTranslator(locale)
   const numericId = Number(id)
-  const canonical = absoluteUrl(localizeHref(`/cards/${encodeURIComponent(id)}`, locale))
+  const canonical = await absoluteUrl(localizeHref(`/cards/${encodeURIComponent(id)}`, locale))
   const card = Number.isInteger(numericId) && numericId > 0 ? await getCard(numericId) : null
 
   // 查不到卡时标 noindex——一张空白详情页被收录只会拉低整站的索引质量。
@@ -107,7 +108,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: image
         ? [
             {
-              url: absoluteUrl(image.bannerUrl || image.cardUrl || image.url),
+              url: await absoluteUrl(image.bannerUrl || image.cardUrl || image.url),
               alt: image.alt || card.name,
             },
           ]

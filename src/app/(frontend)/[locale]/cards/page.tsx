@@ -19,6 +19,7 @@ import { parseCardSearch, numOf, rawOf, csvOrNull, type CardSearchParams } from 
 import { getTranslator } from '@/lib/i18n/t'
 import { LOCALES, localizeHref, type Locale } from '@/lib/i18n/locales'
 import { DEFAULT_CARD_SORT, type CardQuery } from '@/lib/types'
+import { getOrigin } from '@/lib/site-url'
 
 export const dynamic = 'force-dynamic'
 
@@ -123,7 +124,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const title = q ? `${t('navCards')} — ${q}` : t('navCards')
   const siteName = (await getSiteSettings()).siteName || t('defaultSiteName')
   const path = localizeHref('/cards', locale)
-  const origin = (process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/$/, '')
+  const origin = await getOrigin()
 
   return {
     title: `${title} | ${siteName}`,
@@ -131,12 +132,12 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     // 搜索结果与分页都不收录：内容随 query 有无穷组合，收录反而稀释索引。
     robots: q || page > 1 ? { index: false, follow: true } : undefined,
     // canonical 指向不带 query 的干净地址：筛选后的地址与它是同一页内容。
-    alternates: origin ? { canonical: `${origin}${path}` } : undefined,
+    alternates: { canonical: `${origin}${path}` },
     openGraph: {
       type: 'website',
       title,
       description: LOCALES[locale].description,
-      url: origin ? `${origin}${path}` : path,
+      url: `${origin}${path}`,
     },
   }
 }
