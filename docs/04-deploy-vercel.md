@@ -82,10 +82,18 @@
 - **根因**：`s3Storage` 的 `endpoint` 需要完整 URL；B2 的区域不是 `auto`，必须是 `s3.<区域>.backblazeb2.com` 里的那段（如 `us-west-004`）。
 - **修法**：见第 1 节变量表。
 
-### 坑 3：B2 桶未公开 + 未配 CORS → 图片 403 / 浏览器直传被拦
-本项目已开 `clientUploads: true`（浏览器直传桶，绕开 Vercel 4.5MB 请求体上限）。这要求桶侧两步配置：
-- **Bucket Info** 设 `{"allPublic": true}`（否则图片 URL 403）。
-- **CORS Rules** 允许你的域名（`clientUploads` 直传必须跨域放行，否则大图上传被浏览器拦截）：
+### 坑 3：图片 401 / 403 —— 不要用「公开桶」，用「私有桶 + 签名下载」
+本项目 `s3Storage` **同时开了 `clientUploads: true` 和 `signedDownloads: true`**：
+- `clientUploads`：浏览器直传桶（绕开 Vercel 4.5MB 请求体上限）。
+- `signedDownloads`：读图时由 `/api/media/file/<filename>` 路由**服务端签发临时签名 URL 并 302 重定向**给浏览器。
+
+⚠️ **不要为了显示图片把 B2 桶设为 Public**：很多地区/账户把桶设公开时会强制要求绑定信用卡做身份校验——
+本项目当初就是为「免信用卡」才选 B2 的，走公开桶正好和它的目标冲突。真相是：
+**浏览器能加载图片 ≠ 桶要公开**。私有桶 + 签名下载（本项目的默认做法）完全不需要信用卡、也不需要公开。
+
+需要桶侧做的只有两件事：
+- **桶保持 Private**（默认就是，不要点 Public / 不要写 `allPublic:true`，否则反而触发绑卡）。
+- **CORS Rules**：`clientUploads` 浏览器直传必须跨域放行（否则大图上传被浏览器拦），允许你的域名：
   ```json
   [
     {
@@ -99,6 +107,10 @@
   ]
   ```
   生产后把 `http://localhost:3100` 去掉，只留真实域名。
+
+> 副作用：每次图片请求 Serverless 多一次签名运算（图带强缓存，影响极小）。`clientUploads` 直传本身也是签名 URL，不受影响。
+> 注意 `media` 文档的 `url` 字段要指向 **Next.js 路由** `/api/media/file/<filename>?prefix=media`（由 `afterRead` 钩子生成），
+> 而不是 B2 直链——后者在私有桶下会 401。改了 bucket 配置后重跑一次 seed 或按本坑修复脚本回写 url。
 
 ### 坑 4：开了 `clientUploads` 却没跑 S3 的 schema 迁移 → `column "prefix" does not exist`
 - **现象**：首页 / `/cards` 返回 500，Sentry 里的真实错误是

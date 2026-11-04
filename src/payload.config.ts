@@ -123,6 +123,9 @@ export default buildConfig({
           s3Storage({
             collections: { media: { prefix: 'media' } },
             bucket: process.env.S3_BUCKET,
+            // 私有桶 + 签名下载：/api/media/file/<filename> 由服务端签发临时 URL 并 302 重定向给浏览器，
+            // 因此桶无需设为 Public、也无需绑定信用卡。clientUploads 的直传本身就是签名 URL，不受影响。
+            signedDownloads: true,
             // 浏览器直传桶，绕开 Vercel serverless 4.5MB 请求体上限（后台上传大图用）
             clientUploads: true,
             config: {
