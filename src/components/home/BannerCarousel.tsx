@@ -14,6 +14,7 @@ import type {
   MouseEvent as ReactMouseEvent,
   PointerEvent as ReactPointerEvent,
 } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 
 import { useLocale, useT } from '@/lib/i18n/client'
@@ -205,13 +206,15 @@ export function BannerCarousel({ banners }: { banners: BannerView[] }) {
         const inner = (
           <>
             {src && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={src}
                 alt={b.title || 'banner'}
-                // 首张是首屏主图（很可能是 LCP），不等懒加载；其余等进入视口。
-                loading={i === 0 ? 'eager' : 'lazy'}
-                className="absolute inset-0 h-full w-full object-cover"
+                fill
+                // 首张是首屏主图（LCP）：priority 让优化器预加载并直出 AVIF/WebP，
+                // 其余幻灯等进入视口再加载，避免一次性预拉全部轮播大图。
+                priority={i === 0}
+                sizes="100vw"
+                className="object-cover"
               />
             )}
             {/* 图上文字：压一层足够深的渐隐黑色再写字。
