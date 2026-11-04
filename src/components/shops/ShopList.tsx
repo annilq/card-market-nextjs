@@ -6,7 +6,6 @@
 // 因此状态放在这里（列表 + 详情共用的最小外壳），地图只是它的一个消费者。
 // 数据（ShopView[]）由服务端 page 传来：`getShops()` 已经按访问过滤（草稿/未发布不可见），
 // 这里不再过滤一次，避免两套过滤规则不一致。
-import Image from 'next/image'
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 
@@ -200,13 +199,14 @@ export function ShopList({ shops }: { shops: ShopView[] }) {
         <div className="relative aspect-[960/598] overflow-hidden rounded-xl bg-surface-2">
           {heroImg ? (
             <>
-              <Image
+              {/* 媒体走 S3 签名下载（302 到临时 S3 URL），next/image 优化器无法优化重定向，
+                  故用原生 <img> 让浏览器跟随 302；门店主图是首屏主视觉，用 eager + 高优先级。
+                  eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={heroImg}
                 alt={current.image?.alt || current.name}
-                fill
-                sizes="(min-width: 1024px) 60vw, 100vw"
-                priority
-                className="object-cover"
+                fetchPriority="high"
+                className="h-full w-full object-cover"
               />
               {/* 覆层压在图底部：设计图的营业时间就是压在门店照片上的白字。
                   用底部实心、向上渐隐的黑色，避免浅色照片上文字掉到 1:1 级别。

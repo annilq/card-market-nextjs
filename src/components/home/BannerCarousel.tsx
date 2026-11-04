@@ -14,7 +14,6 @@ import type {
   MouseEvent as ReactMouseEvent,
   PointerEvent as ReactPointerEvent,
 } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 
 import { useLocale, useT } from '@/lib/i18n/client'
@@ -206,15 +205,17 @@ export function BannerCarousel({ banners }: { banners: BannerView[] }) {
         const inner = (
           <>
             {src && (
-              <Image
+              // 媒体走 S3 签名下载（/api/media/file/<x> 返回 302 到临时 S3 URL），
+              // next/image 优化器无法优化「重定向」（服务端会 400 失败），故用原生 <img>，
+              // 让浏览器原生跟随 302。首张是首屏主图（LCP）：eager + 高优先级，不等懒加载；
+              // 其余等进入视口。
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
                 src={src}
                 alt={b.title || 'banner'}
-                fill
-                // 首张是首屏主图（LCP）：priority 让优化器预加载并直出 AVIF/WebP，
-                // 其余幻灯等进入视口再加载，避免一次性预拉全部轮播大图。
-                priority={i === 0}
-                sizes="100vw"
-                className="object-cover"
+                loading={i === 0 ? 'eager' : 'lazy'}
+                fetchPriority={i === 0 ? 'high' : 'auto'}
+                className="absolute inset-0 h-full w-full object-cover"
               />
             )}
             {/* 图上文字：压一层足够深的渐隐黑色再写字。

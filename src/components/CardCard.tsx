@@ -11,7 +11,6 @@
 // `onOpen` 是唯一的客户端副作用：给了它，普通左键点击才改成「就地弹窗」，
 // 因此整个组件必须是客户端组件。其余 props 与渲染结果一行未改——
 // 列表页 / 详情页 / 首页横条的用法都不需要动。
-import Image from 'next/image'
 import Link from 'next/link'
 
 import { formatYen } from '@/lib/format'
@@ -37,7 +36,7 @@ export function CardCard({
    * 爬虫与读屏看到的也仍是一个真实链接——弹窗只是拦了普通左键。
    */
   onOpen?: (card: CardView) => void
-  /** 首屏第一行的卡片设为 true，让 next/image 直接预加载、不再 lazy，优化 LCP。 */
+  /** 首屏第一行的卡片设为 true，原生 fetchPriority=high 优化 LCP（图片走 S3 签名 302，无法用 next/image 优化器）。 */
   priority?: boolean
 }) {
   const t = getTranslator(locale)
@@ -72,13 +71,16 @@ export function CardCard({
           </span>
         )}
         {src ? (
-          <Image
+          // 媒体走 S3 签名下载（/api/media/file/<x> 返回 302 到临时 S3 URL），
+          // next/image 优化器无法优化「重定向」，会在服务端 400 失败，故这里用原生 <img>，
+          // 让浏览器原生跟随 302。首屏行用 loading=eager + fetchPriority=high 优化 LCP。
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
             src={src}
             alt={img?.alt || card.name}
-            fill
-            sizes="(min-width: 1024px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw"
-            priority={priority}
-            className="object-cover transition-transform duration-200 ease-out group-hover:scale-[1.03] motion-reduce:transform-none"
+            loading="lazy"
+            fetchPriority={priority ? 'high' : 'auto'}
+            className="h-full w-full object-cover transition-transform duration-200 ease-out group-hover:scale-[1.03] motion-reduce:transform-none"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-sm text-hint">
