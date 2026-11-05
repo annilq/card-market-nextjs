@@ -7,6 +7,8 @@ import path from 'node:path'
 import configPromise from '@payload-config'
 import { getPayload, type Payload } from 'payload'
 
+import { MODULES } from '../src/access/roles'
+
 const SOURCE = '/Users/annilq/Documents/develop/card-market'
 const ADMIN_EMAIL = 'admin@example.com'
 const ADMIN_PASSWORD = 'admin12345'
@@ -63,14 +65,76 @@ async function uploadImage(payload: Payload, filePath: string, alt: string) {
 async function main() {
   const payload = await getPayload({ config: configPromise })
 
+  // 角色（幂等，先于内容写入）：
+  //  - 「管理员」：带 isAdmin 标志的特殊角色，默认拥有全部权限；
+  //  - 「运营」：普通角色，默认对所有模块有查看 / 新增 / 编辑 / 删除权限，
+  //    让新建用户始终有可选角色（避免死胡同）。
+  const adminRoleRes = await payload.find({
+    collection: 'roles',
+    where: { isAdmin: { equals: true } },
+    limit: 1,
+    overrideAccess: true,
+  })
+  let adminRoleId = adminRoleRes.docs[0]?.id
+  if (!adminRoleId) {
+    const created = await payload.create({
+      collection: 'roles',
+      overrideAccess: true,
+      data: { name: '管理员', isAdmin: true },
+    })
+    adminRoleId = created.id
+    console.log('+ 角色：管理员')
+  }
+
+  const allModulePerms = MODULES.map((m) => ({
+    module: m.slug,
+    view: true,
+    create: true,
+    update: true,
+    delete: true,
+  }))
+  const operatorRoleRes = await payload.find({
+    collection: 'roles',
+    where: { name: { equals: '运营' } },
+    limit: 1,
+    overrideAccess: true,
+  })
+  if (operatorRoleRes.docs.length === 0) {
+    await payload.create({
+      collection: 'roles',
+      overrideAccess: true,
+      data: { name: '运营', isAdmin: false, permissions: allModulePerms },
+    })
+    console.log('+ 角色：运营（默认全模块可读可写）')
+  }
+
   // 管理员账号（幂等）
   const existingUsers = await payload.find({ collection: 'users', limit: 1, overrideAccess: true })
   if (existingUsers.docs.length === 0) {
     await payload.create({
       collection: 'users',
-      data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD, name: '管理员' },
+      data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD, name: '管理员', role: adminRoleId as number },
     })
     console.log(`+ 管理员：${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`)
+  }
+
+  // 兜底：确保管理员账号绑定管理员角色（首用户钩子会处理新建场景，这里是旧库补绑）。
+  if (adminRoleId) {
+    const adminUsers = await payload.find({
+      collection: 'users',
+      where: { email: { equals: ADMIN_EMAIL } },
+      limit: 1,
+      overrideAccess: true,
+    })
+    const u = adminUsers.docs[0]
+    if (u && u.role !== adminRoleId && (u.role as { id?: unknown })?.id !== adminRoleId) {
+      await payload.update({
+        collection: 'users',
+        id: u.id,
+        data: { role: adminRoleId },
+        overrideAccess: true,
+      })
+    }
   }
 
   const existingIps = await payload.find({ collection: 'ips', limit: 1, overrideAccess: true })

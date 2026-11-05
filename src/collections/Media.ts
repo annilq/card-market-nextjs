@@ -1,4 +1,6 @@
-import type { CollectionConfig } from 'payload'
+import type { Access, CollectionConfig } from 'payload'
+
+import { moduleRead, roleAction } from '@/access/roles'
 
 export const Media: CollectionConfig = {
   slug: 'media',
@@ -12,11 +14,13 @@ export const Media: CollectionConfig = {
     group: { zh: '素材', en: 'Assets', ja: 'アセット' },
   },
   access: {
-    // 图片必须公开可读：前台所有页面都直接引用 /media/<filename>
-    read: () => true,
-    create: ({ req }) => Boolean(req.user),
-    update: ({ req }) => Boolean(req.user),
-    delete: ({ req }) => Boolean(req.user),
+    // 图片必须公开可读：前台所有页面都直接引用媒体 URL；
+    // 匿名访客始终可读（保持公开站点图片不裂图），登录用户按角色控制。
+    read: moduleRead('media', (() => true) as Access),
+    // 媒体的新增 / 编辑 / 删除纳入角色权限矩阵。
+    create: roleAction('media', 'create'),
+    update: roleAction('media', 'update'),
+    delete: roleAction('media', 'delete'),
   },
   upload: {
     mimeTypes: ['image/*'],

@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
-import { enabledOnly, isAdmin } from '@/access'
+import { enabledOnly } from '@/access'
+import { moduleRead, roleAction } from '@/access/roles'
 import { enabledField, sortField } from '@/fields/shared'
 import { revalidateHook } from '@/lib/revalidate'
 
@@ -15,7 +16,12 @@ export const Rarities: CollectionConfig = {
     defaultColumns: ['name', 'sort', 'enabled'],
     group: { zh: '分类', en: 'Taxonomy', ja: '分類' },
   },
-  access: { read: enabledOnly, create: isAdmin, update: isAdmin, delete: isAdmin },
+  access: {
+    read: moduleRead('rarities', enabledOnly),
+    create: roleAction('rarities', 'create'),
+    update: roleAction('rarities', 'update'),
+    delete: roleAction('rarities', 'delete'),
+  },
   hooks: {
     // 维度（稀有度）变动 → 筛选维度缓存立即失效。
     afterChange: [revalidateHook('facets')],

@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
-import { isAdmin, publishedOnly } from '@/access'
+import { publishedOnly } from '@/access'
+import { moduleRead, roleAction } from '@/access/roles'
 import { linkField, sortField, statusField } from '@/fields/shared'
 import { revalidateHook } from '@/lib/revalidate'
 
@@ -20,7 +21,12 @@ export const Banners: CollectionConfig = {
       ja: 'トップ carousel の単一スロット。スケジュール設定はなし。',
     },
   },
-  access: { read: publishedOnly, create: isAdmin, update: isAdmin, delete: isAdmin },
+  access: {
+    read: moduleRead('banners', publishedOnly),
+    create: roleAction('banners', 'create'),
+    update: roleAction('banners', 'update'),
+    delete: roleAction('banners', 'delete'),
+  },
   hooks: {
     // 轮播图变动 → 轮播缓存立即失效。
     afterChange: [revalidateHook('banners')],

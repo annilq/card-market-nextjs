@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
-import { enabledOnly, isAdmin } from '@/access'
+import { enabledOnly } from '@/access'
+import { moduleRead, roleAction } from '@/access/roles'
 import { enabledField, sortField } from '@/fields/shared'
 import { revalidateHook } from '@/lib/revalidate'
 
@@ -16,7 +17,12 @@ export const Ips: CollectionConfig = {
     group: { zh: '分类', en: 'Taxonomy', ja: '分類' },
     description: { zh: '卡牌所属 IP / 大类，如宝可梦、游戏王、龙珠', en: 'Top-level franchise, e.g. Pokémon / Yu-Gi-Oh!', ja: 'IP（例：ポケモン / 遊戯王）' },
   },
-  access: { read: enabledOnly, create: isAdmin, update: isAdmin, delete: isAdmin },
+  access: {
+    read: moduleRead('ips', enabledOnly),
+    create: roleAction('ips', 'create'),
+    update: roleAction('ips', 'update'),
+    delete: roleAction('ips', 'delete'),
+  },
   hooks: {
     // 维度（IP）变动 → 筛选维度缓存立即失效。
     afterChange: [revalidateHook('facets')],

@@ -1,6 +1,8 @@
 import { Gutter, Link } from '@payloadcms/ui'
 import { Image as ImageIcon, Link2, MousePointerClick } from 'lucide-react'
+import { DefaultTemplate } from '@payloadcms/next/templates'
 import React from 'react'
+import type { AdminViewServerProps } from 'payload'
 
 import { getOrigin } from '@/lib/site-url'
 import { explainLinkPatterns } from '@/lib/admin/public-links'
@@ -123,12 +125,34 @@ function buildSections(origin: string): { examples: { example: string; label: st
   return { examples, sections }
 }
 
-export async function HelpView() {
+export async function HelpView({
+  initPageResult,
+  params,
+  searchParams,
+  user,
+}: AdminViewServerProps) {
   const origin = await getOrigin()
   const { examples, sections } = buildSections(origin)
 
+  // 根视图（Root View）默认是「裸」渲染：Payload 的 Root 路由只在
+  // templateType === 'default' 时才套 DefaultTemplate（含侧栏 Nav + 顶栏 Header），
+  // 而按路由匹配的自定义根视图不会自动设置 templateType。所以必须显式用
+  // DefaultTemplate 包裹，才能复用管理端通用布局（左侧菜单、顶栏都在）。
+  // 数据取自 AdminViewServerProps：req/payload/permissions/visibleEntities 走
+  // initPageResult，params/searchParams/user 直接取。
   return (
-    <Gutter className="admin-help">
+    <DefaultTemplate
+      i18n={initPageResult.req.i18n}
+      locale={initPageResult.locale}
+      params={params}
+      payload={initPageResult.req.payload}
+      permissions={initPageResult.permissions}
+      req={initPageResult.req}
+      searchParams={searchParams}
+      user={user}
+      visibleEntities={initPageResult.visibleEntities}
+    >
+      <Gutter className="admin-help">
       <header className="admin-help__header">
         <h1 className="admin-help__title">后台操作帮助</h1>
         <p className="admin-help__lead">
@@ -216,7 +240,8 @@ export async function HelpView() {
           返回工作台
         </Link>
       </footer>
-    </Gutter>
+      </Gutter>
+    </DefaultTemplate>
   )
 }
 

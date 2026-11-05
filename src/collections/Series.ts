@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
-import { enabledOnly, isAdmin } from '@/access'
+import { enabledOnly } from '@/access'
+import { moduleRead, roleAction } from '@/access/roles'
 import { enabledField, sortField } from '@/fields/shared'
 import { revalidateHook } from '@/lib/revalidate'
 
@@ -15,7 +16,12 @@ export const Series: CollectionConfig = {
     defaultColumns: ['name', 'ip', 'sort', 'enabled'],
     group: { zh: '分类', en: 'Taxonomy', ja: '分類' },
   },
-  access: { read: enabledOnly, create: isAdmin, update: isAdmin, delete: isAdmin },
+  access: {
+    read: moduleRead('series', enabledOnly),
+    create: roleAction('series', 'create'),
+    update: roleAction('series', 'update'),
+    delete: roleAction('series', 'delete'),
+  },
   hooks: {
     // 维度（系列）变动 → 筛选维度缓存立即失效。
     afterChange: [revalidateHook('facets')],

@@ -1,6 +1,6 @@
 import { APIError, type CollectionConfig } from 'payload'
 
-import { adminOnlyField, isAdmin } from '@/access'
+import { moduleRead, roleAction, roleActionField } from '@/access/roles'
 
 const MESSAGE_STATUS = [
   { label: { zh: '新', en: 'New', ja: '新規' }, value: 'new' },
@@ -26,11 +26,11 @@ export const Messages: CollectionConfig = {
     },
   },
   access: {
-    // 公开可写、公开不可读（对齐 Directus Public 角色的字段级 create 权限）
-    read: ({ req }) => Boolean(req.user),
+    // 访客可写（create: () => true）；读取按角色控制（匿名不可读，登录按 messages 查看权限）。
+    read: moduleRead('messages', () => false),
     create: () => true,
-    update: isAdmin,
-    delete: isAdmin,
+    update: roleAction('messages', 'update'),
+    delete: roleAction('messages', 'delete'),
   },
   hooks: {
     beforeChange: [
@@ -92,7 +92,7 @@ export const Messages: CollectionConfig = {
       defaultValue: 'new',
       required: true,
       index: true,
-      access: { update: adminOnlyField },
+      access: { update: roleActionField('messages', 'update') },
       admin: {
         position: 'sidebar',
         // 列表里显示成语义色胶囊：这是团队每天排的队，「新」必须一眼可见。

@@ -1,5 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
+import { ensureAdminRole, isRoleAdmin, roleFieldUpdateOnlyAdmin } from '@/access/roles'
+
 export const Users: CollectionConfig = {
   slug: 'users',
   labels: { singular: { zh: '用户', en: 'User', ja: 'ユーザー' }, plural: { zh: '用户', en: 'Users', ja: 'ユーザー' } },
@@ -18,42 +20,48 @@ export const Users: CollectionConfig = {
   // 受控后台账号模型（角色 / 首次强制改密 / 首用户即管理员）。
   // 设计见 docs/specs/2026-11-04-back-office-account-auth.md。
   // 注意：access 收紧必须与 role 字段同时上线，否则会锁死或更不安全。
+  // role 现在是「角色」集合的关系字段（而非写死的 管理员/普通用户 下拉）：
+  //   - 管理员是 roles 里一条 isAdmin=true 的特殊记录；
+  //   - 普通角色来自角色管理（自定义 + 权限矩阵）；
+  //   - 新建用户时 filterOptions 过滤掉管理员角色，只能选已添加的普通角色；
+  //   - 角色字段仅管理员可改（字段级访问），杜绝普通用户自提权。
   access: {
     // 本人或管理员可见
-    read: ({ req, id }) => {
-      if (req.user?.role === '管理员') return true
+    read: async ({ req, id }) => {
+      if (await isRoleAdmin(req)) return true
       return Boolean(id && req.user?.id === id)
     },
     // 仅管理员可创建；集合为空时放行首用户（钩子保证其为管理员，避免被冒领）
     create: async ({ req }) => {
-      if (req.user?.role === '管理员') return true
+      if (await isRoleAdmin(req)) return true
       const { totalDocs } = await req.payload.count({ collection: 'users' })
       return totalDocs === 0
     },
     // 本人或管理员可改（role 另有字段级权限，普通用户无法自提权）
-    update: ({ req, id }) => {
-      if (req.user?.role === '管理员') return true
+    update: async ({ req, id }) => {
+      if (await isRoleAdmin(req)) return true
       return Boolean(id && req.user?.id === id)
     },
     // 仅管理员可删
-    delete: ({ req }) => req.user?.role === '管理员',
+    delete: ({ req }) => isRoleAdmin(req),
   },
   hooks: {
     beforeChange: [
       async ({ data, originalDoc, req }) => {
         const isCreate = !originalDoc?.id
-        // 首用户即管理员：集合为空时，无论调用方传什么角色都强制为管理员
+        // 首用户即管理员：集合为空时，确保存在「管理员」角色并强制绑定，
+        // 避免被冒领（首用户引导期间 filterOptions 放开，也能在 UI 选到）。
         if (isCreate) {
           const { totalDocs } = await req.payload.count({ collection: 'users' })
-          if (totalDocs === 0) data.role = '管理员'
+          if (totalDocs === 0) data.role = await ensureAdminRole(req)
           // 管理员新建的账号，默认强制下次登录改密
-          if (req.user?.role === '管理员') data.forcePasswordChange = true
+          if (await isRoleAdmin(req)) data.forcePasswordChange = true
         }
         // 改密场景：管理员改他人密码 → 对方须改密；本人改密 → 清零
         if (data.password) {
-          const isSelf = Boolean(req.user?.id) && originalDoc?.id === req.user?.id
+          const isSelf = Boolean(req.user?.id) && String(originalDoc?.id) === String(req.user?.id)
           const isAdminChangingOther =
-            req.user?.role === '管理员' && Boolean(originalDoc?.id) && originalDoc.id !== req.user.id
+            (await isRoleAdmin(req)) && Boolean(originalDoc?.id) && String(originalDoc?.id) !== String(req.user?.id)
           if (isAdminChangingOther) data.forcePasswordChange = true
           else if (isSelf) data.forcePasswordChange = false
         }
@@ -79,15 +87,24 @@ export const Users: CollectionConfig = {
     },
     {
       name: 'role',
-      type: 'select',
+      type: 'relationship',
+      relationTo: 'roles',
       label: { zh: '角色', en: 'Role', ja: '権限' },
-      defaultValue: '普通用户',
-      options: [
-        { label: { zh: '管理员', en: 'Admin', ja: '管理者' }, value: '管理员' },
-        { label: { zh: '普通用户', en: 'Operator', ja: '運営' }, value: '普通用户' },
-      ],
+      required: true,
+      hasMany: false,
+      // 新建用户（无 id）时过滤掉「管理员」角色，只能选已添加的普通角色；
+      // 首用户引导（集合为空）放开，否则无法把首用户设为管理员；
+      // 编辑已有用户（有 id）放开，允许管理员保持 / 调整对方角色。
+      filterOptions: async ({ req, id }) => {
+        if (id) return true
+        const { totalDocs } = await req.payload.count({ collection: 'users' })
+        if (totalDocs === 0) return true
+        return { isAdmin: { equals: false } }
+      },
       // 字段级权限：只有管理员能改角色，杜绝普通用户把自己的角色改成管理员（自提权）
-      access: { update: ({ req }) => req.user?.role === '管理员' },
+      access: {
+        update: roleFieldUpdateOnlyAdmin,
+      },
     },
     {
       name: 'forcePasswordChange',

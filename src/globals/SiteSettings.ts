@@ -1,12 +1,17 @@
 import type { GlobalConfig } from 'payload'
 
+import { roleAction } from '@/access/roles'
 import { revalidateGlobalHook } from '@/lib/revalidate'
 
 export const SiteSettings: GlobalConfig = {
   slug: 'site-settings',
   label: { zh: '站点设置', en: 'Site settings', ja: 'サイト設定' },
   admin: { group: { zh: '设置', en: 'Settings', ja: '設定' } },
-  access: { read: () => true },
+  // 读取保持公开（前台每个页面布局都用它）；编辑按角色控制（管理员或拥有 site-settings 编辑权限的角色）。
+  access: {
+    read: () => true,
+    update: roleAction('site-settings', 'update'),
+  },
   hooks: {
     // 站点设置变动 → 站点设置缓存立即失效（每个页面布局都用它）。
     afterChange: [revalidateGlobalHook('site-settings')],

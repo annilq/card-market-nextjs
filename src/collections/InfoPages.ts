@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
-import { isAdmin, publishedOnly } from '@/access'
+import { publishedOnly } from '@/access'
+import { moduleRead, roleAction } from '@/access/roles'
 import { linkField, sortField, statusField } from '@/fields/shared'
 import { revalidateHook } from '@/lib/revalidate'
 
@@ -28,7 +29,12 @@ export const InfoPages: CollectionConfig = {
       ja: '4つの固定情報ページ。キーはコード側で固定、本文のみ管理。',
     },
   },
-  access: { read: publishedOnly, create: isAdmin, update: isAdmin, delete: isAdmin },
+  access: {
+    read: moduleRead('info-pages', publishedOnly),
+    create: roleAction('info-pages', 'create'),
+    update: roleAction('info-pages', 'update'),
+    delete: roleAction('info-pages', 'delete'),
+  },
   hooks: {
     // 信息页变动 → 信息页缓存立即失效。
     afterChange: [revalidateHook('info-pages')],

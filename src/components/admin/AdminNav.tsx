@@ -45,19 +45,15 @@ export function AdminNav({ payload, permissions, visibleEntities }: Props) {
   // （前缀匹配会让它在所有页面上都亮着）。
   const items: AdminNavItem[] = [
     {
+      // 工作台（仪表盘）不是集合也不是全局，所以 Payload 的 navGroups 里没有它——
+      // 换成平铺菜单之后，回 /admin 的唯一路径成了面包屑里那个没有文字的首页图标。
+      // 它是一级菜单里最该在的第一项，单独加进来，并且只按**完全匹配**判当前项
+      // （前缀匹配会让它在所有页面上都亮着）。
       href: adminRoute,
       icon: 'dashboard',
       label: '工作台',
       slug: 'dashboard',
       exact: true,
-    },
-    {
-      // 帮助页不是集合也不是全局，navGroups 里没有它，和「工作台」一样单独加。
-      // 放在工作台之后：看得懂后台之后第一件事就是查「链接怎么填」。
-      href: `${adminRoute}/help`,
-      icon: 'help',
-      label: '帮助',
-      slug: 'help',
     },
   ]
 
@@ -88,6 +84,16 @@ export function AdminNav({ payload, permissions, visibleEntities }: Props) {
       slug,
     })
   }
+
+  // 帮助页不是集合也不是全局，navGroups 里没有它，和「工作台」一样单独加。
+  // 放在菜单最底部：日常高频进的是固定的那几个集合，帮助属于「需要时再查」的
+  // 次要入口，不占用每天顶部位置；其下才是「登出」。
+  items.push({
+    href: `${adminRoute}/help`,
+    icon: 'help',
+    label: '帮助',
+    slug: 'help',
+  })
 
   return (
     <AdminNavShell>

@@ -24,6 +24,7 @@ import { Ips } from '@/collections/Ips'
 import { Media } from '@/collections/Media'
 import { Messages } from '@/collections/Messages'
 import { Rarities } from '@/collections/Rarities'
+import { Roles } from '@/collections/Roles'
 import { Series } from '@/collections/Series'
 import { Shops } from '@/collections/Shops'
 import { SubSeries } from '@/collections/SubSeries'
@@ -80,6 +81,7 @@ export default buildConfig({
   },
   collections: [
     Users,
+    Roles,
     Media,
     Ips,
     Series,

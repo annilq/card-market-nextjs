@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
-import { enabledOnly, isAdmin } from '@/access'
+import { enabledOnly } from '@/access'
+import { moduleRead, roleAction } from '@/access/roles'
 import { enabledField, sortField } from '@/fields/shared'
 import { revalidateHook } from '@/lib/revalidate'
 
@@ -20,7 +21,12 @@ export const SubSeries: CollectionConfig = {
       ja: '2階層のIPでも必須（NULL は一意制約に参加しないため）。',
     },
   },
-  access: { read: enabledOnly, create: isAdmin, update: isAdmin, delete: isAdmin },
+  access: {
+    read: moduleRead('sub-series', enabledOnly),
+    create: roleAction('sub-series', 'create'),
+    update: roleAction('sub-series', 'update'),
+    delete: roleAction('sub-series', 'delete'),
+  },
   hooks: {
     // 维度（子系列）变动 → 筛选维度缓存立即失效。
     afterChange: [revalidateHook('facets')],

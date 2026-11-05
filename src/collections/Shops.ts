@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
-import { isAdmin, publishedOnly } from '@/access'
+import { publishedOnly } from '@/access'
+import { moduleRead, roleAction } from '@/access/roles'
 import { linkField, sortField, statusField } from '@/fields/shared'
 import { revalidateHook } from '@/lib/revalidate'
 
@@ -15,7 +16,12 @@ export const Shops: CollectionConfig = {
     defaultColumns: ['name', 'address', 'sort', 'status', 'publicLink'],
     group: { zh: '内容', en: 'Content', ja: 'コンテンツ' },
   },
-  access: { read: publishedOnly, create: isAdmin, update: isAdmin, delete: isAdmin },
+  access: {
+    read: moduleRead('shops', publishedOnly),
+    create: roleAction('shops', 'create'),
+    update: roleAction('shops', 'update'),
+    delete: roleAction('shops', 'delete'),
+  },
   hooks: {
     beforeChange: [
       ({ data }) => {

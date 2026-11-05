@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
-import { isAdmin, publishedAnnouncementOnly } from '@/access'
+import { publishedAnnouncementOnly } from '@/access'
+import { moduleRead, roleAction } from '@/access/roles'
 import { linkField, sortField, statusField } from '@/fields/shared'
 import { revalidateHook } from '@/lib/revalidate'
 
@@ -21,10 +22,10 @@ export const Announcements: CollectionConfig = {
     },
   },
   access: {
-    read: publishedAnnouncementOnly,
-    create: isAdmin,
-    update: isAdmin,
-    delete: isAdmin,
+    read: moduleRead('announcements', publishedAnnouncementOnly),
+    create: roleAction('announcements', 'create'),
+    update: roleAction('announcements', 'update'),
+    delete: roleAction('announcements', 'delete'),
   },
   hooks: {
     // 公告变动 → 公告缓存立即失效。

@@ -1,6 +1,7 @@
 import { APIError, type CollectionConfig, type Where } from 'payload'
 
-import { isAdmin, publishedOnly } from '@/access'
+import { publishedOnly } from '@/access'
+import { moduleRead, roleAction } from '@/access/roles'
 import { linkField, statusField } from '@/fields/shared'
 import { revalidateHook } from '@/lib/revalidate'
 
@@ -35,10 +36,10 @@ export const Cards: CollectionConfig = {
     group: { zh: '商品', en: 'Catalog', ja: '商品' },
   },
   access: {
-    read: publishedOnly,
-    create: isAdmin,
-    update: isAdmin,
-    delete: isAdmin,
+    read: moduleRead('cards', publishedOnly),
+    create: roleAction('cards', 'create'),
+    update: roleAction('cards', 'update'),
+    delete: roleAction('cards', 'delete'),
   },
   hooks: {
     beforeValidate: [
