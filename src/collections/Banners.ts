@@ -8,7 +8,7 @@ export const Banners: CollectionConfig = {
   slug: 'banners',
   labels: {
     singular: { zh: '首页轮播', en: 'Banner', ja: 'バナー' },
-    plural: { zh: '首页轮播（单槽位）', en: 'Banners (home carousel)', ja: 'バナー（トップ carousel）' },
+    plural: { zh: '首页轮播', en: 'Banners ', ja: 'バナー' },
   },
   admin: {
     useAsTitle: 'title',
