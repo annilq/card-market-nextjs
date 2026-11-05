@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { isAdmin, publishedOnly } from '@/access'
-import { sortField, statusField } from '@/fields/shared'
+import { linkField, sortField, statusField } from '@/fields/shared'
 import { revalidateHook } from '@/lib/revalidate'
 
 export const Shops: CollectionConfig = {
@@ -12,7 +12,7 @@ export const Shops: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'address', 'sort', 'status'],
+    defaultColumns: ['name', 'address', 'sort', 'status', 'publicLink'],
     group: { zh: '内容', en: 'Content', ja: 'コンテンツ' },
   },
   access: { read: publishedOnly, create: isAdmin, update: isAdmin, delete: isAdmin },
@@ -90,5 +90,6 @@ export const Shops: CollectionConfig = {
     { name: 'description', label: { zh: '门店介绍', en: 'Description', ja: '紹介' }, type: 'textarea' },
     sortField(),
     statusField({ defaultValue: 'published' }),
+    linkField(),
   ],
 }

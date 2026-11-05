@@ -306,6 +306,18 @@ select {
   border-bottom: 0;
 }
 
+/*
+ * 顶栏面包屑：去掉开头那颗「仪表板」首页图标以及紧跟它的 `/` 分隔符。
+ * Payload 默认在 step-nav 最前面放一个指向 /admin 的 home 图标（.step-nav__home），
+ * 后面再跟一个纯文案的 `/`；侧栏已经常驻「工作台」入口，这颗图标是重复的，
+ * 而单独留下的 `/` 会成为一段没有意义的开头分隔符，所以一并隐藏。
+ * 用 `+ span` 精准命中 home 之后的那一个分隔符，不会波及后续层级的分隔符。
+ */
+.app-header__step-nav-wrapper .step-nav__home,
+.app-header__step-nav-wrapper .step-nav__home + span {
+  display: none;
+}
+
 .nav {
   background-color: var(--rail-bg);
   border-right: 0;
@@ -711,6 +723,77 @@ select {
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
+}
+
+/* 「链接」列（LinkCell）：默认一枚可点的小胶囊，点开显示路径 + 复制按钮。
+   与状态胶囊同一套尺寸语言，扫列表时不抢注意力。 */
+.admin-linkcell__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--theme-border-color);
+  border-radius: 999px;
+  background-color: transparent;
+  color: var(--theme-elevation-700);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out;
+}
+.admin-linkcell__badge:hover {
+  border-color: var(--theme-elevation-550);
+  background-color: var(--theme-elevation-100);
+  color: var(--theme-elevation-1000);
+}
+.admin-linkcell__open {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.admin-linkcell__path {
+  max-width: 220px;
+  overflow: hidden;
+  padding: 0 4px;
+  border: none;
+  background: transparent;
+  color: var(--theme-elevation-1000);
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 12px;
+  line-height: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.admin-linkcell__path:hover {
+  text-decoration: underline;
+}
+.admin-linkcell__copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--theme-border-color);
+  border-radius: var(--style-radius-s, 6px);
+  background-color: transparent;
+  color: var(--theme-elevation-700);
+  cursor: pointer;
+  transition: background-color 120ms ease-out, color 120ms ease-out, border-color 120ms ease-out;
+}
+.admin-linkcell__copy:hover {
+  border-color: var(--theme-elevation-550);
+  background-color: var(--theme-elevation-100);
+  color: var(--theme-elevation-1000);
+}
+.admin-linkcell__icon {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
 }
 
 /* 状态胶囊（StatusCell）：22px 高、12px 字，横向扫列表时能一眼分出三档。

@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { isAdmin, publishedOnly } from '@/access'
-import { sortField, statusField } from '@/fields/shared'
+import { linkField, sortField, statusField } from '@/fields/shared'
 import { revalidateHook } from '@/lib/revalidate'
 
 /** 网站审核要求的四个固定信息页标识（前端清单与页脚入口共用）。 */
@@ -20,7 +20,7 @@ export const InfoPages: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['pageKey', 'title', 'status'],
+    defaultColumns: ['pageKey', 'title', 'status', 'publicLink'],
     group: { zh: '内容', en: 'Content', ja: 'コンテンツ' },
     description: {
       zh: '四个固定信息页（运营信息 / 个人信息收集 / 利用规则 / 数据使用）。标识由前端登记，后台只维护标题与正文；未发布时前台仍 200 并提示「尚未发布」。',
@@ -49,5 +49,6 @@ export const InfoPages: CollectionConfig = {
     { name: 'body', label: { zh: '正文', en: 'Body', ja: '本文' }, type: 'richText' },
     sortField(),
     statusField({ defaultValue: 'draft' }),
+    linkField(),
   ],
 }

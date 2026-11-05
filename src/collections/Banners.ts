@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { isAdmin, publishedOnly } from '@/access'
-import { sortField, statusField } from '@/fields/shared'
+import { linkField, sortField, statusField } from '@/fields/shared'
 import { revalidateHook } from '@/lib/revalidate'
 
 export const Banners: CollectionConfig = {
@@ -12,7 +12,7 @@ export const Banners: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'sort', 'status'],
+    defaultColumns: ['title', 'sort', 'status', 'publicLink'],
     group: { zh: '内容', en: 'Content', ja: 'コンテンツ' },
     description: {
       zh: '单槽位：仅首页顶部轮播，无定时上下线，轮播间隔由前端常量控制。',
@@ -44,5 +44,6 @@ export const Banners: CollectionConfig = {
     },
     sortField(),
     statusField({ defaultValue: 'draft' }),
+    linkField(),
   ],
 }

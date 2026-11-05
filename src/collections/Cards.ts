@@ -1,7 +1,7 @@
 import { APIError, type CollectionConfig, type Where } from 'payload'
 
 import { isAdmin, publishedOnly } from '@/access'
-import { statusField } from '@/fields/shared'
+import { linkField, statusField } from '@/fields/shared'
 import { revalidateHook } from '@/lib/revalidate'
 
 const relId = (value: unknown): string | number | null => {
@@ -31,7 +31,7 @@ export const Cards: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'code', 'ip', 'price', 'isHighValue', 'status'],
+    defaultColumns: ['name', 'code', 'ip', 'price', 'isHighValue', 'status', 'publicLink'],
     group: { zh: '商品', en: 'Catalog', ja: '商品' },
   },
   access: {
@@ -185,5 +185,6 @@ export const Cards: CollectionConfig = {
       index: true,
       admin: { hidden: true, readOnly: true, disableBulkEdit: true },
     },
+    linkField(),
   ],
 }

@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { isAdmin, publishedAnnouncementOnly } from '@/access'
-import { sortField, statusField } from '@/fields/shared'
+import { linkField, sortField, statusField } from '@/fields/shared'
 import { revalidateHook } from '@/lib/revalidate'
 
 export const Announcements: CollectionConfig = {
@@ -12,7 +12,7 @@ export const Announcements: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'isPinned', 'publishedAt', 'status'],
+    defaultColumns: ['title', 'isPinned', 'publishedAt', 'status', 'publicLink'],
     group: { zh: '内容', en: 'Content', ja: 'コンテンツ' },
     description: {
       zh: '前台可见 = 已发布 且 (发布时间为空 或 已到点)；排序：置顶优先，其次发布时间倒序。',
@@ -56,5 +56,6 @@ export const Announcements: CollectionConfig = {
     },
     sortField(),
     statusField({ defaultValue: 'draft' }),
+    linkField(),
   ],
 }

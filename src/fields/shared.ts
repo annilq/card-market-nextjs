@@ -47,3 +47,22 @@ export function sortField() {
     admin: { position: 'sidebar' as const },
   }
 }
+
+/**
+ * 列表里的「链接」列：展示当前条目的前台路径，点击展开并可复制。
+ *
+ * 不是数据库字段（type: 'ui'），列里显示什么由 LinkCell 按集合拼出来，
+ * 拼链接的规则在 src/lib/admin/public-links.ts。加这列是为了运营能直接
+ * 拿到详情页地址，填进 banner 的跳转链接，不用自己拼 id。
+ */
+export function linkField() {
+  return {
+    name: 'publicLink',
+    label: { zh: '链接', en: 'Link', ja: 'リンク' },
+    type: 'ui' as const,
+    admin: {
+      components: { Cell: '@/components/admin/LinkCell#LinkCell' },
+      width: '90px',
+    },
+  }
+}
