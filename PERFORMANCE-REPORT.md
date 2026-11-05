@@ -299,3 +299,58 @@ skipTrailingSlashRedirect: true,
 - **mobile LCP 上限**：首页 / 门店 LCP 取决于 B2 媒体延迟，沙箱内不稳定。线上 Vercel → B2 同区域
   会更小；preconnect + preload 已把“请求发起时机”压到最早，`next start` 本地测得 desktop LCP
   普遍 1.1–2.2 s，符合预期。
+
+---
+
+## 9. 后台逐页 Lighthouse 评分 + 优化（第三轮）
+
+> 对 `next start` 本地生产构建（连生产 DB）跑 Lighthouse 13，覆盖 `/admin/login`、
+> `/admin/collections/cards`、`/admin` 三页，mobile（默认节流）+ desktop（`--preset=desktop`）。
+
+### 9.1 关键发现：后台整页 500 落到 Next error 边界（不是性能问题）
+
+首次跑分时三页都是 **A:69 / SEO:45 / Speed Index ~5 s**，且 `html-has-lang`、`document-title`、
+`meta-description`、`landmark-one-main` 全部判 0 —— 但 `curl` 拿到的 HTML 明明有
+`<html lang="zh">`、`<title>`、`<meta name="description">`。原因是：
+
+- Lighthouse（以及任何真实浏览器）会执行完整客户端水合；`curl` 只拿到首屏 RSC 壳，掩盖了崩溃。
+- headless Chrome 的 DOM 是 `<html id="__next_error__">` —— 后台 SSR 抛错后落到 Next error 边界。
+- 服务端日志给出根因：
+  `column users.force_password_change does not exist`。
+
+**根因**：Payload 的 postgres adapter 约定「字段名 camelCase → 列名 snake_case」
+（`forcePasswordChange` → `force_password_change`，与 `reset_password_token`/`login_attempts`/
+`avatar_id` 一致），并且 select 字段落地为独立 ENUM 类型（`enum_users_role`）。
+但手写的迁移 `20261104_221900` 用了字面量 `"forcePasswordChange"`（camelCase 列）和
+普通 `varchar` 的 `role`，于是后台每次查 `users` 表都 500。**这是功能级 bug，Lighthouse 只是把它暴露出来。**
+
+### 9.2 修复
+
+- 新增幂等迁移 `20261105_000000_fix_forcepass_column`：把 `forcePasswordChange` 改名为
+  `force_password_change`（`information_schema` 存在性判断，全新库/已部署库都安全）。
+- 把自动生成但因「列已存在」会失败的 `20261104_235929` 改成幂等版本：确保
+  `enum_users_role` 存在、`role` 由 `varchar` 原地转 `enum`（先 `DROP DEFAULT` 再转、再
+  `SET DEFAULT`，否则报 `default ... cannot be cast automatically`）、缺失列补建。
+- 同步修正 `20261104_221900` 的 `up/down` 为正确的 snake_case + enum 建法。
+- 通过仓库约定命令执行：`npx payload migrate`（不是裸 `psql`），迁移链全部 `Yes`、无 pending。
+
+### 9.3 修复后评分
+
+| 页面 | Mobile P | Desktop P | Accessibility | Best Practices | SEO |
+|---|---|---|---|---|---|
+| `/admin/login` | 97 | 100 | 98 | 100 | 63 |
+| `/admin/collections/cards` | 97 | 100 | 98 | 100 | 63 |
+| `/admin` | 97 | 100 | 98 | 100 | 63 |
+
+修复前（三页一致）：Mobile P 93–95 / Desktop P 95–99 / **A 69 / BP 96 / SEO 45**。
+修复后 **A 69→98、BP 96→100、Desktop P→100**，`/admin/login` 能正常渲染出邮箱/密码表单。
+
+### 9.4 剩余两项（均为预期/不可改）
+
+- **SEO 63（唯一失分 `is-crawlable`）**：`/admin` 主动 `noindex,nofollow` 且 `robots.txt` 禁止
+  抓取后台 —— 这是正确的安全策略，不应为了刷分放开索引。
+- **A11y 98（唯一失分 `landmark-one-main`）**：Payload 生成的 admin 骨架没有 `<main>` 地标，
+  属 Payload 内部标记；改动它需要 fork 其布局组件，收益极低（98→100），不做。
+
+> 结论：后台这轮的「优化」实质是修掉一个让 `/admin` 整体进不去的 schema 列名 bug；
+> 分数从「在错误页上测出来的 A:69/SEO:45」恢复到真实后台的 A:98/BP:100/Desktop P:100。

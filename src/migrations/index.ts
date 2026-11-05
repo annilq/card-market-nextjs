@@ -30,16 +30,16 @@ export const migrations = [
   {
     up: migration_20261104_104939.up,
     down: migration_20261104_104939.down,
-    name: '20261104_104939'
+    name: '20261104_104939',
   },
   {
     up: migration_20261104_221900_role_phone_forcepass.up,
     down: migration_20261104_221900_role_phone_forcepass.down,
-    name: '20261104_221900_role_phone_forcepass'
+    name: '20261104_221900_role_phone_forcepass',
   },
   {
     up: migration_20261105_000000_fix_forcepass_column.up,
     down: migration_20261105_000000_fix_forcepass_column.down,
-    name: '20261105_000000_fix_forcepass_column'
+    name: '20261105_000000_fix_forcepass_column',
   },
 ];
