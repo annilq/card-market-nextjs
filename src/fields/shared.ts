@@ -62,7 +62,7 @@ export function linkField() {
     type: 'ui' as const,
     admin: {
       components: { Cell: '@/components/admin/LinkCell#LinkCell' },
-      width: '90px',
+      width: '220px',
     },
   }
 }

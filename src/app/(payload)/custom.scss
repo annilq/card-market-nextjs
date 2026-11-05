@@ -725,30 +725,8 @@ select {
   gap: 6px;
 }
 
-/* 「链接」列（LinkCell）：默认一枚可点的小胶囊，点开显示路径 + 复制按钮。
-   与状态胶囊同一套尺寸语言，扫列表时不抢注意力。 */
-.admin-linkcell__badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  height: 22px;
-  padding: 0 8px;
-  border: 1px solid var(--theme-border-color);
-  border-radius: 999px;
-  background-color: transparent;
-  color: var(--theme-elevation-700);
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out;
-}
-.admin-linkcell__badge:hover {
-  border-color: var(--theme-elevation-550);
-  background-color: var(--theme-elevation-100);
-  color: var(--theme-elevation-1000);
-}
+/* 「链接」列（LinkCell）：常显路径 + 复制 / 打开两颗按钮。
+   路径可点即复制，后面跟一颗复制图标和一颗打开图标。 */
 .admin-linkcell__open {
   display: inline-flex;
   align-items: center;
@@ -789,6 +767,16 @@ select {
   border-color: var(--theme-elevation-550);
   background-color: var(--theme-elevation-100);
   color: var(--theme-elevation-1000);
+}
+/* 未发布记录：打开按钮描边偏暖色，提示点了会 404（点击仍会再弹一次确认）。 */
+.admin-linkcell__copy--warn {
+  border-color: var(--theme-warning-500, #d97706);
+  color: var(--theme-warning-500, #d97706);
+}
+.admin-linkcell__copy--warn:hover {
+  border-color: var(--theme-warning-500, #d97706);
+  background-color: color-mix(in srgb, var(--theme-warning-500, #d97706) 12%, transparent);
+  color: var(--theme-warning-500, #d97706);
 }
 .admin-linkcell__icon {
   width: 13px;

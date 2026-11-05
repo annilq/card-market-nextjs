@@ -1,29 +1,21 @@
 'use client'
 
 import { toast } from '@payloadcms/ui'
-import { Check, Copy, Link2 } from 'lucide-react'
-import React, { useCallback, useEffect, useState } from 'react'
+import { Check, Copy, ExternalLink } from 'lucide-react'
+import React, { useCallback, useState } from 'react'
 
 /**
  * 列表里的「链接」单元格（客户端部分）。
  *
- * 交互：默认显示一枚 `链接` 小胶囊，鼠标悬停给出提示「点击展开当前条目的前台链接」。
- * 点击后展开完整路径与一颗复制按钮，复制走 Clipboard API 并给一条 toast。
- * 展开状态三秒后自动收起，避免整列常开把行高撑乱。
+ * 直接常显路径 + 两颗按钮：复制、打开。路径是相对站内路径（如 /cards/12），
+ * 拼链接的规则在服务端算好传进来（见 public-links.ts），这里不重复推导。
  *
- * 为什么路径在服务端算好再传进来：拼链接的规则只该有一份（见
- * src/lib/admin/public-links.ts）。这里只负责展示与复制，不重复推导。
+ * 打开按钮：前台可见的记录直接开新标签；草稿 / 归档 / 定时未到点的记录前台
+ * 实际看不到（点了会 404），所以先弹一条确认，用户坚持才跳。判定在服务端
+ * 的 LinkCell 里算好（visible），这里只按结果决定要不要拦一下。
  */
-export function LinkCellClient({ path }: { path: string }) {
-  const [open, setOpen] = useState(false)
+export function LinkCellClient({ path, visible }: { path: string; visible: boolean }) {
   const [copied, setCopied] = useState(false)
-
-  // 展开后 4 秒自动收起；再次点击可立即切换。
-  useEffect(() => {
-    if (!open) return
-    const timer = window.setTimeout(() => setOpen(false), 4000)
-    return () => window.clearTimeout(timer)
-  }, [open])
 
   const copy = useCallback(async () => {
     try {
@@ -38,26 +30,20 @@ export function LinkCellClient({ path }: { path: string }) {
     }
   }, [path])
 
-  if (!open) {
-    return (
-      <button
-        className="admin-linkcell__badge"
-        onClick={() => setOpen(true)}
-        title={`点击展开当前条目的前台链接（${path}）`}
-        type="button"
-      >
-        <Link2 className="admin-linkcell__icon" />
-        链接
-      </button>
-    )
-  }
+  const open = useCallback(() => {
+    if (!visible) {
+      const ok = window.confirm('这条记录当前未发布，前台看不到（打开会 404）。仍要打开吗？')
+      if (!ok) return
+    }
+    window.open(path, '_blank', 'noopener,noreferrer')
+  }, [path, visible])
 
   return (
     <span className="admin-linkcell__open">
       <button
         className="admin-linkcell__path"
         onClick={() => void copy()}
-        title="点击复制"
+        title={`复制 ${path}`}
         type="button"
       >
         {path}
@@ -70,6 +56,15 @@ export function LinkCellClient({ path }: { path: string }) {
         type="button"
       >
         {copied ? <Check className="admin-linkcell__icon" /> : <Copy className="admin-linkcell__icon" />}
+      </button>
+      <button
+        aria-label={visible ? '打开前台页面' : '打开前台页面（当前未发布）'}
+        className={`admin-linkcell__copy${visible ? '' : ' admin-linkcell__copy--warn'}`}
+        onClick={open}
+        title={visible ? '打开前台页面' : '当前未发布，前台看不到'}
+        type="button"
+      >
+        <ExternalLink className="admin-linkcell__icon" />
       </button>
     </span>
   )
