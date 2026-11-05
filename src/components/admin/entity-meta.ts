@@ -5,6 +5,7 @@ import {
   Image as ImageIcon,
   LayoutDashboard,
   Inbox,
+  KeyRound,
   Layers,
   ListTree,
   Megaphone,
@@ -39,6 +40,7 @@ export const ENTITY_ICONS = {
   shops: Store,
   'sub-series': ListTree,
   users: Users,
+  roles: KeyRound,
 } as const
 
 export const ENTITY_DESCRIPTIONS: Record<string, string> = {
@@ -50,6 +52,7 @@ export const ENTITY_DESCRIPTIONS: Record<string, string> = {
   media: '图片素材（卡牌图、banner、门店照片）',
   messages: '访客留言工单：新 / 已处理 / 已归档 / 垃圾',
   rarities: '稀有度及其展示顺序',
+  roles: '后台角色与模块权限',
   series: 'IP 下的系列',
   'site-settings': '站点名称、联系方式与全局文案',
   shops: '门店：地址、营业时间、地图坐标',
