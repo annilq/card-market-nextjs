@@ -732,6 +732,12 @@ select {
   align-items: center;
   gap: 2px;
 }
+/* banner 未填跳转时的占位：灰字，无按钮。 */
+.admin-linkcell__empty {
+  color: var(--theme-elevation-450);
+  font-size: 12px;
+  font-style: italic;
+}
 .admin-linkcell__path {
   max-width: 220px;
   overflow: hidden;

@@ -66,6 +66,34 @@ export function publicPathFor(slug: string, doc: RowDoc): string | null {
 }
 
 /**
+ * 「链接」列要展示的地址。
+ *
+ * 对大多数集合，展示的是**这条记录自己的前台地址**（publicPathFor）。
+ * 但 banner 不一样：banner 本身就是首页的一张轮播，它有自己的 `link` 字段
+ * （点了跳到哪）。运营在 banner 列表里要看的是每条 banner 配的跳转目标，
+ * 不是「它所在的页面」（那永远是首页 `/`）。所以这里对 banner 特判：
+ *
+ * - link 有值 → 原样返回（站内路径或外链都可能是运营填的）。
+ * - link 为空 → href 为 null，label 给一句「未设置」，避免显示空单元格让人以为漏看。
+ *
+ * 其它集合沿用 publicPathFor；拼不出来时 href 与 label 都是 null（不渲染）。
+ */
+export function linkCellModel(
+  slug: string,
+  doc: RowDoc,
+): { href: string | null; label: string | null; isBannerLink: boolean } {
+  if (slug === 'banners') {
+    const link = doc.link
+    const value = typeof link === 'string' ? link.trim() : ''
+    return value
+      ? { href: value, label: value, isBannerLink: true }
+      : { href: null, label: '未设置跳转', isBannerLink: true }
+  }
+  const path = publicPathFor(slug, doc)
+  return { href: path, label: path, isBannerLink: false }
+}
+
+/**
  * 帮助页要展示的「有哪些链接可填」清单。顺序刻意按运营最常填的顺序排。
  * 从同一张登记表衍生的说明文本，避免帮助页写死后与代码不一致。
  */
