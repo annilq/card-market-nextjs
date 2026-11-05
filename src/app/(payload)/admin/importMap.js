@@ -23,6 +23,7 @@ import { UnderlineFeatureClient as UnderlineFeatureClient_e70f5e05f09f93e00b997e
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { StatusCell as StatusCell_ff32efc137541c6552ed42594a323755 } from '@/components/admin/StatusCell'
+import { LinkCell as LinkCell_1421bd8e7e18ea3b1ddeddbf89a7fa1b } from '@/components/admin/LinkCell'
 import { MapPickerField as MapPickerField_d25e7d6048f8e84a9a4fd68f2fe40387 } from '@/collections/Shops/MapPickerField'
 import { AdminAccountAvatar as AdminAccountAvatar_cf75d5cf4dcb8e029646575cda15327f } from '@/components/admin/AdminAccountAvatar'
 import { AdminNav as AdminNav_2623bc737c612ce9420322f2210a7f19 } from '@/components/admin/AdminNav'
@@ -33,6 +34,7 @@ import { LoginIntro as LoginIntro_a23c667f36096b0f05e649a6391dbaaf } from '@/com
 import { AdminProviders as AdminProviders_f1687a21d4a9f2d81c356a10e59ecdc1 } from '@/components/admin/AdminProviders'
 import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
 import { DashboardView as DashboardView_8d5ccf53266e3797f61e9453e2f2d431 } from '@/components/admin/DashboardView'
+import { HelpView as HelpView_b49611ccd828469519fd79e264a9eb51 } from '@/components/admin/HelpView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
@@ -62,6 +64,7 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@/components/admin/StatusCell#StatusCell": StatusCell_ff32efc137541c6552ed42594a323755,
+  "@/components/admin/LinkCell#LinkCell": LinkCell_1421bd8e7e18ea3b1ddeddbf89a7fa1b,
   "@/collections/Shops/MapPickerField#MapPickerField": MapPickerField_d25e7d6048f8e84a9a4fd68f2fe40387,
   "@/components/admin/AdminAccountAvatar#AdminAccountAvatar": AdminAccountAvatar_cf75d5cf4dcb8e029646575cda15327f,
   "@/components/admin/AdminNav#AdminNav": AdminNav_2623bc737c612ce9420322f2210a7f19,
@@ -72,5 +75,6 @@ export const importMap = {
   "@/components/admin/AdminProviders#AdminProviders": AdminProviders_f1687a21d4a9f2d81c356a10e59ecdc1,
   "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,
   "@/components/admin/DashboardView#DashboardView": DashboardView_8d5ccf53266e3797f61e9453e2f2d431,
+  "@/components/admin/HelpView#HelpView": HelpView_b49611ccd828469519fd79e264a9eb51,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

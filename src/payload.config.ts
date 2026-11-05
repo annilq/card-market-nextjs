@@ -69,6 +69,12 @@ export default buildConfig({
       views: {
         // 替换默认的「集合卡片墙」：规模 / 最近更新 / 待处理留言 / 集合索引
         dashboard: { Component: '@/components/admin/DashboardView#DashboardView' },
+        // 帮助页：/admin/help，侧栏有入口。给运营的一份操作说明。
+        help: {
+          Component: '@/components/admin/HelpView#HelpView',
+          path: '/help',
+          meta: { title: '后台操作帮助' },
+        },
       },
     },
   },

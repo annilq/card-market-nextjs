@@ -244,3 +244,181 @@ html[data-theme] ::-webkit-scrollbar-thumb:hover {
 html[data-theme] a[href$='/forgot'] {
   display: none !important;
 }
+
+/* ---------- 6. 帮助页（/admin/help） ----------
+   纯阅读页面，宽度收在 760px，长文不横着铺满整块屏幕。
+   小节用编号 + 标题，步骤用有序列表，链接示例用等宽字体。 */
+.admin-help {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 40px 0 80px;
+}
+.admin-help__header {
+  margin-bottom: 28px;
+}
+.admin-help__title {
+  margin: 0 0 8px;
+  font-size: 26px;
+  font-weight: 600;
+}
+.admin-help__lead {
+  margin: 0;
+  color: var(--theme-elevation-750);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.admin-help__toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 36px;
+  padding: 14px 18px;
+  border: 1px solid var(--theme-border-color);
+  border-radius: 10px;
+  background-color: var(--theme-elevation-50);
+}
+.admin-help__toc-link {
+  color: var(--theme-elevation-800);
+  font-size: 13px;
+  text-decoration: none;
+}
+.admin-help__toc-link:hover {
+  color: var(--theme-elevation-1000);
+  text-decoration: underline;
+}
+.admin-help__section {
+  margin-bottom: 40px;
+  scroll-margin-top: 90px;
+}
+.admin-help__section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 600;
+}
+.admin-help__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background-color: var(--theme-elevation-150);
+  color: var(--theme-elevation-800);
+  font-size: 13px;
+  font-weight: 600;
+}
+.admin-help__text {
+  margin: 0 0 12px;
+  color: var(--theme-elevation-800);
+  font-size: 14px;
+  line-height: 1.8;
+}
+.admin-help__steps {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: help-step;
+}
+.admin-help__step {
+  position: relative;
+  padding: 10px 0 10px 34px;
+  border-top: 1px solid var(--theme-border-color);
+  font-size: 14px;
+  line-height: 1.75;
+}
+.admin-help__step:first-child {
+  border-top: none;
+}
+.admin-help__step::before {
+  counter-increment: help-step;
+  content: counter(help-step);
+  position: absolute;
+  left: 0;
+  top: 12px;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background-color: var(--color-brand, #d92d20);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+}
+.admin-help__step-title {
+  display: block;
+  color: var(--theme-elevation-1000);
+  font-weight: 600;
+}
+.admin-help__step-body {
+  display: block;
+  color: var(--theme-elevation-800);
+}
+.admin-help__table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--theme-border-color);
+  border-radius: 10px;
+}
+.admin-help__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.admin-help__table th,
+.admin-help__table td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--theme-border-color);
+}
+.admin-help__table th {
+  background-color: var(--theme-elevation-50);
+  color: var(--theme-elevation-800);
+  font-weight: 600;
+}
+.admin-help__table tr:last-child td {
+  border-bottom: none;
+}
+.admin-help__code {
+  padding: 2px 6px;
+  border-radius: 5px;
+  background-color: var(--theme-elevation-100);
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.admin-help__cta,
+.admin-help__hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 14px 0 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background-color: var(--theme-elevation-50);
+  color: var(--theme-elevation-800);
+  font-size: 13px;
+}
+.admin-help__inline-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  color: var(--theme-elevation-700);
+}
+.admin-help__footer {
+  margin-top: 48px;
+  padding-top: 20px;
+  border-top: 1px solid var(--theme-border-color);
+}
+.admin-help__back {
+  color: var(--theme-elevation-800);
+  font-size: 14px;
+  text-decoration: none;
+}
+.admin-help__back:hover {
+  color: var(--theme-elevation-1000);
+  text-decoration: underline;
+}

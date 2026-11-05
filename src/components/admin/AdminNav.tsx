@@ -51,6 +51,14 @@ export function AdminNav({ payload, permissions, visibleEntities }: Props) {
       slug: 'dashboard',
       exact: true,
     },
+    {
+      // 帮助页不是集合也不是全局，navGroups 里没有它，和「工作台」一样单独加。
+      // 放在工作台之后：看得懂后台之后第一件事就是查「链接怎么填」。
+      href: `${adminRoute}/help`,
+      icon: 'help',
+      label: '帮助',
+      slug: 'help',
+    },
   ]
 
   for (const collection of payload.config.collections) {

@@ -1,6 +1,7 @@
 import {
   FileText,
   Gem,
+  HelpCircle,
   Image as ImageIcon,
   LayoutDashboard,
   Inbox,
@@ -25,6 +26,7 @@ import {
 export const ENTITY_ICONS = {
   announcements: Megaphone,
   dashboard: LayoutDashboard,
+  help: HelpCircle,
   banners: RectangleHorizontal,
   cards: Package,
   'info-pages': FileText,
