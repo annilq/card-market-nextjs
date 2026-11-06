@@ -3,7 +3,7 @@
 用 **Payload CMS 3** 重新实现 [card-market](../card-market)（原 TanStack Start + Directus）的全部业务功能，
 用于对比两套技术栈的开发效率与部署方案。数据库同为 **PostgreSQL 17**。
 
-- 后台：<http://localhost:3100/admin>（`admin@example.com` / `admin12345`，仅本地默认值）
+- 后台：<http://localhost:3100/admin>（`admin@koduckya.com` / `koduckya`，仅本地默认值）
 - 前台：<http://localhost:3100>（中文）/ `/ja/...`（日本語）/ `/en/...`（English）
 - REST API：`/api/cards`、`/api/announcements` …（Payload 自带 REST，公开角色只读已发布内容）
 
@@ -170,4 +170,3 @@ docs/                           分析与对比文档
 `app` / `logs` / `uptime` 现在分别绑在 `3100` / `127.0.0.1:8080` / `127.0.0.1:3001`。
 `logs` 和 `uptime` 只绑本地，**务必用 VPS 上已有的 nginx/caddy 反代 + 鉴权**后再暴露公网，别裸奔。
 新服务上线：`docker compose up -d --build`（也会把 Sentry 的 instrumentation 编进 standalone 镜像）。
-

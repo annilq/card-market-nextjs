@@ -10,8 +10,8 @@ import { getPayload, type Payload } from 'payload'
 import { MODULES } from '../src/access/roles'
 
 const SOURCE = '/Users/annilq/Documents/develop/card-market'
-const ADMIN_EMAIL = 'admin@example.com'
-const ADMIN_PASSWORD = 'admin12345'
+const ADMIN_EMAIL = 'admin@koduckya.com'
+const ADMIN_PASSWORD = 'koduckya'
 
 type Block = { type: 'h2' | 'p'; text: string }
 
