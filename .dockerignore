@@ -18,3 +18,6 @@ README.md
 vercel.json
 docker-compose.yml
 deploy.sh
+*.sql
+*.dump
+*.log
