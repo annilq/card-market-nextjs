@@ -1,6 +1,6 @@
-# card-market — Payload 版本（Next.js 16 + Payload 3 + PostgreSQL）
+# koduckya — Payload 版本（Next.js 16 + Payload 3 + PostgreSQL）
 
-用 **Payload CMS 3** 重新实现 [card-market](../card-market)（原 TanStack Start + Directus）的全部业务功能，
+用 **Payload CMS 3** 重新实现 [koduckya](../card-market)（原 TanStack Start + Directus）的全部业务功能，
 用于对比两套技术栈的开发效率与部署方案。数据库同为 **PostgreSQL 17**。
 
 - 后台：<http://localhost:3100/admin>（`admin@koduckya.com` / `koduckya`，仅本地默认值）
@@ -11,10 +11,10 @@
 
 ```bash
 # 1. 建库（Postgres 需 13+，本例为本地 postgres 超级用户）
-createdb card_market_payload
+createdb koduckya_payload
 
 # 2. 配置环境变量（.env）
-# DATABASE_URI=postgres://postgres@localhost:5432/card_market_payload
+# DATABASE_URI=postgres://postgres@localhost:5432/koduckya_payload
 # PAYLOAD_SECRET=<随机长字符串>
 # NEXT_PUBLIC_SITE_URL=http://localhost:3100
 

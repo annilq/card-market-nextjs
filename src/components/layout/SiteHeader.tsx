@@ -13,7 +13,7 @@ import { ThemeToggle } from './ThemeToggle'
 // 与 shop.png 同为 27px 高的白色图标，在品牌色顶栏上视觉重量一致。
 function XIcon() {
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src="/x.png" alt="" width={30} height={27} loading="lazy" aria-hidden="true" className="h-7 w-auto" />
+  return <img src="/x.png" alt="" width={30} height={27} loading="lazy" aria-hidden="true" className="w-auto" />
 }
 
 // 店铺图标：源站同一张 shop.png（public/ 已随静态资源迁入）。
@@ -53,7 +53,7 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
   // 折叠菜单：移动端走首页「全部 →」链接 / 全局搜索进 /cards，店铺靠图标入口、
   // 留言在页脚，与参考项目一致。
 
-  // X 账号只在后台维护（形如 @cardmarket），没配就整颗图标不渲染，不留死链。
+  // X 账号只在后台维护（形如 @koduckya），没配就整颗图标不渲染，不留死链。
   const xHandle = settings.xAccount?.replace(/^@/, '').trim()
   const xUrl = xHandle ? `https://x.com/${xHandle}` : null
 
@@ -70,7 +70,7 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
   ) : null
 
   return (
-    <header className="sticky top-0 z-99 bg-brand text-white">
+    <header className="md:sticky top-0 z-99 bg-brand text-white">
       <div className="mx-auto max-w-[1200px] px-4">
         {/* 顶行：语言 + 主题切换不再绝对定位贴视口边缘（那样在 1201–1535px 区间会
             压到同处右上角的 X·店铺图标），改为行内右端、≥2xl 才绝对定位。这里无需

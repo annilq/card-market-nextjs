@@ -1,4 +1,4 @@
-# card-market 业务功能与技术架构分析
+# koduckya 业务功能与技术架构分析
 
 > 分析对象：`/Users/annilq/Documents/develop/card-market`（TanStack Start + Directus 11 + PostgreSQL）
 > 目的：为「用 Payload 重新实现同一套功能」提供功能清单与架构基线，并作为两套技术栈对比的事实依据。

@@ -1,6 +1,6 @@
 # 技术栈对比：Directus + TanStack Start vs Payload + Next.js
 
-> 同一套业务（card-market）在两个栈上各实现一遍后的实测对比。
+> 同一套业务（koduckya）在两个栈上各实现一遍后的实测对比。
 > 左：`/Users/annilq/Documents/develop/card-market`（Directus 11 + TanStack Start + Postgres）
 > 右：`card-market-nextjs`（Payload 3 + Next.js 16 + Postgres，本仓库）
 > 数据均为本机实测（MacBook / Postgres 17 / Node 24.2.0），仅作量级参考。

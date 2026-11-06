@@ -73,7 +73,7 @@ export function AdminLogo() {
   return (
     <span className="admin-brand">
       <BrandMark size={36} />
-      <span className="admin-brand__wordmark">card-market</span>
+      <span className="admin-brand__wordmark">koduckya</span>
     </span>
   )
 }
