@@ -1,39 +1,41 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?NEXT_PUBLIC_SITE_URL is required}
+        NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+        NEXT_PUBLIC_DEFAULT_LOCALE: ${NEXT_PUBLIC_DEFAULT_LOCALE:-zh}
     ports:
       - '3100:3100'
+    env_file:
+      - .env
     environment:
-      DATABASE_URI: postgres://postgres:postgres@database:5432/card_market_payload
-      PAYLOAD_SECRET: ${PAYLOAD_SECRET:-change-me-in-production}
-      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3100}
-      # 上传：留空走本地卷；填了就走 S3 兼容对象存储（R2 / S3 / Spaces）
-      S3_BUCKET: ${S3_BUCKET:-}
-      S3_ENDPOINT: ${S3_ENDPOINT:-}
-      S3_REGION: ${S3_REGION:-auto}
-      S3_KEY: ${S3_KEY:-}
-      S3_SECRET: ${S3_SECRET:-}
+      PORT: '3100'
+      HOSTNAME: '0.0.0.0'
     volumes:
       - media:/app/media
-    depends_on:
-      database:
-        condition: service_healthy
-
-  database:
-    image: postgres:17-alpine
-    environment:
-      POSTGRES_DB: card_market_payload
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres']
-      interval: 5s
+      test:
+        - CMD
+        - node
+        - -e
+        - 'require("http").get("http://127.0.0.1:3100/api/health",r=>process.exit(r.statusCode===200?0:1)).on("error",()=>process.exit(1))'
+      interval: 15s
       timeout: 5s
       retries: 10
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+    deploy:
+      resources:
+        limits:
+          memory: 2G
 
-  # ---- 监控 ----
   # 实时查看容器日志（只读 docker.sock，零代码改动）
   logs:
     image: amir20/dozzle:latest
@@ -41,6 +43,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
       - '127.0.0.1:8080:8080'
+    restart: unless-stopped
     depends_on:
       - app
 
@@ -51,10 +54,10 @@ services:
       - uptime-kuma:/app/data
     ports:
       - '127.0.0.1:3001:3001'
+    restart: unless-stopped
     depends_on:
       - app
 
 volumes:
-  pgdata:
   media:
   uptime-kuma:
