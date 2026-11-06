@@ -9,14 +9,11 @@ import type { SiteSettingsView } from '@/lib/data'
 import { LocaleSwitcher } from './LocaleSwitcher'
 import { ThemeToggle } from './ThemeToggle'
 
-// X（原 Twitter）图标：官方简化字形，实心路径。
-// 旁边的汉字标签与它在视觉重量上更配，因此这里不用描边风格。
+// X（原 Twitter）图标：改用源站同一张 x.png（public/ 已随静态资源迁入），
+// 与 shop.png 同为 27px 高的白色图标，在品牌色顶栏上视觉重量一致。
 function XIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-    </svg>
-  )
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src="/x.png" alt="" width={30} height={27} loading="lazy" aria-hidden="true" className="h-7 w-auto" />
 }
 
 // 店铺图标：源站同一张 shop.png（public/ 已随静态资源迁入）。
