@@ -16,7 +16,18 @@ export const Users: CollectionConfig = {
   // `forgotPassword: false`，而是 (a) 不接邮件适配器使其本就发不出邮件（功能实质失效），
   // (b) 用 admin-ui.css 把登录页那个入口隐藏。唯一可取的重置路径 = 管理员后台改密
   // （access 已收紧 + beforeChange 钩子把对方标记为需改密）。见 spec。
-  auth: true,
+  //
+  // 登录态用纯 JWT（useSessions:false），不写 users_sessions / sessions JSONB 列：
+  // 自托管 standalone + 反向代理下，useSessions=true 依赖 Payload 内部 sessions 列，
+  // 而本仓库 db.push:false 且自定义迁移未补该列，re-seed 后该列缺失 → 登录 JWT 的
+  // sid 在下次请求时查不到 → 后台 /admin 一律 307 跳回 /admin/login（登录成功却进不去）。
+  // 纯 JWT 把用户声明直接装进 payload-token cookie，从根上消除这条回环，self-hosted 官方推荐。
+  // secure:false 是明文 HTTP（当前 VPS 直连 :3100）必须的，否则 Secure cookie 不落盘。
+  auth: {
+    useSessions: false,
+    tokenExpiration: 7200,
+    cookies: { sameSite: 'Lax', secure: false },
+  },
   // 受控后台账号模型（角色 / 首次强制改密 / 首用户即管理员）。
   // 设计见 docs/specs/2026-11-04-back-office-account-auth.md。
   // 注意：access 收紧必须与 role 字段同时上线，否则会锁死或更不安全。
