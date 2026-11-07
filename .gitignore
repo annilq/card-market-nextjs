@@ -2,6 +2,7 @@ node_modules/
 .next/
 media/
 .env
+.vpsdb
 *.tsbuildinfo
 next-env.d.ts
 payload-types.ts

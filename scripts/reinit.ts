@@ -1,20 +1,23 @@
 // 重置业务数据（保留表结构与管理员账号）：清空所有业务集合后重跑 seed。
 import { Client } from 'pg'
 
+// 业务数据 + 管理员 + 角色全部清空，保留表结构。
+// 各集合的 *_rels 关联表由 RESTART IDENTITY CASCADE 自动级联清空，无需逐个列出。
+// payload 系统表（payload_migrations / payload_preferences / _locales 等）不动。
 const TABLES = [
   'messages',
-  'cards_rels',
   'cards',
   'banners',
   'announcements',
   'info_pages',
   'shops',
-  'info_pages',
   'sub_series',
   'series',
   'rarities',
   'ips',
   'media',
+  'roles',
+  'users',
 ]
 
 async function main() {

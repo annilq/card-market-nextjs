@@ -9,8 +9,10 @@ import { getPayload, type Payload } from 'payload'
 
 import { MODULES } from '../src/access/roles'
 
-const ADMIN_EMAIL = 'admin@koduckya.com'
-const ADMIN_PASSWORD = 'koduckya'
+// 管理员账号可经环境变量覆盖（重置脏库、换主账号时用）。
+// 不写进仓库：运行时用 ADMIN_EMAIL / ADMIN_PASSWORD 传入即可。
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@koduckya.com'
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'koduckya'
 
 /** 当前项目 public/ 下的同名 logo，与脚本位置绑定，不依赖运行时工作目录。 */
 const LOGO_PATH = fileURLToPath(new URL('../public/logo_header.png', import.meta.url))
