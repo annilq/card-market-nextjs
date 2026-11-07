@@ -17,12 +17,11 @@ export const Users: CollectionConfig = {
   // (b) 用 admin-ui.css 把登录页那个入口隐藏。唯一可取的重置路径 = 管理员后台改密
   // （access 已收紧 + beforeChange 钩子把对方标记为需改密）。见 spec。
   //
-  // 登录态用纯 JWT（useSessions:false）。
-  // self-hosted standalone 下 useSessions:true 时，Payload 每次鉴权都会校验 JWT 里的
-  // sid 必须存在于该用户的 sessions（users_sessions 关系表）中（见 payload 的
-  // auth/strategies/jwt.js）；实测本项目登录成功后该校验仍不通过 → /admin 一律 307
-  // 跳回 /admin/login（表现即「登录成功却进不去」）。关掉 session 后不再走该校验，
-  // 用户声明直接装进 payload-token cookie，登录链路闭环。
+  // 登录态用纯 JWT（useSessions:false）——自托管场景下的刻意简化：
+  // 不写 users_sessions 关系表、不做会话轮换，每次请求只验签 payload-token。
+  // 注意：后台「登录成功却跳回登录页」的真正原因不是会话校验，而是 serverURL 非空
+  // 触发的 cookie 鉴权 CSRF 门禁（详见 payload.config.ts 的 serverURL 注释）。
+  // 这里保留纯 JWT 只因为足够用，且少一次会话表查询；与那个 bug 的修复无关。
   // 代价：不能服务端单独吊销某次登录，只能等 token 过期（tokenExpiration 秒）。
   // secure:false 适配当前明文 HTTP（VPS 直连 :3100）；上 HTTPS 后改回 true。
   auth: {

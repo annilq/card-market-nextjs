@@ -135,15 +135,21 @@ export default buildConfig({
   secret: process.env.PAYLOAD_SECRET ?? '',
   sharp,
   // serverURL 是后台 /admin 与媒体 URL 的主机基址。
-  // 关键决策（根治「后台空白/跨域」）：
-  //   - 线上（Vercel 注入 VERCEL=1）：**刻意留空**。Payload 在 serverURL 为空时会改用
-  //     相对路径（formatAdminURL: !serverURL → 返回相对 path），admin 前端与媒体 URL
-  //     都按「用户实际访问的域名」同源解析。于是无论访问主域名、部署专属域名还是 preview，
-  //     后台都不会再去一个不匹配的 host 拉资源——彻底不依赖任何域名变量。
+  // 关键决策（根治「后台空白/跨域」与「登录成功却跳回登录页」）：
+  //   - 生产（Vercel 注入 VERCEL=1，或自托管 standalone 的 NODE_ENV=production）：
+  //     **刻意留空**。Payload 在 serverURL 为空时会改用相对路径
+  //     （formatAdminURL: !serverURL → 返回相对 path），admin 前端与媒体 URL
+  //     都按「用户实际访问的域名」同源解析，不依赖任何域名变量。
+  //     更关键的是 cookie 鉴权：serverURL 非空时，sanitize 会把它塞进 config.csrf
+  //     （config/sanitize.js），而 auth/extractJWT.js 对每个带 payload-token 的请求
+  //     都要求 Origin 或 Sec-Fetch-Site 与 csrf 匹配。后台登录后的 RSC 导航请求
+  //     `GET /admin?_rsc=...` 实测两者都不带（headful Chrome 抓包确认）→ 鉴权被判空
+  //     → 307 回 /admin/login，表现即「登录成功却进不去」。留空后 csrf 为空数组，
+  //     extractJWT 直接采信同源 cookie，链路闭环。
   //   - 本地 dev：回退 localhost:3100，保证本地 SSR 的媒体绝对 URL 正确。
   // 注意：绝不能用 VERCEL_URL 兜底——它指向「每次部署专属域名」，与用户访问的主域名不是同一 host。
   serverURL:
-    process.env.VERCEL === '1'
+    process.env.VERCEL === '1' || process.env.NODE_ENV === 'production'
       ? ''
       : process.env.SITE_URL ||
         process.env.NEXT_PUBLIC_SITE_URL ||
