@@ -17,12 +17,14 @@ export const Users: CollectionConfig = {
   // (b) 用 admin-ui.css 把登录页那个入口隐藏。唯一可取的重置路径 = 管理员后台改密
   // （access 已收紧 + beforeChange 钩子把对方标记为需改密）。见 spec。
   //
-  // 登录态用纯 JWT（useSessions:false），不写 users_sessions / sessions JSONB 列：
-  // 自托管 standalone + 反向代理下，useSessions=true 依赖 Payload 内部 sessions 列，
-  // 而本仓库 db.push:false 且自定义迁移未补该列，re-seed 后该列缺失 → 登录 JWT 的
-  // sid 在下次请求时查不到 → 后台 /admin 一律 307 跳回 /admin/login（登录成功却进不去）。
-  // 纯 JWT 把用户声明直接装进 payload-token cookie，从根上消除这条回环，self-hosted 官方推荐。
-  // secure:false 是明文 HTTP（当前 VPS 直连 :3100）必须的，否则 Secure cookie 不落盘。
+  // 登录态用纯 JWT（useSessions:false）。
+  // self-hosted standalone 下 useSessions:true 时，Payload 每次鉴权都会校验 JWT 里的
+  // sid 必须存在于该用户的 sessions（users_sessions 关系表）中（见 payload 的
+  // auth/strategies/jwt.js）；实测本项目登录成功后该校验仍不通过 → /admin 一律 307
+  // 跳回 /admin/login（表现即「登录成功却进不去」）。关掉 session 后不再走该校验，
+  // 用户声明直接装进 payload-token cookie，登录链路闭环。
+  // 代价：不能服务端单独吊销某次登录，只能等 token 过期（tokenExpiration 秒）。
+  // secure:false 适配当前明文 HTTP（VPS 直连 :3100）；上 HTTPS 后改回 true。
   auth: {
     useSessions: false,
     tokenExpiration: 7200,
