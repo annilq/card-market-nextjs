@@ -1,39 +1,16 @@
 'use client'
 
-import Link from 'next/link'
-
-import { localizeHref } from '@/lib/i18n/locales'
-import { useLocale, useT } from '@/lib/i18n/client'
-
 /**
- * `[locale]` 段的 404：未匹配路径与不支持的语言段都落到这里。
+ * `[locale]` 段的 404：段内 notFound()（例如 `/de/cards` 里语言段非法时页面主动抛出）
+ * 会落到这里，而不是内置 404。
  *
- * 语言用 I18nProvider 里的那一个（根布局从请求头解析，已归一到受支持的值），
- * 不能用 URL 里的原始段——`/de/cards` 里那个段是非法值，
- * 直接拼链接会得到 `/de/cards` 这类二次 404。
+ * 未匹配路径由 `[locale]/[...rest]/page.tsx` 的 catch-all 主动 notFound() 导到这里，
+ * 段内页面自己的 notFound() 也落到这里——两种来路共用同一套 NotFoundView。
+ * 语言由 NotFoundView 内部从 I18nProvider 取（URL 首段解析，非法段回退 zh），
+ * 不能直接用 URL 里的原始段——`/de/cards` 里那个段是非法值，拼链接会二次 404。
  */
-export default function LocaleRouteNotFound() {
-  const locale = useLocale()
-  const t = useT()
+import { NotFoundView } from '@/components/layout/NotFoundView'
 
-  return (
-    <div className="py-24 text-center">
-      <p className="text-6xl font-black tracking-tight text-faint" aria-hidden="true">
-        404
-      </p>
-      <h1 className="mt-4 text-xl font-bold text-fg">{t('notFoundHeading')}</h1>
-      <p className="mt-2 text-muted">{t('notFoundBody')}</p>
-      <div className="mt-6 flex items-center justify-center gap-4 text-sm">
-        <Link
-          href={localizeHref('/', locale)}
-          className="inline-flex items-center rounded-full bg-accent px-4 py-1.5 text-on-accent transition hover:bg-accent/90"
-        >
-          {t('backHome')}
-        </Link>
-        <Link href={localizeHref('/cards', locale)} className="text-muted underline">
-          {t('browseCards')}
-        </Link>
-      </div>
-    </div>
-  )
+export default function LocaleRouteNotFound() {
+  return <NotFoundView />
 }

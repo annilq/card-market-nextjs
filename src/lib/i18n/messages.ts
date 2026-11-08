@@ -28,7 +28,8 @@ const zh = {
   themeToLight: '切换到浅色模式',
   switchLanguage: '切换语言',
   notFoundHeading: '页面不存在',
-  notFoundBody: '页面不存在或已被删除。',
+  notFoundHint: '你要找的页面可能已被移动或删除。试试浏览卡牌，或直接使用顶部搜索。',
+  notFoundLinksLabel: '快捷入口',
   errorBody: '页面加载出错了，请稍后重试。',
   copyright: 'Copyright © {year} KoDuckYa.Inc. All rights reserved.',
 
@@ -188,7 +189,8 @@ const ja: Record<MessageKey, string> = {
   themeToLight: 'ライトモードに切り替え',
   switchLanguage: '言語を切り替え',
   notFoundHeading: 'ページが見つかりません',
-  notFoundBody: 'ページが存在しないか、削除されました。',
+  notFoundHint: 'お探しのページは移動または削除された可能性があります。カードを探すか、上部の検索をお使いください。',
+  notFoundLinksLabel: 'クイックアクセス',
   errorBody: 'ページの読み込みに失敗しました。時間をおいて再度お試しください。',
   copyright: 'Copyright © {year} KoDuckYa.Inc. All rights reserved.',
 
@@ -335,7 +337,8 @@ const en: Record<MessageKey, string> = {
   themeToLight: 'Switch to light mode',
   switchLanguage: 'Switch language',
   notFoundHeading: 'Page not found',
-  notFoundBody: 'This page does not exist or has been removed.',
+  notFoundHint: "The page you're looking for may have been moved or deleted. Try browsing cards, or use the search at the top.",
+  notFoundLinksLabel: 'Quick links',
   errorBody: 'Something went wrong while loading this page. Please try again.',
   copyright: 'Copyright © {year} KoDuckYa.Inc. All rights reserved.',
 
