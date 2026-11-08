@@ -122,7 +122,7 @@ export default async function FrontendLayout({ children }: { children: ReactNode
         )}
       </head>
       <body className="flex min-h-screen flex-col">
-        <I18nProvider locale={locale}>
+        <I18nProvider>
           <SiteHeader settings={settings} />
           <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-6">{children}</main>
           <SiteFooter settings={settings} />

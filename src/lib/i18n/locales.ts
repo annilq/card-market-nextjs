@@ -55,6 +55,17 @@ export function isDefaultLocale(locale: Locale): boolean {
 }
 
 /**
+ * 从路径的首段读出界面语言。默认语言由 middleware rewrite 成 `/zh/...`，
+ * 因此首段可能是 `zh`（rewrite 后的内部路径），也可能整段缺失（浏览器地址 `/`）；
+ * `ja` / `en` 不 rewrite，首段就是它们自己。未知段（如 `/de/cards`）返回 null，
+ * 由调用方回退到 middleware 已归一化的语言，避免 404 页把非法段拼进链接。
+ */
+export function localeFromPathname(pathname: string): Locale | null {
+  const first = pathname.split('/').filter(Boolean)[0]
+  return first && first in LOCALES ? (first as Locale) : null
+}
+
+/**
  * 给站内路径补上语言段。用于「路径来自后台内容」的场景（如 banner 的 link），
  * 这类值绕过了路由类型系统，只能在这里补齐，否则从日语页点进去会掉回默认语言。
  * 已带受支持语言段的路径原样返回；外链（非 `/` 开头）也原样返回。
