@@ -25,6 +25,8 @@ export const Media: CollectionConfig = {
   upload: {
     mimeTypes: ['image/*'],
     focalPoint: true,
+    // 原图重编码为 webp 降体积（不影响已生成的 imageSizes；imageSizes 如需同样压缩见各 size 的 formatOptions）
+    formatOptions: { format: 'webp', options: { quality: 82 } },
     imageSizes: [
       { name: 'thumb', width: 480, height: 480, position: 'centre' },
       { name: 'card', width: 800, height: 800, position: 'centre' },
