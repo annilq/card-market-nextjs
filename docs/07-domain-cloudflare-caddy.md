@@ -133,9 +133,12 @@ Cloudflare Registrar **不支持 `.jp`**（JPRS 管理，要日本联系地址�
    这是运行时变量，改完 `docker compose up -d app` 重新加载即可，**不重构建镜像**。
 
 2. **B2 桶 CORS**（Cloudflare 代理/直接都建议加 https）：
-   在 B2 控制台给桶加/改 CORS 规则，把 `allowedOrigins` 换成
-   `["https://你的域名.jp", "https://www.你的域名.jp"]`。
-   否则后台大图直传被浏览器跨域拦掉（文档第 10 节第 2 条）。
+   把 [06 清单第 2 节](06-console-checklist.md) 那条规则的 `allowedOrigins` 数组
+   **追加** https 域名、删掉 IP 和 localhost：
+   `["https://card-market-nextjs.vercel.app", "https://你的域名.jp", "https://www.你的域名.jp"]`。
+   其余字段尤其 `allowedOperations` 必须原样保留 `s3_put` / `s3_get` / `s3_head`，
+   别改成 `PUT`；控制台若只给简版预设就继续用 B2 CLI 更新。
+   否则后台大图直传被浏览器跨域拦掉（05 文档第 10 节第 2 条）。改完重传一张大图验证。
 
 3. **后台默认管理员密码** `admin12345` 仍挂在公网 —— 上线当天或之前先改掉（第 10 节第 1 条，最紧急）。
 
@@ -186,5 +189,5 @@ curl -sS -I https://你的域名.jp/             # 首页 200
 | Caddy 起不来 / 证书申请超时 | 80 端口被挡或 ACME 连不通 | 确认安全组+ufw 放了 80/443；`docker compose logs caddy` 看挑战报错 |
 | 访问 502 | caddy 连不到 app | 确认 `reverse_proxy app:3100` 用服务名；`docker compose ps` 看 app 是否 up |
 | canonical 还是 IP | `SITE_URL` 没改或没 reload | 改 VPS `.env` 后 `docker compose up -d app` |
-| 后台传图被拦 | B2 CORS 没加 https 域名 | 第 5 步第 2 条，改完重传验证 |
+| 后台传图被拦 | 预检被 B2 拒：`allowedOrigins` 没加 https 域名，或 `allowedOperations` 写成了 `PUT` 而非 `s3_put`，或规则压根没建 | [06 清单第 2 节](06-console-checklist.md) 核对规则全文与预检命令；本文第 5 步第 2 条改 origin；改完重传验证 |
 | 证书 90 天到期 | Caddy 自动续，无需人工 | 偶尔 `docker compose restart caddy` 保活即可；Uptime Kuma 加一条证书到期监控 |

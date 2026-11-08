@@ -162,8 +162,11 @@ push 到 GitHub 已授权，阶段 0 的修正会在你确认 diff 后推上去�
   [site-url.ts](../src/lib/site-url.ts#L37) 的 `getOrigin()` 用请求 host，
   canonical 与 OG 在请求上下文里不受影响。
 - B2 桶 CORS 需要允许 `http://153.115.43.228:3100`，否则后台大图直传被浏览器拦掉。
-  图片显示不受影响，已经验证正常。
-  当前规则需要你在 B2 控制台确认，改规则也需要你的控制台权限。
+  图片显示不受影响，已经验证正常。这条规则**还没建**：B2 原生只读接口看到
+  `corsRules` 是 `[]`，不带凭据的 OPTIONS 预检返回 `403` +
+  `CORSResponse: CORS is not enabled for this bucket.`。正确规则（以及
+  `allowedOperations` 必须写 `s3_put` 而不是 `PUT` 这个坑）见
+  [06 清单第 2 节](06-console-checklist.md)。改规则需要你的控制台权限或 B2 CLI 凭据。
 - 后台首个管理员账号走 Payload 的 `/admin` 首次用户流程创建，不要用默认值。
 - Dozzle 和 Uptime Kuma 在 [compose](../docker-compose.yml#L43) 已绑 `127.0.0.1`，
   保持不动。这次不暴露到公网。
@@ -263,8 +266,12 @@ VPS 内网 IP 是 `172.16.0.3`，走 `enp3s0`。用 `postgres/postgres` 试探�
    而站点现在全网可访问。登录 `http://153.115.43.228:3100/admin` 后立刻改掉。
 2. **在 B2 桶新建第一条 CORS 规则，允许 `http://153.115.43.228:3100`。**
    B2 原生只读接口已确认桶上 `corsRules` 是空的，一条规则都没有，所以不是追加。
-   建议 `allowedOrigins` 同时写上 Vercel 域名和新地址，两边部署的后台上传都能用。
-   验证方法是在后台上传一张大图，能传成功就是生效了。
+   规则全文、两种 CLI 写法和验证命令见
+   [06 清单第 2 节](06-console-checklist.md)：`allowedOperations` 必须是
+   `s3_put` / `s3_get` / `s3_head`，**写 `PUT` / `GET` / `POST` / `HEAD` 不生效**；
+   `allowedOrigins` 建议同时写上 Vercel 域名、新地址和 localhost。
+   当前后台上传就是缺这条规则才报 CORS 错。验证方法是在后台上传一张大图，
+   能传成功就是生效了。
 3. **轮换凭据。** 数据库密码出现在对话里了，去 Xserver 面板改，改完告诉我，
    我同步生产 env 文件。Neon、B2、Sentry 的凭据也建议轮换，因为本地 `.env`
    曾经进过构建产物，轮换后记得同步 Vercel 的环境变量。

@@ -27,20 +27,50 @@ nc -z -w3 153.115.43.228 3100 && echo OK
 80、443、3100 从 4 秒超时变成快速拒绝（80、443 没有服务监听），3100 返回 200。
 公网现在能打开站点。
 
-## 2. 在 B2 控制台加一条 CORS 规则
+## 2. 在 B2 桶加一条 CORS 规则
 
-位置是 Backblaze B2 → Buckets → 选你的桶 → Bucket Settings → CORS Rules。
+后台上传报错的根因在这一步。`src/payload.config.ts` 开了 `clientUploads: true`，
+Payload 先签发一个预签名 PUT URL，再让**浏览器直接跨域 PUT 到 B2**。这个 PUT 带
+`Content-Type`、`If-None-Match` 等自定义头，属于非简单请求，浏览器会先发 `OPTIONS`
+预检；桶上没有 CORS 规则时 B2 回 403 且不带 `Access-Control-Allow-Origin`，浏览器
+就把真正的 PUT 拦下来，页面只看到 `TypeError: Failed to fetch`。
 
-我用 B2 原生只读接口查过了。`b2_list_buckets` 返回的 `corsRules` 是 `[]`，
-`b2_get_bucket` 返回 `null`。桶上一条 CORS 规则都没有，所以是**新建第一条**，
-不是追加。下面的规则我同时放上了 Vercel 域名和新地址，两边部署的后台上传都能用。
+我做过一次不带凭据的只读预检：
+
+```bash
+curl -i -X OPTIONS 'https://koduckya.s3.us-west-004.backblazeb2.com/media/__probe__.png' \
+  -H 'Origin: http://153.115.43.228:3100' \
+  -H 'Access-Control-Request-Method: PUT' \
+  -H 'Access-Control-Request-Headers: content-type, if-none-match'
+```
+
+返回 `403` + `CORSResponse: CORS is not enabled for this bucket.`，和 B2 原生只读接口
+的结果一致：`b2_list_buckets` 看到 `corsRules: []`，`b2_get_bucket` 返回 `null`。
+所以是**新建第一条规则**，不是追加；B2 按第一条匹配规则生效，别在前面留更宽的旧规则。
+
+报错出在预检 OPTIONS，不是 PUT 本身失败，也不是密钥、`S3_ENDPOINT` 或签名配错。
+`signedDownloads: true` 的 302 签名下载走自己的 `/api/media/file/...`，前台读图不跨域，
+不需要为它放开 GET。
+
+### 规则内容
+
+**`allowedOperations` 必须用 `s3_*` 小写操作名，不能写 `PUT` / `GET` / `POST` / `HEAD`。**
+`allowedOperations` 是 B2 原生接口（`b2_update_bucket` / B2 CLI）的字段，取值是
+`s3_put`、`s3_get`、`s3_head`、`s3_post`、`s3_delete` 这类操作名；`PUT` 那套是 S3
+`PutBucketCors` 里 `AllowedMethods` 的词汇。两套 API 的词汇不能混用，混了两边都不认。
+**这一节早先给的是错的 `["GET", "PUT", "POST", "HEAD"]`，照抄不会生效。**
 
 ```json
 [
   {
     "corsRuleName": "card-market-vps",
-    "allowedOrigins": ["https://card-market-nextjs.vercel.app", "http://153.115.43.228:3100"],
-    "allowedOperations": ["GET", "PUT", "POST", "HEAD"],
+    "allowedOrigins": [
+      "https://card-market-nextjs.vercel.app",
+      "http://153.115.43.228:3100",
+      "http://localhost:3100",
+      "http://127.0.0.1:3100"
+    ],
+    "allowedOperations": ["s3_put", "s3_get", "s3_head"],
     "allowedHeaders": ["*"],
     "exposeHeaders": ["ETag"],
     "maxAgeSeconds": 3600
@@ -48,11 +78,80 @@ nc -z -w3 153.115.43.228 3100 && echo OK
 ]
 ```
 
-桶保持 Private，不要点 Public。项目用私有桶加签名下载，
-设成公开反而会触发 Backblaze 要求绑定信用卡。
-`clientUploads` 让浏览器直传桶，跨域必须放行，否则后台传大图会被浏览器拦掉。
+- `s3_put` 是修这个报错的那一条，另外两个只是余量，删掉不影响上传。
+- `allowedOrigins` 要写完整 origin（含端口），不带路径、不带结尾斜杠。后两条是本地
+  `next dev` 和第 6 节那条 SSH 隧道进后台时用得上的。
+- `allowedHeaders` 必须是**单独一个 `"*"`**：AWS SDK v3 会带 `x-amz-checksum-crc32`、
+  `x-amz-sdk-checksum-algorithm` 这类头，逐个枚举容易漏。预检要求 origin、操作名、
+  以及每个被请求的头全部匹配才放行。
+- 单条规则上限 1000 字节，一个桶最多 100 条。
 
-我会在部署后从后台上传一张图验证这条规则真的生效。
+### 怎么应用
+
+Web 控制台在 Backblaze B2 → Buckets → 选桶 → Bucket Settings → CORS Rules。
+**如果那里只给「单一来源 / 全部来源」这种简版预设、不让填操作名，就必须用 B2 CLI 或
+S3 兼容 API** —— 简版规则写不出 `s3_put`。有 JSON 编辑框的话直接粘上面那段。
+
+B2 CLI（本机没装，需要你在自己电脑上用面板的 application key 执行；
+**不要把密钥贴到聊天里**）。先把上面那段 JSON 存成 `/tmp/b2-cors.json`，然后：
+
+```bash
+b2 account authorize                       # 老版是 b2 authorize-account
+b2 bucket update --cors-rules "$(< /tmp/b2-cors.json)" koduckya allPrivate
+```
+
+末尾的 `allPrivate` 别漏——这条命令会一并提交 bucketType，写成 `allPublic` 会把桶改公开。
+老版 CLI 是 `b2 update-bucket --corsRules "$(< /tmp/b2-cors.json)" koduckya allPrivate`；
+先跑 `b2 bucket update --help` 确认你装的版本。建议先 `jq . /tmp/b2-cors.json`
+验一下格式，B2 的报错大多是 JSON 不合法。
+
+也可以走 S3 兼容 API，**这里反过来要写 `PUT`**（用的是 S3 的 `AllowedMethods`）。
+把下面这段存成 `/tmp/cors.json`：
+
+```json
+{
+  "CORSRules": [
+    {
+      "ID": "card-market-vps",
+      "AllowedOrigins": ["https://card-market-nextjs.vercel.app", "http://153.115.43.228:3100", "http://localhost:3100", "http://127.0.0.1:3100"],
+      "AllowedMethods": ["PUT", "GET", "HEAD"],
+      "AllowedHeaders": ["*"],
+      "ExposeHeaders": ["ETag"],
+      "MaxAgeSeconds": 3600
+    }
+  ]
+}
+```
+
+```bash
+aws s3api put-bucket-cors \
+  --endpoint-url https://s3.us-west-004.backblazeb2.com \
+  --bucket koduckya \
+  --cors-configuration file:///tmp/cors.json
+```
+
+`AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` 用现有的 `S3_KEY` / `S3_SECRET`。
+两种写法等价，挑一种，别把字段名混着抄。
+
+**桶保持 Private，不要点 Public。** 项目用私有桶加签名下载，设成公开反而会触发
+Backblaze 要求绑定信用卡。CORS 不是授权：预签名 URL 的签名照旧要验，CORS 只是告诉
+浏览器「允许读这个响应」。
+
+### 验证
+
+再打一次上面那条预检，期望从 `403` 变成 `200`，并带
+`Access-Control-Allow-Origin: http://153.115.43.228:3100` 和
+`Access-Control-Allow-Methods: PUT`。也可以
+`aws s3api get-bucket-cors --endpoint-url https://s3.us-west-004.backblazeb2.com --bucket koduckya`
+读回规则确认。然后到 `/admin` 重传一张大图，能传成功就是生效了。
+
+域名上线后按 [07 文档第 5 步](07-domain-cloudflare-caddy.md) 把 https 域名加进
+`allowedOrigins`、删掉 IP 和 localhost。
+
+官方参考：[CORS 规则](https://www.backblaze.com/docs/cloud-storage-cross-origin-resource-sharing-rules)、
+[用 B2 CLI 开启 CORS](https://www.backblaze.com/docs/cloud-storage-enable-cors-with-the-cli)、
+[b2_update_bucket](https://www.backblaze.com/apidocs/b2-update-bucket)、
+[S3 Put Bucket CORS](https://www.backblaze.com/apidocs/s3-put-bucket-cors)。
 
 ## 3. 把 Xserver PostgreSQL 的连接信息给我
 
