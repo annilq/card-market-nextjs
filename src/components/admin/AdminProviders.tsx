@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 
 import { RichTextToolbarLabels } from './RichTextToolbarLabels'
 import { ForcePasswordChangeGuard } from './ForcePasswordChangeGuard'
+import { LoginPasswordVisibility } from './LoginPasswordVisibility'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
 import './admin-ui.css'
@@ -12,10 +13,11 @@ import './admin-ui.css'
  * 挂在这里而不是改 `app/(payload)/layout.tsx`——那份文件是 Payload 生成的，
  * 升级时会被整份重写，写进去的 import 会静默消失。
  *
- * 它做两件事：
+ * 它做这些事：
  *   1. 把 `admin-ui.css`（Tailwind 变量 + shadcn 令牌）带进后台 bundle；
  *   2. 提供一个 Radix Tooltip 的 Provider；
- *   3. 给富文本工具条的按钮补名字（RichTextToolbarLabels）。
+ *   3. 给富文本工具条的按钮补名字（RichTextToolbarLabels）；
+ *   4. 给登录页密码框补一个明文 / 密文切换按钮（LoginPasswordVisibility）。
  */
 export function AdminProviders({ children }: { children: ReactNode }) {
   return (
@@ -25,6 +27,8 @@ export function AdminProviders({ children }: { children: ReactNode }) {
       <RichTextToolbarLabels />
       {/* 首次登录强制改密守卫：遮罩式，必须先改密才能进入后台（见组件注释）。 */}
       <ForcePasswordChangeGuard />
+      {/* 登录页密码框的明文切换。PasswordInput 写死 type，只能补一个按钮叠上去。 */}
+      <LoginPasswordVisibility />
       {children}
     </TooltipProvider>
   )

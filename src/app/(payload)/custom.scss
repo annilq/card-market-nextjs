@@ -1056,6 +1056,47 @@ html[data-theme='dark'] .template-minimal {
   outline-offset: var(--accessibility-outline-offset);
 }
 
+/* ---------- 9d. 登录页密码明文切换（LoginPasswordVisibility） ----------
+   按钮叠在密码框右侧。`.field-type__wrap` 报错时会变高，所以定位基准用
+   input 的直接父容器（组件给它加了 admin-password-eye-wrap）。
+   给 input 预留右内边距，长密码不会被图标压住。 */
+.admin-password-eye-wrap {
+  position: relative;
+}
+.admin-password-eye-wrap > input {
+  padding-right: 44px;
+}
+.admin-password-eye-slot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+.admin-password-eye {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-right: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--style-radius-s);
+  background-color: transparent;
+  color: var(--theme-elevation-700);
+  cursor: pointer;
+}
+.admin-password-eye:hover {
+  background-color: var(--theme-elevation-50);
+  color: var(--theme-elevation-1000);
+}
+.admin-password-eye:focus-visible {
+  outline: var(--accessibility-outline);
+  outline-offset: var(--accessibility-outline-offset);
+}
+
 /* ---------- 10. 无障碍：尊重「减少动态效果」 ---------- */
 @media (prefers-reduced-motion: reduce) {
   .btn,
