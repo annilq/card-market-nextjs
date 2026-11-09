@@ -202,6 +202,35 @@ html.dark {
   animation-duration: var(--dur-continuity);
 }
 
+/* 卡牌图片加载占位：凹陷图位（bg-surface-2）上缓扫一道亮带，告诉用户「这里在加载」。
+   亮带用 surface（比 surface-2 亮一档），保证在浅色与深色主题下都读得到。
+   位移用 translateX 而非 scale，避免和视图转场（contain: paint 的形变）打架。 */
+@keyframes card-image-shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+.card-image-shimmer {
+  overflow: hidden;
+  background: var(--color-surface-2);
+}
+.card-image-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0,
+    var(--color-surface) 50%,
+    transparent 100%
+  );
+  animation: card-image-shimmer 1.4s var(--ease-out-soft) infinite;
+}
+
 /* 结果网格换页/换筛选：整块淡入 + 6px 上移，不逐格 stagger
    （12–24 个格子逐格延迟会读成「加载慢」，而不是「列表换了」）。
    只在用户改过筛选/翻过页之后加这个类（见各路由的 `changed` 状态）：

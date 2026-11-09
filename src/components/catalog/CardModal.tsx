@@ -23,6 +23,7 @@ import { useDialog } from '@/lib/use-dialog'
 import { useT } from '@/lib/i18n/client'
 import { localizeHref, type Locale } from '@/lib/i18n/locales'
 import type { CardView } from '@/lib/types'
+import { CardImage } from '@/components/CardImage'
 
 function CloseIcon() {
   return (
@@ -89,8 +90,12 @@ export function CardModal({
         <div className="w-[47%] shrink-0">
           <div className="aspect-[3/4] overflow-hidden rounded-lg bg-surface-2">
             {src ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={src} alt={img?.alt || card.name} className="h-full w-full object-cover" />
+              // 加载占位 + 淡入由 CardImage 统一处理（媒体走 S3 签名 302，用原生 <img>）。
+              <CardImage
+                src={src}
+                alt={img?.alt || card.name}
+                imgClassName="object-cover"
+              />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-xs text-hint">
                 {t('noImageShort')}

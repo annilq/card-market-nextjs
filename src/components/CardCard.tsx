@@ -18,6 +18,7 @@ import { getTranslator } from '@/lib/i18n/t'
 import type { Locale } from '@/lib/i18n/locales'
 import { localizeHref } from '@/lib/i18n/locales'
 import type { CardView } from '@/lib/types'
+import { CardImage } from './CardImage'
 
 export function CardCard({
   card,
@@ -77,13 +78,13 @@ export function CardCard({
           // 媒体走 S3 签名下载（/api/media/file/<x> 返回 302 到临时 S3 URL），
           // next/image 优化器无法优化「重定向」，会在服务端 400 失败，故这里用原生 <img>，
           // 让浏览器原生跟随 302。首屏行用 loading=eager + fetchPriority=high 优化 LCP。
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          // 加载占位 + 淡入由 CardImage 统一处理。
+          <CardImage
             src={src}
             alt={img?.alt || card.name}
-            loading="lazy"
+            loading={priority ? 'eager' : 'lazy'}
             fetchPriority={priority ? 'high' : 'auto'}
-            className="h-full w-full object-cover transition-transform duration-200 ease-out group-hover:scale-[1.03] motion-reduce:transform-none"
+            imgClassName="object-cover transition-transform duration-200 ease-out group-hover:scale-[1.03] motion-reduce:transform-none"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-sm text-hint">

@@ -11,6 +11,7 @@ import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } f
 
 import type { ImageView } from '@/lib/types'
 import { useReducedMotion } from '@/lib/use-reduced-motion'
+import { CardImage } from '@/components/CardImage'
 
 export interface CardGalleryProps {
   images: ImageView[]
@@ -108,8 +109,8 @@ export function CardGallery({
           // 800×800 居中裁切，object-contain 的图位里会把卡面裁掉一圈。
           // width/height 带上媒体尺寸：图位本身是 aspect-[3/4]，但这两个属性
           // 让浏览器在图片字节到达前就算出占位，加载完成不会再顶一下。
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          // 加载占位 + 淡入由 CardImage 统一处理（媒体走 S3 签名 302，用原生 <img>）。
+          <CardImage
             key={main.url}
             src={main.url}
             // 优先用后台给这张图填的 alt（多图时每张说的可能不是同一面），
@@ -120,7 +121,8 @@ export function CardGallery({
             decoding="async"
             // 主图就是这一页的 LCP 元素，别让它排在缩略图后面取。
             fetchPriority="high"
-            className={`h-full w-full object-contain ${swapped ? 'banner-enter' : ''}`}
+            imgKey={main.url}
+            imgClassName={`object-contain ${swapped ? 'banner-enter' : ''}`}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-hint">
@@ -148,16 +150,16 @@ export function CardGallery({
                   : 'border-transparent hover:border-border-strong'
               }`}
             >
-              {/* 缩略图的文字信息由按钮的 aria-label 承担，图片本身是装饰。 */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              {/* 缩略图的文字信息由按钮的 aria-label 承担，图片本身是装饰。
+                  加载占位 + 淡入由 CardImage 统一处理（媒体走 S3 签名 302，用原生 <img>）。 */}
+              <CardImage
                 src={thumbSrc(image)}
                 alt=""
                 width={image.width ?? undefined}
                 height={image.height ?? undefined}
                 loading="lazy"
                 decoding="async"
-                className="h-full w-full object-cover"
+                imgClassName="object-cover"
               />
             </button>
           ))}
