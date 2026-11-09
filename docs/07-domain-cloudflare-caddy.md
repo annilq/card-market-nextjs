@@ -176,7 +176,7 @@ curl -sS -I https://你的域名.jp/             # 首页 200
 验证清单：
 - [ ] `https://你的域名.jp` 返回 200，浏览器地址栏小锁
 - [ ] canonical / OG 指向 `https://你的域名.jp`（非 IP、非 3100）
-- [ ] 后台 `/admin` 登录正常，上传一张大图成功（证明 B2 CORS 生效）
+- [ ] 后台 `/admin` 登录正常，上传一张大图成功（证明 B2 CORS 与 `If-None-Match` 条件写两层都通，见 [06 清单第 2 节](06-console-checklist.md)）
 - [ ] `http://153.115.43.228:3100` 从公网应**不可达**（已收回 loopback）
 - [ ] `docker compose ps` 显示 app、caddy 都 healthy/running
 
@@ -189,5 +189,6 @@ curl -sS -I https://你的域名.jp/             # 首页 200
 | Caddy 起不来 / 证书申请超时 | 80 端口被挡或 ACME 连不通 | 确认安全组+ufw 放了 80/443；`docker compose logs caddy` 看挑战报错 |
 | 访问 502 | caddy 连不到 app | 确认 `reverse_proxy app:3100` 用服务名；`docker compose ps` 看 app 是否 up |
 | canonical 还是 IP | `SITE_URL` 没改或没 reload | 改 VPS `.env` 后 `docker compose up -d app` |
-| 后台传图被拦 | 预检被 B2 拒：`allowedOrigins` 没加 https 域名，或 `allowedOperations` 写成了 `PUT` 而非 `s3_put`，或规则压根没建 | [06 清单第 2 节](06-console-checklist.md) 核对规则全文与预检命令；本文第 5 步第 2 条改 origin；改完重传验证 |
+| 后台传图被拦 | 预检被 B2 拒：`allowedOrigins` 没加 https 域名，或 `allowedOperations` 写成了 `PUT` 而非 `s3_put`，或上传规则被排在了 `["*"]` 下载规则之后 | [06 清单第 2 节](06-console-checklist.md) 核对 2026-11-09 已生效的三条规则与预检命令；本文第 5 步第 2 条改 origin；改完重传验证 |
+| 预检 200 但真正 PUT 回 501 | 不是 CORS、也不是 SDK 校验和参数（B2 容忍 `x-amz-checksum-crc32`）：Payload 为修 CVE-2026-105867 把 `If-None-Match: *` 硬编码进预签名 PUT，B2 不实现条件写 | [06 清单第 2 节「第二层」](06-console-checklist.md)：`src/lib/s3/b2-client-uploads.ts` 重签去掉该头，已挂进 `payload.config.ts`；改完需重新构建部署 |
 | 证书 90 天到期 | Caddy 自动续，无需人工 | 偶尔 `docker compose restart caddy` 保活即可；Uptime Kuma 加一条证书到期监控 |

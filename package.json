@@ -17,6 +17,8 @@
     "check:message": "node --env-file=.env --import tsx scripts/check-action.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1161.0",
+    "@aws-sdk/s3-request-presigner": "3.1161.0",
     "@payloadcms/db-postgres": "3.92.1",
     "@payloadcms/next": "3.92.1",
     "@payloadcms/richtext-lexical": "3.92.1",

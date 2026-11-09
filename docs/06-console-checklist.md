@@ -35,6 +35,13 @@ Payload 先签发一个预签名 PUT URL，再让**浏览器直接跨域 PUT 到
 预检；桶上没有 CORS 规则时 B2 回 403 且不带 `Access-Control-Allow-Origin`，浏览器
 就把真正的 PUT 拦下来，页面只看到 `TypeError: Failed to fetch`。
 
+> **后台上传有两个独立的坑，本节先讲第一个。** ① CORS 预检 `403`（本节，改 B2 桶规则）；
+> ② 预检过了、真正的 `PUT` 仍回 `501 Not Implemented`（Payload 为修 CVE-2026-105867
+> 把 `If-None-Match: *` 硬编码进预签名 PUT，B2 不实现条件写，改
+> `src/lib/s3/b2-client-uploads.ts`，见本节末「第二层」）。两个都修好才能传图，
+> 而且必须先修 CORS 才会暴露第二个。**注意：**曾误判为 AWS SDK 校验和参数，
+> 已用真实 B2 探针推翻——B2 其实容忍 `x-amz-checksum-crc32`，关掉它治不了 501。
+
 我做过一次不带凭据的只读预检：
 
 ```bash
@@ -44,9 +51,17 @@ curl -i -X OPTIONS 'https://koduckya.s3.us-west-004.backblazeb2.com/media/__prob
   -H 'Access-Control-Request-Headers: content-type, if-none-match'
 ```
 
-返回 `403` + `CORSResponse: CORS is not enabled for this bucket.`，和 B2 原生只读接口
-的结果一致：`b2_list_buckets` 看到 `corsRules: []`，`b2_get_bucket` 返回 `null`。
-所以是**新建第一条规则**，不是追加；B2 按第一条匹配规则生效，别在前面留更宽的旧规则。
+返回 `403` + `CORSResponse: CORS is not enabled for this bucket.`。
+关于「桶上有没有规则」，前后两次查到的结果不一样，以 **2026-11-09 用 B2 CLI 读回的为准**：
+早先 B2 原生只读接口看到 `corsRules: []`（`b2_get_bucket` 返回 `null`），
+但后来 `b2 bucket get koduckya` 看到桶上已有两条 `["*"]` 来源的**下载**规则
+（`downloadFromAnyOrigin`、`s3DownloadFromAnyOrigin`，操作只有
+`b2_download_*` / `s3_head` / `s3_get`）。**没有 `s3_put`**，所以 PUT 预检依然 403。
+
+B2 按**第一条** origin 匹配的规则生效，这两条 `["*"]` 规则会先截住预检，
+因此上传规则必须排在第一位。`b2 bucket update --cors-rules` 是**整体替换**，
+不是追加：提交时必须把现有规则一并带上，只发下面那一条会把已有下载能力冲掉。
+实操顺序是先 `b2 bucket get koduckya` 读回，把新规则插到数组开头，再整体提交。
 
 报错出在预检 OPTIONS，不是 PUT 本身失败，也不是密钥、`S3_ENDPOINT` 或签名配错。
 `signedDownloads: true` 的 302 签名下载走自己的 `/api/media/file/...`，前台读图不跨域，
@@ -54,11 +69,17 @@ curl -i -X OPTIONS 'https://koduckya.s3.us-west-004.backblazeb2.com/media/__prob
 
 ### 规则内容
 
+**2026-11-09 已按方案 1 在 `koduckya` 桶落地并验证通过**，下面这段是最终生效的规则。
+如果以后要重配，注意它是三条规则组成的数组（见上面「整体替换 / 顺序」的说明），
+单独贴第一条会冲掉原有两条下载规则。
+
 **`allowedOperations` 必须用 `s3_*` 小写操作名，不能写 `PUT` / `GET` / `POST` / `HEAD`。**
 `allowedOperations` 是 B2 原生接口（`b2_update_bucket` / B2 CLI）的字段，取值是
 `s3_put`、`s3_get`、`s3_head`、`s3_post`、`s3_delete` 这类操作名；`PUT` 那套是 S3
 `PutBucketCors` 里 `AllowedMethods` 的词汇。两套 API 的词汇不能混用，混了两边都不认。
 **这一节早先给的是错的 `["GET", "PUT", "POST", "HEAD"]`，照抄不会生效。**
+
+最终生效的完整数组（三条，`card-market-vps` 排第一）：
 
 ```json
 [
@@ -74,6 +95,22 @@ curl -i -X OPTIONS 'https://koduckya.s3.us-west-004.backblazeb2.com/media/__prob
     "allowedHeaders": ["*"],
     "exposeHeaders": ["ETag"],
     "maxAgeSeconds": 3600
+  },
+  {
+    "corsRuleName": "downloadFromAnyOrigin",
+    "allowedOrigins": ["*"],
+    "allowedOperations": ["b2_download_file_by_id", "b2_download_file_by_name"],
+    "allowedHeaders": ["authorization", "range"],
+    "exposeHeaders": null,
+    "maxAgeSeconds": 3600
+  },
+  {
+    "corsRuleName": "s3DownloadFromAnyOrigin",
+    "allowedOrigins": ["*"],
+    "allowedOperations": ["s3_head", "s3_get"],
+    "allowedHeaders": ["authorization", "range"],
+    "exposeHeaders": null,
+    "maxAgeSeconds": 3600
   }
 ]
 ```
@@ -84,26 +121,35 @@ curl -i -X OPTIONS 'https://koduckya.s3.us-west-004.backblazeb2.com/media/__prob
 - `allowedHeaders` 必须是**单独一个 `"*"`**：AWS SDK v3 会带 `x-amz-checksum-crc32`、
   `x-amz-sdk-checksum-algorithm` 这类头，逐个枚举容易漏。预检要求 origin、操作名、
   以及每个被请求的头全部匹配才放行。
+- 后两条是桶上原有的下载规则，原样保留。`b2` 读回时 `exposeHeaders` 会小写成
+  `etag`、操作顺序也会重排，属于 B2 自己的归一化，不影响语义。
 - 单条规则上限 1000 字节，一个桶最多 100 条。
 
-### 怎么应用
+### 怎么应用（已执行）
 
-Web 控制台在 Backblaze B2 → Buckets → 选桶 → Bucket Settings → CORS Rules。
-**如果那里只给「单一来源 / 全部来源」这种简版预设、不让填操作名，就必须用 B2 CLI 或
-S3 兼容 API** —— 简版规则写不出 `s3_put`。有 JSON 编辑框的话直接粘上面那段。
-
-B2 CLI（本机没装，需要你在自己电脑上用面板的 application key 执行；
-**不要把密钥贴到聊天里**）。先把上面那段 JSON 存成 `/tmp/b2-cors.json`，然后：
+本机已装 B2 CLI 5.0.2。**不要把密钥贴到聊天里**——`.env` 里的 `S3_KEY` / `S3_SECRET`
+就是 B2 的 applicationKeyId / applicationKey，用环境变量传给 CLI，密钥不进命令行：
 
 ```bash
-b2 account authorize                       # 老版是 b2 authorize-account
-b2 bucket update --cors-rules "$(< /tmp/b2-cors.json)" koduckya allPrivate
+# 授权（只需一次；也支持 B2_APPLICATION_KEY_ID / B2_APPLICATION_KEY 环境变量）
+b2 account authorize
+
+# 先读回现状，务必把已有规则一起带进新数组
+b2 bucket get koduckya > /tmp/b2-bucket-before.json
+
+# 把上面三条规则的 JSON 存成 /tmp/b2-cors-rules.json，再整体提交
+b2 bucket update --cors-rules "$(< /tmp/b2-cors-rules.json)" koduckya allPrivate
 ```
 
 末尾的 `allPrivate` 别漏——这条命令会一并提交 bucketType，写成 `allPublic` 会把桶改公开。
-老版 CLI 是 `b2 update-bucket --corsRules "$(< /tmp/b2-cors.json)" koduckya allPrivate`；
-先跑 `b2 bucket update --help` 确认你装的版本。建议先 `jq . /tmp/b2-cors.json`
-验一下格式，B2 的报错大多是 JSON 不合法。
+老版 CLI 是 `b2 update-bucket --corsRules ...`；先跑 `b2 bucket update --help`
+确认你装的版本。建议先 `jq . /tmp/b2-cors-rules.json` 验一下格式，
+B2 的报错大多是 JSON 不合法。
+
+Web 控制台在 Backblaze B2 → Buckets → 选桶 → Bucket Settings → CORS Rules。
+**如果那里只给「单一来源 / 全部来源」这种简版预设、不让填操作名，就必须用 B2 CLI 或
+S3 兼容 API** —— 简版规则写不出 `s3_put`，也不会保留已有规则。
+本次走的是 B2 CLI 方案，没有用控制台。
 
 也可以走 S3 兼容 API，**这里反过来要写 `PUT`**（用的是 S3 的 `AllowedMethods`）。
 把下面这段存成 `/tmp/cors.json`：
@@ -137,13 +183,73 @@ aws s3api put-bucket-cors \
 Backblaze 要求绑定信用卡。CORS 不是授权：预签名 URL 的签名照旧要验，CORS 只是告诉
 浏览器「允许读这个响应」。
 
-### 验证
+### 验证（2026-11-09 已通过）
 
-再打一次上面那条预检，期望从 `403` 变成 `200`，并带
-`Access-Control-Allow-Origin: http://153.115.43.228:3100` 和
-`Access-Control-Allow-Methods: PUT`。也可以
+`b2 bucket get koduckya` 读回三条规则、桶仍是 `allPrivate`。不带凭据的 OPTIONS 预检：
+
+| 场景 | 结果 |
+| --- | --- |
+| `http://153.115.43.228:3100` + PUT + checksum 头 | `200`，`Access-Control-Allow-Methods: PUT`，四个请求头全放行 |
+| `http://localhost:3100` + PUT | `200` |
+| `https://evil.example.com` + PUT | `403 This CORS request is not allowed.`（白名单外仍拒绝） |
+| `http://153.115.43.228:3100` + GET + `range` | `200`，原有下载规则未被冲掉 |
+
+CORS 只解决了浏览器肯发请求；`/admin` 重传大图当时仍在真正的 `PUT` 上失败，
+见下面「第二层」。两层都修好后，重传成功才是端到端生效。
+若用 S3 兼容 API，可用
 `aws s3api get-bucket-cors --endpoint-url https://s3.us-west-004.backblazeb2.com --bucket koduckya`
-读回规则确认。然后到 `/admin` 重传一张大图，能传成功就是生效了。
+读回规则确认。
+
+### 第二层：真正的 PUT 回 501，不是 CORS、也不是校验和
+
+预检改 200 后，`/admin` 上传大图的真正 `PUT` 仍报
+`501 (Not Implemented)` / `Error: Upload failed with status 501`。B2 的响应体原文是
+`A header you provided implies functionality that is not implemented If-None-Match`。
+
+**根因。** `@payloadcms/storage-s3` 从 3.90.0 起为修
+CVE-2026-105867（clientUploads 可能覆盖已有对象），在 `generateSignedURL.js` 里把
+`IfNoneMatch: '*'` 硬编码进预签名的 `PutObjectCommand`，并把
+`'If-None-Match': '*'` 作为浏览器请求头一并返回——这就是 S3 的「条件写」。
+B2 的 S3 兼容 API **不实现条件写**，收到这个头直接回 501。这跟 CORS、密钥、
+`S3_ENDPOINT` 都无关：预检已过说明请求到了 B2，是 B2 拒绝了头本身。
+
+两个容易走偏的点，都已用真实 B2 探针逐一排除：
+
+- **不是 AWS SDK 校验和。** URL 里的 `x-amz-checksum-crc32` /
+  `x-amz-sdk-checksum-algorithm=CRC32` 是 SDK v3 ≥3.729 的默认行为，但 B2 其实容忍：
+  带 checksum、**不带** `If-None-Match` → `200`；设 `WHEN_REQUIRED` 去掉 checksum、
+  **保留** `If-None-Match` → 仍 `501`。所以那两个开关无害但治不了本，已撤掉。
+- **不能只删浏览器头。** `if-none-match` 被签进了 `X-Amz-SignedHeaders`
+  （`content-type;host;if-none-match`）。只把浏览器发的 `If-None-Match` 去掉、沿用
+  原签名 URL，B2 会回 `400 InvalidRequest: header 'if-none-match' is listed in
+  signed headers, but is not present`。必须连命令一起重签。
+
+`IfNoneMatch` 是硬编码在命令里的，`s3Storage({ config })` 传不进去；npm 最新的
+3.93.0 仍硬编码、也没有 B2 兼容开关，升级无解。另一条路是关掉 `clientUploads` 走
+服务端上传（实测 `putObject` 对 B2 返回 200），但那会推翻 Vercel 4.5MB 绕行和
+刚配好的 CORS 直传方案，不采用。
+
+**已落地修法。** 新增 [src/lib/s3/b2-client-uploads.ts](../src/lib/s3/b2-client-uploads.ts)，
+在 [payload.config.ts](../src/payload.config.ts) 里排在 `s3Storage` 之后（`order: 1`）
+挂一个配置插件，包住 `/storage-s3-generate-signed-url` 端点：先让上游 handler 照常
+跑完鉴权、`randomUUID()` 唯一 Key 与签名回执，再从它签好的 URL 里取出**同一个对象
+Key**，重签一张不带 `IfNoneMatch` 的 PUT URL，并换掉浏览器头里的 `If-None-Match`。
+对象位置、`clientUploadContext` / 回执、文档引用全部不变，只换签名。两个 AWS SDK 包
+已作为显式依赖写进 `package.json`，避免 Docker 的 `npm ci` 依赖提升落空。
+
+安全取舍要如实说：去掉条件写等于少一层「服务端强制不覆盖」的纵深防御。本项目仍
+保留上游的防覆盖主体——`resolveSignedURLKey` 每次上传生成 `randomUUID()` 段作为 Key，
+`createClientUploadReceipt` 把 collection / filename / 用户 / 6 小时过期签进回执，客户端
+无法指定 Key；`assertClientUploadAccess` 的权限校验也照常执行。插件内部还会检测上游
+是否仍在签 `if-none-match`，**上游哪天去掉（或 B2 支持条件写）就自动空转**，
+到时直接删掉这个 shim 即可。
+
+**验证。** `npx tsc --noEmit`、`npx next build` 均通过；用落地插件本身对真实 B2 发 PUT：
+签名头从 `content-type;host;if-none-match` 变 `content-type;host`、浏览器头无
+`If-None-Match`、同一对象 Key（含中文/空格/`&`/`%`）真 PUT `200`、GET 命中、
+cleanup `204`，自动失效与错误透传分支也都通过。
+**代码改完要重新部署才生效**（VPS 上 `docker compose build app && docker compose up -d app`，
+不像 `.env` 那样是运行时变量），之后在 `/admin` 重传一张大图做端到端确认。
 
 域名上线后按 [07 文档第 5 步](07-domain-cloudflare-caddy.md) 把 https 域名加进
 `allowedOrigins`、删掉 IP 和 localhost。

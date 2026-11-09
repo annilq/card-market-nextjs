@@ -162,11 +162,17 @@ push 到 GitHub 已授权，阶段 0 的修正会在你确认 diff 后推上去�
   [site-url.ts](../src/lib/site-url.ts#L37) 的 `getOrigin()` 用请求 host，
   canonical 与 OG 在请求上下文里不受影响。
 - B2 桶 CORS 需要允许 `http://153.115.43.228:3100`，否则后台大图直传被浏览器拦掉。
-  图片显示不受影响，已经验证正常。这条规则**还没建**：B2 原生只读接口看到
-  `corsRules` 是 `[]`，不带凭据的 OPTIONS 预检返回 `403` +
-  `CORSResponse: CORS is not enabled for this bucket.`。正确规则（以及
-  `allowedOperations` 必须写 `s3_put` 而不是 `PUT` 这个坑）见
-  [06 清单第 2 节](06-console-checklist.md)。改规则需要你的控制台权限或 B2 CLI 凭据。
+  图片显示不受影响，已经验证正常。**2026-11-09 已修好**：原先桶上只有下载规则、
+  没有 `s3_put`，PUT 预检返回 `403`；现已在 B2 CLI 里补上上传规则（排在第一位，
+  保留原有两条下载规则，桶仍 `allPrivate`），预检变 `200`。规则全文与
+  `allowedOperations` 必须写 `s3_put` 而不是 `PUT` 这个坑见
+  [06 清单第 2 节](06-console-checklist.md)。
+  预检通过后还有第二层：Payload 为修 CVE-2026-105867 把 `If-None-Match: *` 硬编码进
+  `clientUploads` 的预签名 PUT，而 B2 不实现条件写，真正的 PUT 回 `501`。这不是 AWS SDK
+  的校验和参数（已用真实 B2 探针推翻：B2 容忍 `x-amz-checksum-crc32`，关掉它治不了本）。
+  已新增 `src/lib/s3/b2-client-uploads.ts` 包住签发端点，用同一个对象 Key 重签一张不带该头
+  的 URL（见 [06 清单第 2 节「第二层」](06-console-checklist.md)），桶规则不用改。
+  代码改动需重新构建部署才生效。
 - 后台首个管理员账号走 Payload 的 `/admin` 首次用户流程创建，不要用默认值。
 - Dozzle 和 Uptime Kuma 在 [compose](../docker-compose.yml#L43) 已绑 `127.0.0.1`，
   保持不动。这次不暴露到公网。
@@ -251,7 +257,7 @@ VPS 内网 IP 是 `172.16.0.3`，走 `enp3s0`。用 `postgres/postgres` 试探�
 | 2 | 从 Neon 导出数据导入 Xserver 库 | 已完成，23 张表与业务数据校验通过 |
 | 3 | `docker compose build`、`up -d`、跑第 4 节的第 4 步健康检查 | 已完成，容器 healthy，页面与图片全绿 |
 | 4 | 你完成安全组放行。从公网验证 `/api/health`、首页、`/admin`、`/api/cards` | 已完成。根因是规则组没绑定 VPS，绑定后公网全绿 |
-| 5 | 改后台默认管理员密码。确认 B2 CORS 允许 `http://153.115.43.228:3100`，验证后台上传大图 | 待办，见第 10 节 |
+| 5 | 改后台默认管理员密码。确认 B2 CORS 允许 `http://153.115.43.228:3100`，验证后台上传大图 | B2 CORS 已配置并验证预检 200；真正的 PUT 曾回 501（`If-None-Match` 条件写，B2 不实现），已新增 `src/lib/s3/b2-client-uploads.ts` 重签去掉该头（见 [06 清单第 2 节](06-console-checklist.md)）；**待重新部署后在 `/admin` 重传大图确认**，并改管理员密码 |
 | 6 | 配置 Uptime Kuma 监控项与告警，确认 Sentry 上报，交付运维手册与回滚命令 | 待办，见第 10 节 |
 
 每阶段结束给你一条简短结果和下一步，任一步没过就停在那里，不往下做。
@@ -264,14 +270,18 @@ VPS 内网 IP 是 `172.16.0.3`，走 `enp3s0`。用 `postgres/postgres` 试探�
 
 1. **改后台默认管理员密码。** 导入的数据里带着 `admin@example.com` / `admin12345`，
    而站点现在全网可访问。登录 `http://153.115.43.228:3100/admin` 后立刻改掉。
-2. **在 B2 桶新建第一条 CORS 规则，允许 `http://153.115.43.228:3100`。**
-   B2 原生只读接口已确认桶上 `corsRules` 是空的，一条规则都没有，所以不是追加。
+2. **B2 桶 CORS 已在 2026-11-09 配好**（原本后台上传因此报 CORS 错）。
+   桶上其实早有两条下载规则，缺的是 `s3_put`，不是一条规则都没有；已用 B2 CLI
+   把上传规则插到第一条并整体提交，保留原有两条，`allPrivate` 不变，预检已变 200。
    规则全文、两种 CLI 写法和验证命令见
    [06 清单第 2 节](06-console-checklist.md)：`allowedOperations` 必须是
-   `s3_put` / `s3_get` / `s3_head`，**写 `PUT` / `GET` / `POST` / `HEAD` 不生效**；
-   `allowedOrigins` 建议同时写上 Vercel 域名、新地址和 localhost。
-   当前后台上传就是缺这条规则才报 CORS 错。验证方法是在后台上传一张大图，
-   能传成功就是生效了。
+   `s3_put` / `s3_get` / `s3_head`，**写 `PUT` / `GET` / `POST` / `HEAD` 不生效**。
+   预检通了之后，真正的 PUT 还因 Payload 硬编码的 `If-None-Match: *`（S3 条件写，
+   B2 不实现）被回 `501`；曾误判为 AWS SDK 的 `x-amz-checksum-crc32` 校验和参数，
+   已用真实 B2 探针推翻。现新增 `src/lib/s3/b2-client-uploads.ts` 包住签发端点，
+   用同一个对象 Key 重签一张不带该头的 URL（见 [06 清单第 2 节「第二层」](06-console-checklist.md)）。
+   代码改动需重新构建部署（`docker compose build app && docker compose up -d app`），
+   之后在 `/admin` 重传一张大图做端到端确认。
 3. **轮换凭据。** 数据库密码出现在对话里了，去 Xserver 面板改，改完告诉我，
    我同步生产 env 文件。Neon、B2、Sentry 的凭据也建议轮换，因为本地 `.env`
    曾经进过构建产物，轮换后记得同步 Vercel 的环境变量。

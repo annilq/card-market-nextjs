@@ -1,6 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+import type { S3ClientConfig } from '@aws-sdk/client-s3'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import {
   FixedToolbarFeature,
@@ -30,9 +31,21 @@ import { Shops } from '@/collections/Shops'
 import { SubSeries } from '@/collections/SubSeries'
 import { Users } from '@/collections/Users'
 import { SiteSettings } from '@/globals/SiteSettings'
+import { b2ClientUploadsPlugin } from '@/lib/s3/b2-client-uploads'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
+
+// S3 / B2 客户端配置：s3Storage 与 B2 兼容插件必须共用同一份 endpoint / region /
+// credentials，否则重签出的 URL 与浏览器实际请求的签名对不上。
+const s3Config: S3ClientConfig = {
+  endpoint: process.env.S3_ENDPOINT || undefined,
+  region: process.env.S3_REGION || 'auto',
+  credentials: {
+    accessKeyId: process.env.S3_KEY ?? '',
+    secretAccessKey: process.env.S3_SECRET ?? '',
+  },
+}
 
 export default buildConfig({
   admin: {
@@ -170,14 +183,16 @@ export default buildConfig({
             signedDownloads: true,
             // 浏览器直传桶，绕开 Vercel serverless 4.5MB 请求体上限（后台上传大图用）
             clientUploads: true,
-            config: {
-              endpoint: process.env.S3_ENDPOINT || undefined,
-              region: process.env.S3_REGION || 'auto',
-              credentials: {
-                accessKeyId: process.env.S3_KEY ?? '',
-                secretAccessKey: process.env.S3_SECRET ?? '',
-              },
-            },
+            config: s3Config,
+          }),
+          // B2 的 S3 兼容 API 不实现条件写（If-None-Match），而 Payload 为修
+          // CVE-2026-105867 会把它硬编码进 clientUploads 的预签名 PUT。
+          // 这个插件包住签发端点，用同一个对象 Key 重签一张不带该头的 URL。
+          // 它自带 order: 1，排在 s3Storage（0）之后才看得到端点；内部会检测
+          // 上游是否仍在签 if-none-match，上游修好即自动空转。详见该文件注释。
+          b2ClientUploadsPlugin({
+            bucket: process.env.S3_BUCKET,
+            config: s3Config,
           }),
         ]
       : []),
