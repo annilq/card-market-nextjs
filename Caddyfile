@@ -1,7 +1,8 @@
 # 反代到同一 compose 网络里的 app 服务（容器名 app，端口 3100）。
 # Caddy 首次启动会为 koduckya.jp 和 www.koduckya.jp 自动申请 Let's Encrypt 证书并自动续期。
 # 显式转发 Host / X-Forwarded-*，让 src/lib/site-url.ts 的 getOrigin() 读到真实域名。
-koduckya.jp {
+# 默认域名是 www，canonical / OG / sitemap 都跟随请求 host，所以无需改代码或 env。
+www.koduckya.jp {
 	encode gzip
 	reverse_proxy app:3100 {
 		header_up Host {host}
@@ -10,7 +11,7 @@ koduckya.jp {
 	}
 }
 
-# www 统一 301 到根域，避免同一内容出现两个 canonical。
-www.koduckya.jp {
-	redir https://koduckya.jp{uri} permanent
+# 根域 301 到 www（默认域名），避免同一内容出现两个 canonical。
+koduckya.jp {
+	redir https://www.koduckya.jp{uri} permanent
 }
