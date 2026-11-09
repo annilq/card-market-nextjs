@@ -7,7 +7,7 @@ services:
         NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
         NEXT_PUBLIC_DEFAULT_LOCALE: ${NEXT_PUBLIC_DEFAULT_LOCALE:-zh}
     ports:
-      - '3100:3100'
+      - '127.0.0.1:3100:3100'
     env_file:
       - .env
     environment:
@@ -36,6 +36,21 @@ services:
         limits:
           memory: 2G
 
+  # HTTPS 反代 + 自动证书。首次启动会为 Caddyfile 里的域名申请 Let's Encrypt。
+  # app 的 3100 已收回 loopback，公网只从 80/443 进。
+  caddy:
+    image: caddy:2
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+    depends_on:
+      - app
+
   # 实时查看容器日志（只读 docker.sock，零代码改动）
   logs:
     image: amir20/dozzle:latest
@@ -61,3 +76,5 @@ services:
 volumes:
   media:
   uptime-kuma:
+  caddy_data:
+  caddy_config:
