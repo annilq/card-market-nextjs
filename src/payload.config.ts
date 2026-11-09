@@ -38,12 +38,24 @@ const dirname = path.dirname(filename)
 
 // S3 / B2 客户端配置：s3Storage 与 B2 兼容插件必须共用同一份 endpoint / region /
 // credentials，否则重签出的 URL 与浏览器实际请求的签名对不上。
+// requestHandler 必须显式带上 s3Storage 默认的 agent 选项：插件把 config 展开在
+// 默认 requestHandler 之后，这里一旦提供就会整体替换，漏写会把连接池从 100 降到 50。
+// B2 偶发在 TCP 连上后吞掉 TLS 握手，而默认 handler 没有请求级 deadline，单次挂起
+// 约 120s；requestTimeout + throwOnRequestTimeout 把它压成可重试的 TimeoutError。
+// 回读原图与回传四个产物都用这份缓存客户端，一处配置即可覆盖两处挂点。
 const s3Config: S3ClientConfig = {
   endpoint: process.env.S3_ENDPOINT || undefined,
   region: process.env.S3_REGION || 'auto',
   credentials: {
     accessKeyId: process.env.S3_KEY ?? '',
     secretAccessKey: process.env.S3_SECRET ?? '',
+  },
+  requestHandler: {
+    httpAgent: { keepAlive: true, maxSockets: 100 },
+    httpsAgent: { keepAlive: true, maxSockets: 100 },
+    requestTimeout: 8000,
+    throwOnRequestTimeout: true,
+    socketTimeout: 10000,
   },
 }
 
