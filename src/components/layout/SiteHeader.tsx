@@ -106,6 +106,8 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
             <img
               src={settings?.logo?.url||`/logo_header.png`}
               alt={settings?.logo?.alt ?? siteName}
+              width={settings?.logo?.width ?? 300}
+              height={settings?.logo?.height ?? 57}
               className=" w-auto object-contain"
             />
           </Link>
