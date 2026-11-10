@@ -38,6 +38,16 @@ export function enabledField() {
   }
 }
 
+export type SortTip = { zh: string; en: string; ja: string }
+
+/** 带说明气泡的排序字段标签。两个集合共用一个组件，文案由调用方给。 */
+export function sortFieldLabel(tip: SortTip) {
+  return {
+    path: '@/components/admin/SortFieldLabel#SortFieldLabel',
+    clientProps: { tip },
+  }
+}
+
 export function sortField() {
   return {
     name: 'sort',

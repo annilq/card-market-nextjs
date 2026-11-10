@@ -94,7 +94,7 @@ export default async function Page({ params, searchParams }: Props) {
     loadBanners(),
     // 首页最多 5 条，其中置顶最多 2 条；其余名额用发布时间最新的公告补满。
     getAnnouncements({ limit: HOME_NOTICE_COUNT, maxPinned: HOME_PINNED_COUNT }),
-    getHighValueCards(8),
+    getHighValueCards(10),
     // 筛选维度的完整四层（IP → 系列 → 子系列 + 稀有度）：首页用的筛选栏与 /cards 是同一个。
     getFacets(),
     getCards(query),

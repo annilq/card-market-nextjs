@@ -2,7 +2,7 @@ import { APIError, type CollectionConfig, type Where } from 'payload'
 
 import { publishedOnly } from '@/access'
 import { moduleRead, roleAction } from '@/access/roles'
-import { linkField, statusField } from '@/fields/shared'
+import { linkField, sortField, sortFieldLabel, statusField } from '@/fields/shared'
 import { revalidateHook } from '@/lib/revalidate'
 
 const relId = (value: unknown): string | number | null => {
@@ -198,6 +198,23 @@ export const Cards: CollectionConfig = {
           admin: { width: '33%' },
         },
       ],
+    },
+    // 买取排序只在两类买取卡上有意义；未设序号的卡按最新发布垫在后面。
+    {
+      ...sortField(),
+      defaultValue: undefined,
+      index: true,
+      admin: {
+        position: 'sidebar',
+        condition: (data) => Boolean(data?.isHighValue || data?.isNoDeduction),
+        components: {
+          Label: sortFieldLabel({
+            zh: '仅高价买取 / 不减额买取卡牌生效。数字越小越靠前；留空的卡牌按发布时间倒序排在设了序号的之后。首页栏目最多取 10 张。',
+            en: 'Only applies to high-value / no-deduction buyback cards. Lower numbers come first; cards without a number follow by publish time. The homepage strip takes at most 10.',
+            ja: '高価買取 / 減額なし買取のみ有効。小さいほど上位。番号未設定のカードは公開日時の新しい順で後ろに並びます。トップは最大10件。',
+          }),
+        },
+      },
     },
     statusField(),
     {

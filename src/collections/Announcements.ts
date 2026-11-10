@@ -2,7 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { publishedAnnouncementOnly } from '@/access'
 import { moduleRead, roleAction } from '@/access/roles'
-import { linkField, sortField, statusField } from '@/fields/shared'
+import { linkField, sortField, sortFieldLabel, statusField } from '@/fields/shared'
 import { revalidateHook } from '@/lib/revalidate'
 
 export const Announcements: CollectionConfig = {
@@ -79,6 +79,13 @@ export const Announcements: CollectionConfig = {
           ja: '小さいほど上に表示。固定記事のみ有効。',
         },
         condition: (data) => Boolean(data?.isPinned),
+        components: {
+          Label: sortFieldLabel({
+            zh: '仅置顶公告生效。数字越小越靠前，用于多条置顶公告之间的先后；未置顶时按发布时间倒序，此字段不参与排序。',
+            en: 'Only applies to pinned announcements. Lower numbers come first among pins; unpinned ones sort by publish time and ignore this field.',
+            ja: '固定記事のみ有効。小さいほど固定内で上位。固定なしは公開日時順で、この値は使われません。',
+          }),
+        },
       },
     },
     statusField({ defaultValue: 'draft' }),

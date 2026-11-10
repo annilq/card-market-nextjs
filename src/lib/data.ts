@@ -338,12 +338,26 @@ export async function getLatestCards(limit = 8): Promise<CardView[]> {
   return result.items
 }
 
-/** 首页「高价买取」。
- * 横条现同时纳入高价买取与不减额买取两类卡牌。 */
-export async function getHighValueCards(limit = 8): Promise<CardView[]> {
-  const result = await getCards({ limit, sort: 'price_desc', highValueOnly: true })
-  return result.items
-}
+/** 首页「高价买取」栏目。
+ *  横条现同时纳入高价买取与不减额买取两类卡牌。按后台排序号升序（未设序号的按 Postgres
+ *  ASC 默认 NULLS LAST 垫后），同序号再按发布时间倒序；最多 10 张，交给前端轮播。 */
+export const getHighValueCards = unstable_cache(
+  async (limit = 10): Promise<CardView[]> => {
+    const payload = await getPayloadClient()
+    const result = await payload.find({
+      collection: 'cards',
+      depth: 1,
+      overrideAccess: false,
+      where: { or: [{ isHighValue: { equals: true } }, { isNoDeduction: { equals: true } }] },
+      sort: ['sort', '-createdAt'],
+      limit,
+    })
+    return result.docs.map((doc) => toCardView(doc, false))
+  },
+  ['high-value-cards'],
+  // 与 getCards 共用 cards 标签，后台改完由 afterChange 钩子主动失效。
+  { revalidate: 3600, tags: ['cards'] },
+)
 
 /** 筛选用维度：IP → 系列 → 子系列，外加稀有度与卡牌状态。缓存 5 分钟——它出现在
  * 首页与列表页，是最常被重复查询的静态维度。 */
