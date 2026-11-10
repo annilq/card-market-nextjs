@@ -1,7 +1,6 @@
 // 面向页面的视图模型：把 Payload 的文档（含关系 ID / 富文本 JSON）收敛成页面能直接渲染的形状。
 // 这样页面组件不需要知道 Payload 的关系展开规则，也不需要自己转富文本。
 
-export type CardStatus = 'raw' | 'packaged'
 export type CardSort = 'price_desc' | 'price_asc' | 'newest' | 'oldest'
 
 export const CARD_SORTS: CardSort[] = ['price_desc', 'price_asc', 'newest', 'oldest']
@@ -33,7 +32,10 @@ export interface CardView {
   rarityName: string | null
   images: ImageView[]
   isHighValue: boolean
-  cardStatus: CardStatus
+  isNoDeduction: boolean
+  cardStatusId: number | null
+  cardStatusName: string | null
+  cardStatusAccent: boolean
   descriptionHtml: string
   createdAt: string
 }
@@ -95,7 +97,7 @@ export interface CardQuery {
   seriesIds?: number[]
   subSeriesIds?: number[]
   rarityIds?: number[]
-  cardStatus?: CardStatus[]
+  cardStatusIds?: number[]
   highValueOnly?: boolean
   minPrice?: number
   maxPrice?: number

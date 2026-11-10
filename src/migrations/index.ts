@@ -9,6 +9,8 @@ import * as migration_20261105_020000_roles_permission_model from './20261105_02
 import * as migration_20261105_030000_fix_roles_permissions_cols from './20261105_030000_fix_roles_permissions_cols';
 import * as migration_20261105_040000_fix_roles_permissions_id from './20261105_040000_fix_roles_permissions_id';
 import * as migration_20261106_050000_add_roles_id_to_locked_docs_rels from './20261106_050000_add_roles_id_to_locked_docs_rels';
+import * as migration_20261110_221000_card_statuses from './20261110_221000_card_statuses';
+import * as migration_20261110_234500_no_deduction_buyback from './20261110_234500_no_deduction_buyback';
 
 export const migrations = [
   {
@@ -65,5 +67,15 @@ export const migrations = [
     up: migration_20261106_050000_add_roles_id_to_locked_docs_rels.up,
     down: migration_20261106_050000_add_roles_id_to_locked_docs_rels.down,
     name: '20261106_050000_add_roles_id_to_locked_docs_rels',
+  },
+  {
+    up: migration_20261110_221000_card_statuses.up,
+    down: migration_20261110_221000_card_statuses.down,
+    name: '20261110_221000_card_statuses',
+  },
+  {
+    up: migration_20261110_234500_no_deduction_buyback.up,
+    down: migration_20261110_234500_no_deduction_buyback.down,
+    name: '20261110_234500_no_deduction_buyback',
   },
 ];

@@ -16,7 +16,7 @@ export const publishedOnly: Access = ({ req }) => {
   return where
 }
 
-/** 维度集合（ips/series/sub-series/rarities）用布尔 enabled 控制是否启用。 */
+/** 维度集合（ips/series/sub-series/rarities/card-statuses）用布尔 enabled 控制是否启用。 */
 export const enabledOnly: Access = ({ req }) => {
   if (req.user) return true
   const where: Where = { enabled: { equals: true } }

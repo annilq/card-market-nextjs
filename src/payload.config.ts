@@ -20,6 +20,7 @@ import { migrations } from './migrations'
 import { Announcements } from '@/collections/Announcements'
 import { Banners } from '@/collections/Banners'
 import { Cards } from '@/collections/Cards'
+import { CardStatuses } from '@/collections/CardStatuses'
 import { InfoPages } from '@/collections/InfoPages'
 import { Ips } from '@/collections/Ips'
 import { Media } from '@/collections/Media'
@@ -112,6 +113,7 @@ export default buildConfig({
     Series,
     SubSeries,
     Rarities,
+    CardStatuses,
     Cards,
     Banners,
     Announcements,

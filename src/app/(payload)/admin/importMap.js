@@ -22,8 +22,10 @@ import { StrikethroughFeatureClient as StrikethroughFeatureClient_e70f5e05f09f93
 import { UnderlineFeatureClient as UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
+import { ExclusiveBuybackField as ExclusiveBuybackField_d7e48e3007ad67af7b5147955b29eb05 } from '@/components/admin/ExclusiveBuybackField'
 import { StatusCell as StatusCell_ff32efc137541c6552ed42594a323755 } from '@/components/admin/StatusCell'
 import { LinkCell as LinkCell_1421bd8e7e18ea3b1ddeddbf89a7fa1b } from '@/components/admin/LinkCell'
+import { AdminDateCell as AdminDateCell_b1bd7046154b34faf793f5e4e8e6ad3b } from '@/components/admin/AdminDateCell'
 import { MapPickerField as MapPickerField_d25e7d6048f8e84a9a4fd68f2fe40387 } from '@/collections/Shops/MapPickerField'
 import { AdminAccountAvatar as AdminAccountAvatar_cf75d5cf4dcb8e029646575cda15327f } from '@/components/admin/AdminAccountAvatar'
 import { AdminNav as AdminNav_2623bc737c612ce9420322f2210a7f19 } from '@/components/admin/AdminNav'
@@ -63,8 +65,10 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#UnderlineFeatureClient": UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
+  "@/components/admin/ExclusiveBuybackField#ExclusiveBuybackField": ExclusiveBuybackField_d7e48e3007ad67af7b5147955b29eb05,
   "@/components/admin/StatusCell#StatusCell": StatusCell_ff32efc137541c6552ed42594a323755,
   "@/components/admin/LinkCell#LinkCell": LinkCell_1421bd8e7e18ea3b1ddeddbf89a7fa1b,
+  "@/components/admin/AdminDateCell#AdminDateCell": AdminDateCell_b1bd7046154b34faf793f5e4e8e6ad3b,
   "@/collections/Shops/MapPickerField#MapPickerField": MapPickerField_d25e7d6048f8e84a9a4fd68f2fe40387,
   "@/components/admin/AdminAccountAvatar#AdminAccountAvatar": AdminAccountAvatar_cf75d5cf4dcb8e029646575cda15327f,
   "@/components/admin/AdminNav#AdminNav": AdminNav_2623bc737c612ce9420322f2210a7f19,

@@ -86,7 +86,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     card.price != null ? t('priceTag', { price: formatYen(card.price) }) : t('priceOnRequest'),
     card.code ? t('cardCode', { code: card.code }) : '',
     card.rarityName ?? '',
-    t(card.cardStatus === 'packaged' ? 'statusPackaged' : 'statusRaw'),
+    card.cardStatusName ?? '',
   ]
     .filter(Boolean)
     .join(' · ')

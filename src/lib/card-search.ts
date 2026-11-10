@@ -6,7 +6,7 @@
 //
 // 参数表（读两写法、写只写逗号）：
 //   ip / series / sub / rarity  多选 ID，逗号分隔（也接受重复参数 `ip=1&ip=2`）
-//   status                      卡牌状态，逗号分隔（raw / packaged）
+//   status                      卡牌状态 ID，逗号分隔
 //   hv=1                        只看高价买取
 //   min / max                   价格区间
 //   q                           关键词（由顶栏搜索带入，这里只负责读出来）
@@ -20,13 +20,10 @@ import {
   DEFAULT_CARD_SORT,
   type CardQuery,
   type CardSort,
-  type CardStatus,
 } from '@/lib/types'
 
 /** Next 的 `searchParams`（await 之后的形状）。 */
 export type CardSearchParams = Record<string, string | string[] | undefined>
-
-const CARD_STATUSES: CardStatus[] = ['raw', 'packaged']
 
 /**
  * 取一个参数的原始值。
@@ -78,10 +75,6 @@ export function parseCardSearch(
   { limit, withPage = false }: CardSearchOptions,
 ): CardQuery {
   const rawSort = rawOf(sp, 'sort')
-  const statuses = rawOf(sp, 'status')
-    ?.split(',')
-    .map((s) => s.trim())
-    .filter((s): s is CardStatus => CARD_STATUSES.includes(s as CardStatus))
   const rawPage = numOf(sp, 'page')
 
   const base: CardQuery = {
@@ -89,7 +82,7 @@ export function parseCardSearch(
     seriesIds: idListOf(sp, 'series'),
     subSeriesIds: idListOf(sp, 'sub'),
     rarityIds: idListOf(sp, 'rarity'),
-    cardStatus: statuses?.length ? statuses : undefined,
+    cardStatusIds: idListOf(sp, 'status'),
     highValueOnly: rawOf(sp, 'hv') != null,
     minPrice: numOf(sp, 'min'),
     maxPrice: numOf(sp, 'max'),

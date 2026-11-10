@@ -12,7 +12,14 @@
  * 前台用的是无用户的服务端读取（overrideAccess:false），那里 req.user 为空，
  * 直接走各集合的「匿名公开 Where」，不会触发角色查询。
  */
-import type { Access, FieldAccess, PayloadRequest } from 'payload'
+import { APIError } from 'payload'
+import type {
+  Access,
+  CollectionBeforeDeleteHook,
+  CollectionBeforeValidateHook,
+  FieldAccess,
+  PayloadRequest,
+} from 'payload'
 import type { Role, User } from '@/payload-types'
 
 /**
@@ -28,6 +35,7 @@ export const MODULES = [
   { slug: 'series', label: { zh: '系列', en: 'Series', ja: 'シリーズ' } },
   { slug: 'sub-series', label: { zh: '子系列', en: 'Sub-series', ja: 'サブシリーズ' } },
   { slug: 'rarities', label: { zh: '稀有度', en: 'Rarities', ja: 'レアリティ' } },
+  { slug: 'card-statuses', label: { zh: '卡牌状态', en: 'Card conditions', ja: 'カード状態' } },
   { slug: 'shops', label: { zh: '门店', en: 'Shops', ja: '店舗' } },
   { slug: 'messages', label: { zh: '访客留言', en: 'Messages', ja: 'お問い合わせ' } },
   { slug: 'media', label: { zh: '媒体素材', en: 'Media', ja: 'メディア' } },
@@ -164,3 +172,65 @@ export function roleActionField(
  * 字段级访问：仅管理员可改「角色」字段，防止普通用户自我提权。
  */
 export const roleFieldUpdateOnlyAdmin: FieldAccess = ({ req }) => isRoleAdmin(req)
+
+/** 判断某个角色 id 是否带 isAdmin 标志。overrideAccess 直查，避免与 roles 自身的访问规则递归。 */
+export async function isAdminRoleId(
+  req: PayloadRequest,
+  roleId: number | string | null,
+): Promise<boolean> {
+  if (roleId == null) return false
+  const { totalDocs } = await req.payload.find({
+    collection: 'roles',
+    where: { and: [{ id: { equals: roleId } }, { isAdmin: { equals: true } }] },
+    overrideAccess: true,
+    depth: 0,
+    limit: 1,
+  })
+  return totalDocs > 0
+}
+
+/**
+ * 单一管理员约束：管理员角色只能属于一个账号，既不能复制给别人，也不能从它身上摘掉。
+ *
+ * Payload 每次 update 都会把未提交的 role 从原文档回填，所以「保持原值」必须先放行。
+ * 库里一个管理员都没有时允许建立第一个，兼容首用户引导和 seed 的旧库补绑；
+ * 一旦有了管理员，任何换成别人或降级的写入都会破坏约束，一律拒绝。
+ */
+export const enforceSingleAdmin: CollectionBeforeValidateHook = async ({ data, originalDoc, req }) => {
+  if (!data || data.role == null) return data
+  const submitted = toRoleId(data.role)
+  const previous = originalDoc ? toRoleId(originalDoc.role) : null
+  if (originalDoc?.id && String(previous) === String(submitted)) return data
+
+  const submittedIsAdmin = await isAdminRoleId(req, submitted)
+  const previousIsAdmin = previous != null && (await isAdminRoleId(req, previous))
+  if (!submittedIsAdmin && !previousIsAdmin) return data
+
+  const { totalDocs } = await req.payload.find({
+    collection: 'users',
+    where: { role: { equals: submittedIsAdmin ? submitted : previous } },
+    overrideAccess: true,
+    depth: 0,
+    limit: 0,
+  })
+  if (totalDocs === 0) return data
+  throw new APIError('应用只能有一个管理员，管理员角色不能分配或变更', 400, undefined, true)
+}
+
+/**
+ * 禁止删除持有管理员角色的账号，否则后台会失去唯一的管理员。
+ * 清空数据的 reinit 走裸 SQL TRUNCATE，不触发本钩子。
+ */
+export const preventAdminDeletion: CollectionBeforeDeleteHook = async ({ id, req }) => {
+  const user = await req.payload.findByID({
+    collection: 'users',
+    id,
+    overrideAccess: true,
+    depth: 0,
+    disableErrors: true,
+  })
+  if (!user) return
+  if (await isAdminRoleId(req, toRoleId(user.role))) {
+    throw new APIError('不能删除唯一的管理员账号', 400, undefined, true)
+  }
+}

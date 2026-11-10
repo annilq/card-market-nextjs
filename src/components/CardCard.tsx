@@ -43,8 +43,9 @@ export function CardCard({
   const t = getTranslator(locale)
   const img = card.images[0]
   const src = compact ? img?.thumbUrl || img?.url : img?.cardUrl || img?.url
-  const isVault = card.cardStatus === 'packaged'
+  const accent = card.cardStatusAccent
   const isScarce = !!card.rarityName && ['SSR', 'UR'].includes(card.rarityName)
+  const buybackLabel = card.isHighValue ? t('highValue') : card.isNoDeduction ? t('noDeduction') : null
 
   return (
     <Link
@@ -67,11 +68,11 @@ export function CardCard({
       }`}
     >
       <div className={`relative aspect-[3/4] overflow-hidden rounded-lg bg-surface-2`}>
-        {card.isHighValue && (
+        {buybackLabel && (
           // z-10：图片在 hover 时 scale 出 transform、自成一层，按 DOM 顺序会盖在
           // 位于它之前的徽章上；抬一层保证「高价买取」悬停时不被放大的图遮住。
           <span className="absolute left-1 top-1 z-10 rounded-xl bg-brand px-1.5 py-0.5 text-[11px] text-white">
-            {t('highValue')}
+            {buybackLabel}
           </span>
         )}
         {src ? (
@@ -91,12 +92,12 @@ export function CardCard({
             {t('noImage')}
           </div>
         )}
-        {isVault && (
+        {accent && (
           <span aria-hidden="true" className="absolute inset-y-0 left-0 z-10 w-1 bg-vault" />
         )}
-        {isVault && (
+        {accent && card.cardStatusName && (
           <span className="absolute left-2 top-2 z-10 rounded bg-surface px-1.5 py-0.5 text-[11px] font-medium text-vault shadow-sm">
-            {t('statusPackaged')}
+            {card.cardStatusName}
           </span>
         )}
       </div>

@@ -46,6 +46,8 @@ const relName = (value: unknown): string | null => {
   return null
 }
 
+const relFlag = (value: unknown, key: string): boolean => Boolean(value && typeof value === 'object' && (value as Record<string, unknown>)[key])
+
 function toImageView(value: unknown): ImageView | null {
   if (!value || typeof value !== 'object') return null
   const media = value as Media
@@ -86,7 +88,10 @@ function toCardView(doc: any, withDescription = false): CardView {
     rarityName: relName(doc.rarity),
     images: toImages(doc.images),
     isHighValue: Boolean(doc.isHighValue),
-    cardStatus: doc.cardStatus ?? 'raw',
+    isNoDeduction: Boolean(doc.isNoDeduction),
+    cardStatusId: relId(doc.cardStatus),
+    cardStatusName: relName(doc.cardStatus),
+    cardStatusAccent: relFlag(doc.cardStatus, 'accent'),
     descriptionHtml: withDescription ? renderRichText(doc.description) : '',
     createdAt: doc.createdAt,
   }
@@ -142,42 +147,99 @@ export const getBanners = unstable_cache(
   { revalidate: 86400, tags: ['banners'] },
 )
 
-/** 公告列表：置顶优先，其次发布时间倒序（未设发布时间的按创建时间兜底）。缓存 2 分钟。 */
+type AnnouncementListOptions = {
+  limit?: number
+  page?: number
+  /** 置顶最多展示几条：置顶再多也只取排序最靠前的这几条（首页用）。 */
+  maxPinned?: number
+}
+
+type AnnouncementSortInput = {
+  isPinned?: boolean | null
+  sort?: number | null
+  publishedAt?: string | null
+  createdAt?: string | null
+}
+
+/** 公告的「有效时间」：设了发布时间按发布时间，否则按创建时间（留空 = 立即展示）。 */
+function announcementTime(doc: AnnouncementSortInput): number {
+  const value = doc.publishedAt ?? doc.createdAt
+  const time = value ? Date.parse(value) : 0
+  return Number.isNaN(time) ? 0 : time
+}
+
+/**
+ * 公告排序：置顶组在前，组内按 sort 升序、再按时间倒序；
+ * 未置顶组的 sort 不参与排序——它们只按时间倒序。
+ */
+function compareAnnouncements(a: AnnouncementSortInput, b: AnnouncementSortInput): number {
+  const pinnedDiff = Number(Boolean(b.isPinned)) - Number(Boolean(a.isPinned))
+  if (pinnedDiff !== 0) return pinnedDiff
+  if (a.isPinned) {
+    const orderDiff = (a.sort ?? 0) - (b.sort ?? 0)
+    if (orderDiff !== 0) return orderDiff
+  }
+  return announcementTime(b) - announcementTime(a)
+}
+
+/**
+ * 公告列表：置顶优先（置顶内按 sort 升序，其次时间倒序），未置顶按时间倒序。
+ *
+ * 排序不交给数据库：置顶/未置顶需要两套排序键，且「未设发布时间」要回退到创建时间
+ * （Postgres 的 DESC 会把 NULL 排在最前）。公告量小（人工运营），因此一次取回全部
+ * 可见条目在内存中排好再分页。这里不能用 Select API 只挑字段——createdAt 是内部字段，
+ * 不在 select 结果里，而它正是「未设发布时间」时的排序兜底。
+ * 这也修掉了「置顶了 B，首页却看不到」的根因：旧实现先按时间取前 N 条再排置顶，
+ * 不在时间窗口里的置顶公告永远进不来。
+ *
+ * maxPinned 只用于首页：先取排序最靠前的若干条置顶，再用最新公告补满 limit。
+ * 缓存 10 分钟，后台改完由 afterChange 钩子主动失效。
+ */
 export const getAnnouncements = unstable_cache(
-  async (options: { limit?: number; page?: number } = {}) => {
+  async (options: AnnouncementListOptions = {}) => {
     const payload = await getPayloadClient()
     const result = await payload.find({
       collection: 'announcements',
-      depth: 1,
+      depth: 0,
       overrideAccess: false,
-      limit: options.limit ?? 20,
-      page: options.page ?? 1,
-      sort: '-publishedAt',
+      pagination: false,
     })
-    const docs = [...result.docs].sort((a, b) => {
-      if (Boolean(a.isPinned) !== Boolean(b.isPinned)) return a.isPinned ? -1 : 1
-      const left = a.publishedAt ?? a.createdAt
-      const right = b.publishedAt ?? b.createdAt
-      return left < right ? 1 : left > right ? -1 : 0
-    })
+
+    const docs = [...result.docs].sort(compareAnnouncements)
+    const limit = options.limit ?? 20
+    const page = options.page ?? 1
+    const total = docs.length
+    const totalPages = limit > 0 ? Math.ceil(total / limit) : 0
+
+    let items = docs
+    if (options.maxPinned != null) {
+      const pinned = docs.filter((doc) => doc.isPinned).slice(0, Math.min(options.maxPinned, limit))
+      const unpinned = docs
+        .filter((doc) => !doc.isPinned)
+        .slice(0, Math.max(0, limit - pinned.length))
+      items = [...pinned, ...unpinned]
+    } else {
+      const start = (page - 1) * limit
+      items = docs.slice(start, start + limit)
+    }
+
     return {
-      items: docs.map(
+      items: items.map(
         (doc): AnnouncementView => ({
           id: toId(doc.id),
           title: doc.title,
-          bodyHtml: renderRichText(doc.body),
+          // 列表视图从不渲染正文；详情页由 getAnnouncement 单独取回完整文档。
+          bodyHtml: '',
           publishedAt: doc.publishedAt ?? null,
           isPinned: Boolean(doc.isPinned),
         }),
       ),
-      total: result.totalDocs,
-      totalPages: result.totalPages,
+      total,
+      totalPages,
     }
   },
   // unstable_cache 默认已把函数参数（options）纳入缓存键，不同 limit/page 组合各自独立缓存。
   undefined,
-  // 公告列表按发布时间倒序、改动不频繁，后台改完由 afterChange 钩子主动失效；
-  // 缓存放 10 分钟足够，避免突发写入时旧列表停留太久。
   { revalidate: 600, tags: ['announcements'] },
 )
 
@@ -219,8 +281,8 @@ export const getCards = unstable_cache(
     if (query.seriesIds?.length) and.push({ series: { in: query.seriesIds } })
     if (query.subSeriesIds?.length) and.push({ subSeries: { in: query.subSeriesIds } })
     if (query.rarityIds?.length) and.push({ rarity: { in: query.rarityIds } })
-    if (query.cardStatus?.length) and.push({ cardStatus: { in: query.cardStatus } })
-    if (query.highValueOnly) and.push({ isHighValue: { equals: true } })
+    if (query.cardStatusIds?.length) and.push({ cardStatus: { in: query.cardStatusIds } })
+    if (query.highValueOnly) and.push({ or: [{ isHighValue: { equals: true } }, { isNoDeduction: { equals: true } }] })
     if (query.minPrice != null || query.maxPrice != null) {
       const price: Where = {}
       if (query.minPrice != null) price.greater_than_equal = query.minPrice
@@ -228,7 +290,9 @@ export const getCards = unstable_cache(
       and.push({ price })
     }
     const q = query.q?.trim()
-    if (q) and.push({ or: [{ name: { like: q } }, { code: { like: q } }] })
+    // 与后台列表搜索同一组字段：卡名 / 编号 / 稀有度名称。
+    // 'rarity.name' 是关系字段的嵌套路径，Payload 会 JOIN rarities 表后按名字做 like。
+    if (q) and.push({ or: [{ name: { like: q } }, { code: { like: q } }, { 'rarity.name': { like: q } }] })
 
     const result = await payload.find({
       collection: 'cards',
@@ -274,13 +338,14 @@ export async function getLatestCards(limit = 8): Promise<CardView[]> {
   return result.items
 }
 
-/** 首页「高价买取」。 */
+/** 首页「高价买取」。
+ * 横条现同时纳入高价买取与不减额买取两类卡牌。 */
 export async function getHighValueCards(limit = 8): Promise<CardView[]> {
   const result = await getCards({ limit, sort: 'price_desc', highValueOnly: true })
   return result.items
 }
 
-/** 筛选用维度：IP → 系列 → 子系列，外加稀有度。缓存 5 分钟——它出现在
+/** 筛选用维度：IP → 系列 → 子系列，外加稀有度与卡牌状态。缓存 5 分钟——它出现在
  * 首页与列表页，是最常被重复查询的静态维度。 */
 export const getFacets = unstable_cache(
   async (): Promise<{
@@ -288,13 +353,15 @@ export const getFacets = unstable_cache(
     series: FacetView[]
     subSeries: FacetView[]
     rarities: FacetView[]
+    cardStatuses: FacetView[]
   }> => {
     const payload = await getPayloadClient()
-    const [ips, series, subSeries, rarities] = await Promise.all([
+    const [ips, series, subSeries, rarities, cardStatuses] = await Promise.all([
       payload.find({ collection: 'ips', depth: 0, overrideAccess: false, limit: 200, sort: 'sort' }),
       payload.find({ collection: 'series', depth: 0, overrideAccess: false, limit: 500, sort: 'sort' }),
       payload.find({ collection: 'sub-series', depth: 0, overrideAccess: false, limit: 1000, sort: 'sort' }),
       payload.find({ collection: 'rarities', depth: 0, overrideAccess: false, limit: 200, sort: 'sort' }),
+      payload.find({ collection: 'card-statuses', depth: 0, overrideAccess: false, limit: 200, sort: 'sort' }),
     ])
     return {
       ips: ips.docs.map((doc) => ({ id: toId(doc.id), name: doc.name, sort: doc.sort ?? 0 })),
@@ -311,10 +378,11 @@ export const getFacets = unstable_cache(
         parentId: relId(doc.series),
       })),
       rarities: rarities.docs.map((doc) => ({ id: toId(doc.id), name: doc.name, sort: doc.sort ?? 0 })),
+      cardStatuses: cardStatuses.docs.map((doc) => ({ id: toId(doc.id), name: doc.name, sort: doc.sort ?? 0 })),
     }
   },
   ['facets'],
-  // 维度（IP/系列/子系列/稀有度）改动极少，后台改完由 afterChange 钩子主动失效；缓存放最长（1 天）。
+  // 维度（IP/系列/子系列/稀有度/卡牌状态）改动极少，后台改完由 afterChange 钩子主动失效；缓存放最长（1 天）。
   { revalidate: 86400, tags: ['facets'] },
 )
 

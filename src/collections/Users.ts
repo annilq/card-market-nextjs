@@ -1,6 +1,13 @@
+import { validations } from 'payload'
 import type { CollectionConfig } from 'payload'
 
-import { ensureAdminRole, isRoleAdmin, roleFieldUpdateOnlyAdmin } from '@/access/roles'
+import {
+  enforceSingleAdmin,
+  ensureAdminRole,
+  isRoleAdmin,
+  preventAdminDeletion,
+  roleFieldUpdateOnlyAdmin,
+} from '@/access/roles'
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -35,7 +42,7 @@ export const Users: CollectionConfig = {
   // role 现在是「角色」集合的关系字段（而非写死的 管理员/普通用户 下拉）：
   //   - 管理员是 roles 里一条 isAdmin=true 的特殊记录；
   //   - 普通角色来自角色管理（自定义 + 权限矩阵）；
-  //   - 新建用户时 filterOptions 过滤掉管理员角色，只能选已添加的普通角色；
+  //   - 新建账号的下拉不列出管理员角色，全应用只允许一个管理员；
   //   - 角色字段仅管理员可改（字段级访问），杜绝普通用户自提权。
   access: {
     // 本人或管理员可见
@@ -58,11 +65,14 @@ export const Users: CollectionConfig = {
     delete: ({ req }) => isRoleAdmin(req),
   },
   hooks: {
+    // 单一管理员约束放在最前面，任何写入路径都要过这一关。
+    beforeValidate: [enforceSingleAdmin],
+    beforeDelete: [preventAdminDeletion],
     beforeChange: [
       async ({ data, originalDoc, req }) => {
         const isCreate = !originalDoc?.id
         // 首用户即管理员：集合为空时，确保存在「管理员」角色并强制绑定，
-        // 避免被冒领（首用户引导期间 filterOptions 放开，也能在 UI 选到）。
+        // 首用户成为管理员由本钩子决定，避免被冒领。
         if (isCreate) {
           const { totalDocs } = await req.payload.count({ collection: 'users' })
           if (totalDocs === 0) data.role = await ensureAdminRole(req)
@@ -104,15 +114,18 @@ export const Users: CollectionConfig = {
       label: { zh: '角色', en: 'Role', ja: '権限' },
       required: true,
       hasMany: false,
-      // 新建用户（无 id）时过滤掉「管理员」角色，只能选已添加的普通角色；
-      // 首用户引导（集合为空）放开，否则无法把首用户设为管理员；
-      // 编辑已有用户（有 id）放开，允许管理员保持 / 调整对方角色。
-      filterOptions: async ({ req, id }) => {
-        if (id) return true
-        const { totalDocs } = await req.payload.count({ collection: 'users' })
-        if (totalDocs === 0) return true
+      // 任何角色下拉都不出现管理员角色，只有管理员本人编辑自己时保留全部候选，
+      // 否则表单里连自己的当前值都找不到。
+      filterOptions: async ({ id, req }) => {
+        if (id && String(id) === String(req.user?.id) && (await isRoleAdmin(req))) return true
         return { isAdmin: { equals: false } }
       },
+      // filterOptions 只给后台下拉用。提交时剥掉它再走默认关系校验，否则
+      // validateFilterOptions 会用当前用户权限反查 roles，而 roles.read 仅管理员，
+      // 非管理员改密/改名时回填的 role 会被误判为「无效的选择」。
+      // id 是否存在由外键保证，谁能改与单一管理员约束由下方 access 和 beforeValidate 钩子保证。
+      validate: (value, options) =>
+        validations.relationship(value, { ...options, filterOptions: undefined }),
       // 字段级权限：只有管理员能改角色，杜绝普通用户把自己的角色改成管理员（自提权）
       access: {
         update: roleFieldUpdateOnlyAdmin,
@@ -124,6 +137,8 @@ export const Users: CollectionConfig = {
       label: { zh: '首次登录强制改密', en: 'Force password change', ja: '初回パスワード変更必須' },
       defaultValue: false,
       admin: { hidden: true }, // 后台 UI 不显示；由钩子控制，客户端守卫读取
+      // 该标记只由 beforeChange 钩子维护，禁止客户端清零以跳过首次强制改密。
+      access: { update: () => false },
     },
   ],
 }

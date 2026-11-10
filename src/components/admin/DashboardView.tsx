@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { AdminLocalDateTime } from './AdminLocalDateTime'
 import { ENTITY_DESCRIPTIONS, ENTITY_FALLBACK_ICON, ENTITY_ICONS } from './entity-meta'
 import { formatYen } from '@/lib/format'
 import type { Card as CardDoc, Message } from '@/payload-types'
@@ -62,15 +63,7 @@ function formatMoney(value: number | null | undefined): string {
   return `¥${formatYen(value)}`
 }
 
-function formatDateTime(value: string | null | undefined): string {
-  if (!value) return '—'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '—'
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
-}
-
-function formatRelative(value: string | null | undefined, locale = 'zh-CN'): string {
+function formatRelative(value: string | null | undefined, locale = 'zh-CN'): React.ReactNode {
   if (!value) return '—'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '—'
@@ -82,7 +75,7 @@ function formatRelative(value: string | null | undefined, locale = 'zh-CN'): str
   if (Math.abs(hours) < 24) return formatter.format(-hours, 'hour')
   const days = Math.round(hours / 24)
   if (Math.abs(days) < 30) return formatter.format(-days, 'day')
-  return formatDateTime(value)
+  return <AdminLocalDateTime value={value} />
 }
 
 type StatusValue = 'archived' | 'draft' | 'published'
@@ -338,7 +331,7 @@ export async function DashboardView({ locale = 'zh-CN', navGroups = [], payload,
                           <StatusBadge status={card.status as StatusValue} />
                         </TableCell>
                         <TableCell className="tabular whitespace-nowrap text-muted-foreground">
-                          {formatDateTime(card.updatedAt)}
+                          <AdminLocalDateTime value={card.updatedAt} />
                         </TableCell>
                       </TableRow>
                     ))}

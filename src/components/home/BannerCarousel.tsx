@@ -218,10 +218,8 @@ export function BannerCarousel({ banners }: { banners: BannerView[] }) {
                 className="absolute inset-0 h-full w-full object-cover"
               />
             )}
-            {/* 图上文字：压一层足够深的渐隐黑色再写字。
-                 之前是 from-black/60，深色主题下与图片的深色区域叠在一起，
-                 实测对比度只有 1.23:1——文字几乎消失。改成底部实心、向上渐隐。 */}
-            {/* 圆点已移到舞台底部正中，文字无需再为其让位。 */}
+            {/* 标题与描述文字层暂时隐藏，先只展示轮播图。 */}
+            {/*
             {(b.title || b.description) && (
               <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/85 via-black/55 to-transparent p-4 text-white sm:p-6">
                 {b.title && (
@@ -236,6 +234,7 @@ export function BannerCarousel({ banners }: { banners: BannerView[] }) {
                 )}
               </div>
             )}
+            */}
           </>
         )
         // 每张幻灯都是绝对定位的层；桌面下由 CSS 变量决定它相对于激活位的

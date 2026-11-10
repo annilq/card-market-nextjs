@@ -175,7 +175,7 @@ async function main() {
   // 说明：派生 / 计算字段（cards.dedupeKey、shops.lat / lng、各集合的 publicLink）
   // 由钩子或 UI 生成，不需要也不应手填，故下面不列出。
 
-  // 维度：IP → 系列 → 子系列（外加稀有度）
+  // 维度：IP → 系列 → 子系列（外加稀有度、卡牌状态）
   const ip = await payload.create({
     collection: 'ips',
     data: { name: '宝可梦', sort: 1, enabled: true },
@@ -192,6 +192,15 @@ async function main() {
     collection: 'rarities',
     data: { name: 'SSR', sort: 1, enabled: true },
   })
+  // 卡牌状态是可增删的维度：accent 决定前台是否显示原来「有包装」的强调样式。
+  const rawStatus = await payload.create({
+    collection: 'card-statuses',
+    data: { name: '裸卡', sort: 1, enabled: true, accent: false },
+  })
+  await payload.create({
+    collection: 'card-statuses',
+    data: { name: '有包装', sort: 2, enabled: true, accent: true },
+  })
 
   // 卡牌
   await payload.create({
@@ -207,7 +216,8 @@ async function main() {
       images: [cardImage.id],
       description: lexical([{ type: 'p', text: '皮卡丘示例卡牌，裸卡状态，支持回购咨询。' }]),
       isHighValue: true,
-      cardStatus: 'raw',
+      isNoDeduction: false,
+      cardStatus: rawStatus.id,
       status: 'published',
     },
   })

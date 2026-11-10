@@ -60,12 +60,10 @@ export default async function AnnouncementsPage({ params, searchParams }: Props)
   const t = getTranslator(locale)
   const query = (await searchParams) ?? {}
   const page = parsePage(query.page)
+  // 排序（置顶优先，其次时间倒序）在数据层完成，分页也基于全局顺序，
+  // 因此这里直接渲染——置顶项不会因为落在后面的页而丢掉。
   const result = await getAnnouncements({ limit: PAGE_SIZE, page })
-
-  // API 已按发布时间取回当前页；这里再次稳定分组，确保归档页始终先展示置顶项。
-  const announcements = [...result.items].sort(
-    (left, right) => Number(right.isPinned) - Number(left.isPinned),
-  )
+  const announcements = result.items
 
   return (
     <div>

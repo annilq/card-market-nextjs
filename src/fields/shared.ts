@@ -27,7 +27,7 @@ export function statusField(overrides: Partial<SelectField> = {}): SelectField {
   return field as SelectField
 }
 
-/** 维度集合（IP / 系列 / 子系列 / 稀有度）用布尔「启用」而非发布状态。 */
+/** 维度集合（IP / 系列 / 子系列 / 稀有度 / 卡牌状态）用布尔「启用」而非发布状态。 */
 export function enabledField() {
   return {
     name: 'enabled',

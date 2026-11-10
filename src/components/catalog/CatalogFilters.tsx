@@ -8,7 +8,7 @@
 //
 // URL 参数名（与 `cards/page.tsx` 的解析必须一致，否则分享出去的链接等于换了一门语言）：
 //   ip / series / sub / rarity  多选 ID，逗号分隔（也接受重复参数 ip=1&ip=2）
-//   status                      卡牌状态，逗号分隔（raw / packaged）
+//   status                      卡牌状态 ID，逗号分隔
 //   hv=1                        只看高价买取
 //   min / max                   价格区间
 //   q                           关键词（由顶栏搜索带入，这里只负责保留）
@@ -31,11 +31,8 @@ import {
   CARD_SORTS,
   DEFAULT_CARD_SORT,
   type CardSort,
-  type CardStatus,
   type FacetView,
 } from '@/lib/types'
-
-const CARD_STATUSES: CardStatus[] = ['raw', 'packaged']
 
 const PARAM = {
   ip: 'ip',
@@ -65,7 +62,7 @@ export interface CatalogFilterValue {
   seriesIds: number[]
   subSeriesIds: number[]
   rarityIds: number[]
-  cardStatus: CardStatus[]
+  cardStatusIds: number[]
   highValueOnly: boolean
   minPrice?: number
   maxPrice?: number
@@ -78,6 +75,7 @@ export interface CatalogFacets {
   series: FacetView[]
   subSeries: FacetView[]
   rarities: FacetView[]
+  cardStatuses: FacetView[]
 }
 
 /**
@@ -122,11 +120,7 @@ function readValue(sp: URLSearchParams): CatalogFilterValue {
     seriesIds: idsOf(sp, PARAM.series),
     subSeriesIds: idsOf(sp, PARAM.sub),
     rarityIds: idsOf(sp, PARAM.rarity),
-    cardStatus:
-      firstOf(sp, PARAM.status)
-        ?.split(',')
-        .map((s) => s.trim())
-        .filter((s): s is CardStatus => CARD_STATUSES.includes(s as CardStatus)) ?? [],
+    cardStatusIds: idsOf(sp, PARAM.status),
     highValueOnly: firstOf(sp, PARAM.highValue) != null,
     minPrice: numOf(sp, PARAM.min),
     maxPrice: numOf(sp, PARAM.max),
@@ -229,10 +223,10 @@ export function CatalogFilters({
     push(patch)
   }
 
-  const toggleStatus = (status: CardStatus) => {
-    const cur = new Set(value.cardStatus)
-    if (cur.has(status)) cur.delete(status)
-    else cur.add(status)
+  const toggleStatus = (id: number) => {
+    const cur = new Set(value.cardStatusIds)
+    if (cur.has(id)) cur.delete(id)
+    else cur.add(id)
     push({ [PARAM.status]: cur.size ? Array.from(cur).join(',') : null })
   }
 
@@ -273,7 +267,7 @@ export function CatalogFilters({
   const seriesSel = new Set(value.seriesIds)
   const subSel = new Set(value.subSeriesIds)
   const raritySel = new Set(value.rarityIds)
-  const statusSel = new Set(value.cardStatus)
+  const statusSel = new Set(value.cardStatusIds)
 
   const seriesEnabled = (s: FacetView) => ipSel.size === 0 || (s.parentId != null && ipSel.has(s.parentId))
   const subEnabled = (ss: FacetView) => {
@@ -290,7 +284,7 @@ export function CatalogFilters({
       value.seriesIds.length +
       value.subSeriesIds.length +
       value.rarityIds.length +
-      value.cardStatus.length >
+      value.cardStatusIds.length >
       0 ||
     value.highValueOnly ||
     value.minPrice != null ||
@@ -303,7 +297,7 @@ export function CatalogFilters({
     value.seriesIds.length +
     value.subSeriesIds.length +
     value.rarityIds.length +
-    value.cardStatus.length +
+    value.cardStatusIds.length +
     (value.highValueOnly ? 1 : 0) +
     (value.minPrice != null || value.maxPrice != null ? 1 : 0) +
     (value.q ? 1 : 0)
@@ -315,7 +309,7 @@ export function CatalogFilters({
     value.seriesIds.length +
     value.subSeriesIds.length +
     value.rarityIds.length +
-    value.cardStatus.length +
+    value.cardStatusIds.length +
     (value.highValueOnly ? 1 : 0) +
     (value.minPrice != null || value.maxPrice != null ? 1 : 0)
 
@@ -380,13 +374,11 @@ export function CatalogFilters({
       })
     }
   }
-  for (const status of value.cardStatus) {
-    const left = value.cardStatus.filter((s) => s !== status)
-    chips.push({
-      key: `status:${status}`,
-      label: status === 'raw' ? t('typeRaw') : t('typePackaged'),
-      patch: { [PARAM.status]: left.length ? left.join(',') : null },
-    })
+  for (const id of value.cardStatusIds) {
+    const label = nameOf(facets.cardStatuses, id)
+    if (label) {
+      chips.push({ key: `status:${id}`, label, patch: { [PARAM.status]: csvOrNull(without(value.cardStatusIds, id)) } })
+    }
   }
   if (value.highValueOnly) {
     chips.push({ key: 'hv', label: t('highValueOnly'), patch: { [PARAM.highValue]: null } })
@@ -437,23 +429,8 @@ export function CatalogFilters({
         onToggle={(id) => toggleMulti('rarity', id)}
       />
 
-      {/* 卡牌状态：裸卡 / 有包装。档位是固定的两种（不像 IP、系列那样由后台增删），
-          所以不走 Facet 的 id 数组，直接枚举。 */}
-      <div>
-        <div className="font-medium text-sm mb-2">{t('cardStatus')}</div>
-        <div className="space-y-1">
-          {CARD_STATUSES.map((s) => (
-            <label key={s} className="flex min-h-6 items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={statusSel.has(s)}
-                onChange={() => toggleStatus(s)}
-              />
-              {s === 'raw' ? t('statusRaw') : t('statusPackaged')}
-            </label>
-          ))}
-        </div>
-      </div>
+      {/* 卡牌状态来自后台 card-statuses 集合（facets.cardStatuses），与稀有度一样走 Facet 的 id 数组。 */}
+      <Facet title={t('cardStatus')} items={facets.cardStatuses} sel={statusSel} onToggle={(id) => toggleStatus(id)} />
 
       <label className="flex min-h-9 items-center gap-2 text-sm text-muted">
         <input
@@ -567,16 +544,11 @@ export function CatalogFilters({
         : `${currentSeries.name} / ${t('facetAll')}`
       : t('facetAll')
 
-    const typeText = value.cardStatus[0]
-      ? value.cardStatus[0] === 'raw'
-        ? t('typeRaw')
-        : t('typePackaged')
-      : t('facetAll')
+    const typeText = facets.cardStatuses.find((s) => s.id === value.cardStatusIds[0])?.name ?? t('facetAll')
 
     const typeOptions: HomeFilterOption[] = [
       { value: '', label: t('facetAll') },
-      { value: 'raw', label: t('typeRaw') },
-      { value: 'packaged', label: t('typePackaged') },
+      ...facets.cardStatuses.map((s) => ({ value: String(s.id), label: s.name })),
     ]
     const sortOptions: HomeFilterOption[] = [
       { value: 'price_desc', label: t('sortPriceDesc') },
@@ -679,7 +651,7 @@ export function CatalogFilters({
             series={seriesOptions}
             subSeries={facets.subSeries}
             value={{
-              cardStatus: value.cardStatus[0],
+              cardStatusId: value.cardStatusIds[0],
               seriesId: value.seriesIds[0],
               sort: value.sort,
               subSeriesId: value.subSeriesIds[0],
@@ -697,8 +669,8 @@ export function CatalogFilters({
                   [PARAM.sub]: next.subSeriesId ? String(next.subSeriesId) : null,
                   ...(seriesId && parentIp ? { [PARAM.ip]: String(parentIp) } : {}),
                 })
-              } else if ('cardStatus' in next) {
-                push({ [PARAM.status]: next.cardStatus ?? null })
+              } else if ('cardStatusId' in next) {
+                push({ [PARAM.status]: next.cardStatusId != null ? String(next.cardStatusId) : null })
               } else if ('sort' in next) {
                 push({ [PARAM.sort]: next.sort ?? null })
               }

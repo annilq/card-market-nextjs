@@ -2,6 +2,7 @@ import { getTranslation } from '@payloadcms/translations'
 import type { DefaultServerCellComponentProps } from 'payload'
 import React from 'react'
 
+import { AdminLocalDateTime } from './AdminLocalDateTime'
 import { StatusQuickSelect, type StatusOption } from './StatusQuickSelect'
 
 /**
@@ -28,13 +29,6 @@ const TONE: Record<string, string> = {
   processed: 'published',
   published: 'published',
   spam: 'muted',
-}
-
-/** 未来时间的「发布时间」：说明这条虽然已是 published，但前台还没到点。 */
-function formatDateTime(value: number): string {
-  const d = new Date(value)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 export function StatusCell({ cellData, collectionSlug, field, i18n, rowData }: DefaultServerCellComponentProps) {
@@ -90,7 +84,7 @@ export function StatusCell({ cellData, collectionSlug, field, i18n, rowData }: D
       )}
       {scheduledAt ? (
         <span className="admin-status admin-status--scheduled">
-          定时 · {formatDateTime(scheduledAt)}
+          定时 · <AdminLocalDateTime value={scheduledAt} />
         </span>
       ) : null}
     </span>

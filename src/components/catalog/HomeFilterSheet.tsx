@@ -15,13 +15,13 @@ import { useRef, useState } from 'react'
 
 import { useT } from '@/lib/i18n/client'
 import { useDialog } from '@/lib/use-dialog'
-import { DEFAULT_CARD_SORT, type CardSort, type CardStatus, type FacetView } from '@/lib/types'
+import { DEFAULT_CARD_SORT, type CardSort, type FacetView } from '@/lib/types'
 
 /** 面板当前开的是哪一个筛选。三个筛选共用同一个面板，只是内容不同。 */
 export type HomeFilterField = 'series' | 'type' | 'sort'
 
 export interface HomeFilterValue {
-  cardStatus: CardStatus | undefined
+  cardStatusId: number | undefined
   seriesId: number | undefined
   sort: CardSort
   subSeriesId: number | undefined
@@ -183,14 +183,14 @@ export function HomeFilterSheet({
                 type="button"
                 onClick={() => {
                   if (field === 'type') {
-                    onPick({ cardStatus: o.value ? (o.value as CardStatus) : undefined })
+                    onPick({ cardStatusId: o.value ? Number(o.value) : undefined })
                   } else {
                     onPick({ sort: (o.value || DEFAULT_CARD_SORT) as CardSort })
                   }
                   onClose()
                 }}
                 className={`${row} ${
-                  (field === 'type' ? o.value === (value.cardStatus ?? '') : o.value === value.sort)
+                  (field === 'type' ? o.value === String(value.cardStatusId ?? '') : o.value === value.sort)
                     ? 'bg-white/20 font-bold'
                     : 'font-medium'
                 }`}

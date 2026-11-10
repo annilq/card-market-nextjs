@@ -59,7 +59,7 @@ function buildCardsHref(locale: Locale, query: CardQuery, page: number): string 
   put('series', csvOrNull(query.seriesIds))
   put('sub', csvOrNull(query.subSeriesIds))
   put('rarity', csvOrNull(query.rarityIds))
-  put('status', csvOrNull(query.cardStatus))
+  put('status', csvOrNull(query.cardStatusIds))
   if (query.highValueOnly) sp.set('hv', '1')
   if (query.minPrice != null) sp.set('min', String(query.minPrice))
   if (query.maxPrice != null) sp.set('max', String(query.maxPrice))

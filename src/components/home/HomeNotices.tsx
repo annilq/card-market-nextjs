@@ -11,8 +11,10 @@ import type { Locale } from '@/lib/i18n/locales'
 import { localizeHref } from '@/lib/i18n/locales'
 import type { AnnouncementView } from '@/lib/types'
 
-/** 首页只露三条：实测通知面板 168px = 3 行 × 57px。父页可以按上限多取几条，这里截断。 */
-const HOME_NOTICE_COUNT = 3
+/** 首页最多露出五条（置顶 + 最新合计），父页按同样的上限取数。 */
+export const HOME_NOTICE_COUNT = 5
+/** 置顶最多露出前两条，避免置顶过多把最新公告挤出首页。 */
+export const HOME_PINNED_COUNT = 2
 
 export function HomeNotices({
   items,

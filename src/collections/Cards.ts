@@ -32,8 +32,12 @@ export const Cards: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'code', 'ip', 'price', 'isHighValue', 'status', 'publicLink'],
+    defaultColumns: ['name', 'code', 'ip', 'price', 'isHighValue', 'isNoDeduction', 'status', 'publicLink'],
     group: { zh: '商品', en: 'Catalog', ja: '商品' },
+    // 后台列表搜索覆盖卡名 / 收藏编号 / 稀有度名称。
+    // 稀有度是关系字段，直接写 'rarity' 会被 Payload 的 like 降级成 equals（按 ID 比），
+    // 必须写嵌套路径 'rarity.name' 才会 JOIN rarities 表按名称做子串匹配。
+    listSearchableFields: ['name', 'code', 'rarity.name'],
   },
   access: {
     read: moduleRead('cards', publishedOnly),
@@ -45,6 +49,10 @@ export const Cards: CollectionConfig = {
     beforeValidate: [
       async ({ data, originalDoc, req, operation }) => {
         const merged = { ...(originalDoc ?? {}), ...(data ?? {}) }
+        // 两个买取标记互斥。后台表单已经即时联动，这里守住 REST / GraphQL / Local API 写入。
+        if (merged.isHighValue && merged.isNoDeduction) {
+          throw new APIError('「高价买取」与「不减额买取」只能选一个', 400, { field: 'isNoDeduction' }, true)
+        }
         const key = buildCardDedupeKey(merged as Record<string, unknown>)
         if (data) data.dedupeKey = key ?? undefined
         if (key) {
@@ -92,9 +100,9 @@ export const Cards: CollectionConfig = {
           index: true,
           admin: { width: '33%' },
           filterOptions: ({ siblingData }) => {
-            const data = siblingData as { ip?: unknown } | undefined
-            const where: Where = data?.ip ? { ip: { equals: data.ip } } : {}
-            return where
+            const ipId = relId((siblingData as { ip?: unknown } | undefined)?.ip)
+            // 没选 IP 时返回 false（Payload 会转成空结果），否则下拉会把全部系列一次性拉出来。
+            return ipId ? { ip: { equals: ipId } } : false
           },
         },
         {
@@ -106,9 +114,9 @@ export const Cards: CollectionConfig = {
           index: true,
           admin: { width: '33%' },
           filterOptions: ({ siblingData }) => {
-            const data = siblingData as { series?: unknown } | undefined
-            const where: Where = data?.series ? { series: { equals: data.series } } : {}
-            return where
+            const seriesId = relId((siblingData as { series?: unknown } | undefined)?.series)
+            // 没选系列时不列全量子系列；选了系列就只列它的子系列，下拉不会堆无关数据。
+            return seriesId ? { series: { equals: seriesId } } : false
           },
         },
       ],
@@ -162,19 +170,32 @@ export const Cards: CollectionConfig = {
           type: 'checkbox',
           defaultValue: false,
           index: true,
-          admin: { width: '50%', description: { zh: '纯标识，仅供「只看精品」筛选', en: 'Flag only, used by the "high value" filter', ja: '「高価買取のみ」絞り込み用フラグ' } },
+          admin: {
+            width: '33%',
+            description: { zh: '与「不减额买取」互斥；进入首页高价买取栏目', en: 'Mutually exclusive with "No-deduction buyback"; appears in the homepage strip', ja: '「減額なし買取」と排他。トップの高価買取欄に表示' },
+            components: { Field: '@/components/admin/ExclusiveBuybackField#ExclusiveBuybackField' },
+          },
+        },
+        {
+          name: 'isNoDeduction',
+          label: { zh: '不减额买取', en: 'No-deduction buyback', ja: '減額なし買取' },
+          type: 'checkbox',
+          defaultValue: false,
+          index: true,
+          admin: {
+            width: '33%',
+            description: { zh: '与「高价买取」互斥；进入首页高价买取栏目', en: 'Mutually exclusive with "High-value buyback"; appears in the homepage strip', ja: '「高価買取」と排他。トップの高価買取欄に表示' },
+            components: { Field: '@/components/admin/ExclusiveBuybackField#ExclusiveBuybackField' },
+          },
         },
         {
           name: 'cardStatus',
-          label: { zh: '卡牌状态', en: 'Card condition type', ja: 'カード状態' },
-          type: 'select',
-          defaultValue: 'raw',
+          label: { zh: '卡牌状态', en: 'Card condition', ja: 'カード状態' },
+          type: 'relationship',
+          relationTo: 'card-statuses',
           required: true,
-          options: [
-            { label: { zh: '裸卡', en: 'Raw', ja: '裸' }, value: 'raw' },
-            { label: { zh: '有包装', en: 'Packaged', ja: 'パッケージあり' }, value: 'packaged' },
-          ],
-          admin: { width: '50%' },
+          index: true,
+          admin: { width: '33%' },
         },
       ],
     },

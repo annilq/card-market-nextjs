@@ -20,7 +20,7 @@ import { ContentLanguageNotice } from '@/components/ContentLanguageNotice'
 import { BannerCarousel } from '@/components/home/BannerCarousel'
 import { HighValueStrip } from '@/components/home/HighValueStrip'
 import { HomeCardGrid } from '@/components/home/HomeCardGrid'
-import { HomeNotices } from '@/components/home/HomeNotices'
+import { HOME_NOTICE_COUNT, HOME_PINNED_COUNT, HomeNotices } from '@/components/home/HomeNotices'
 import {
   getAnnouncements,
   getBanners,
@@ -92,8 +92,8 @@ export default async function Page({ params, searchParams }: Props) {
 
   const [banners, notices, highValue, facets, catalog] = await Promise.all([
     loadBanners(),
-    // 多取一条：置顶公告与新建公告都可能挤进前三，截断留给 HomeNotices 统一处理。
-    getAnnouncements({ limit: 4 }),
+    // 首页最多 5 条，其中置顶最多 2 条；其余名额用发布时间最新的公告补满。
+    getAnnouncements({ limit: HOME_NOTICE_COUNT, maxPinned: HOME_PINNED_COUNT }),
     getHighValueCards(8),
     // 筛选维度的完整四层（IP → 系列 → 子系列 + 稀有度）：首页用的筛选栏与 /cards 是同一个。
     getFacets(),

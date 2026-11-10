@@ -35,14 +35,15 @@ export function CardInfo({
   actions?: ReactNode
 }) {
   const t = getTranslator(locale)
-  const isVault = card.cardStatus === 'packaged'
-  const statusLabel = isVault ? t('statusPackaged') : t('statusRaw')
+  const accent = card.cardStatusAccent
+  const statusLabel = card.cardStatusName
+  const buybackLabel = card.isHighValue ? t('highValue') : card.isNoDeduction ? t('noDeduction') : null
   const nameClass = 'min-w-0 break-words font-medium text-fg'
   const valueClass = 'min-w-0 break-words text-fg'
 
   return (
     <div className="flex min-w-0 flex-col">
-      {(card.rarityName || card.isHighValue || isVault) && (
+      {(card.rarityName || card.isHighValue || card.isNoDeduction || accent) && (
         <div className="flex flex-wrap items-center gap-2">
           {card.rarityName && (
             // 红底：实测徽章底色 #db261d，与顶栏同一支红。
@@ -51,14 +52,14 @@ export function CardInfo({
               {card.rarityName}
             </span>
           )}
-          {card.isHighValue && (
+          {buybackLabel && (
             <span className="rounded-full bg-brand px-2.5 py-1 text-xs text-white">
-              {t('highValue')}
+              {buybackLabel}
             </span>
           )}
-          {isVault && (
+          {accent && card.cardStatusName && (
             <span className="rounded-full bg-vault-bg px-2.5 py-1 text-xs text-vault">
-              {t('statusPackaged')}
+              {card.cardStatusName}
             </span>
           )}
         </div>
@@ -79,7 +80,7 @@ export function CardInfo({
           </InfoRow>
         )}
         <InfoRow label={t('cardStatus')}>
-          <span className={valueClass}>{statusLabel}</span>
+          <span className={valueClass}>{statusLabel ?? '—'}</span>
         </InfoRow>
       </div>
 
