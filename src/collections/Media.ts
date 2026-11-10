@@ -32,6 +32,13 @@ export const Media: CollectionConfig = {
       { name: 'card', width: 800, height: 800, position: 'centre' },
       { name: 'banner', width: 1920, height: 900, position: 'centre' },
     ],
+    // 媒体响应默认不带 Cache-Control，浏览器回访会重新下载（Lighthouse 实测约 66 KiB）。
+    // 文件名按上传批次带 -1/-2 后缀，内容基本不变，给 30 天浏览器缓存；30 天也是
+    // Lighthouse 判定「高效缓存」的下限。若后台原地替换同名文件，用户最多看到 30 天旧图。
+    modifyResponseHeaders: ({ headers }) => {
+      headers.set('Cache-Control', 'public, max-age=2592000, stale-while-revalidate=86400')
+      return headers
+    },
   },
   fields: [
     {
