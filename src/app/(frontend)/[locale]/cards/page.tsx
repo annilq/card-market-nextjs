@@ -123,21 +123,24 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 
   // 列表页标题跟随当前筛选：带关键词时用「卡牌 — X」。
   const title = q ? `${t('navCards')} — ${q}` : t('navCards')
-  const siteName = (await getSiteSettings()).siteName || t('defaultSiteName')
+  const settings = await getSiteSettings()
+  const siteName = settings.siteName || t('defaultSiteName')
+  const description = settings.intro?.trim() || LOCALES[locale].description
   const path = localizeHref('/cards', locale)
   const origin = await getOrigin()
 
   return {
-    title: `${title} | ${siteName}`,
-    description: LOCALES[locale].description,
+    title,
+    description,
     // 搜索结果与分页都不收录：内容随 query 有无穷组合，收录反而稀释索引。
     robots: q || page > 1 ? { index: false, follow: true } : undefined,
     // canonical 指向不带 query 的干净地址：筛选后的地址与它是同一页内容。
     alternates: { canonical: `${origin}${path}` },
     openGraph: {
       type: 'website',
+      siteName,
       title,
-      description: LOCALES[locale].description,
+      description,
       url: `${origin}${path}`,
     },
   }

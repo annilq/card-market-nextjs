@@ -27,6 +27,7 @@ import {
   getCards,
   getFacets,
   getHighValueCards,
+  getSiteSettings,
 } from '@/lib/data'
 import { parseCardSearch, type CardSearchParams } from '@/lib/card-search'
 import { DEFAULT_LOCALE, LOCALES, localizeHref, type Locale } from '@/lib/i18n/locales'
@@ -57,7 +58,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const locale = raw as Locale
   const origin = await getOrigin()
   const url = await absUrl('/', locale)
-  const { title, description } = LOCALES[locale]
+  const settings = await getSiteSettings()
+  const { title } = LOCALES[locale]
+  const siteName = settings.siteName?.trim() || getTranslator(locale)('defaultSiteName')
+  const description = settings.intro?.trim() || LOCALES[locale].description
   const [first] = await loadBanners()
   const cover = first?.image?.bannerUrl || first?.image?.url
 
@@ -66,6 +70,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description,
     alternates: { canonical: url },
     openGraph: {
+      siteName,
       title,
       description,
       url,

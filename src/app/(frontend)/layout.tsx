@@ -64,6 +64,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const settings = await loadSiteSettings()
   const meta = LOCALES[locale]
   const siteName = settings.siteName?.trim() || meta.title
+  const description = settings.intro?.trim() || meta.description
 
   const origin = await getOrigin()
   const languages: Record<string, string> = {}
@@ -76,11 +77,13 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     // 有了 metadataBase，子页面里写相对路径的 og:image / alternates 也会变成绝对地址。
     metadataBase: new URL(origin),
+    applicationName: siteName,
     title: {
-      default: meta.title,
+      // title.template 不会套用到定义它的这一层，默认标题要自己带上站名。
+      default: `${meta.title} | ${siteName}`,
       template: `%s | ${siteName}`,
     },
-    description: meta.description,
+    description,
     // 卡牌编号容易被 iOS 识别成电话号码。
     formatDetection: { telephone: false },
     alternates: {
@@ -92,13 +95,13 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName,
       locale: meta.intl,
       title: meta.title,
-      description: meta.description,
+      description,
       url: await rootUrl(locale),
     },
     twitter: {
       card: 'summary',
       title: meta.title,
-      description: meta.description,
+      description,
     },
   }
 }

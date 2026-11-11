@@ -77,12 +77,9 @@ export interface InfoPageView {
 
 export interface SiteSettingsView {
   siteName: string
+  intro: string | null
   logo: ImageView | null
   xAccount: string | null
-  contactEmail: string | null
-  contactPhone: string | null
-  businessHours: string | null
-  shopAddress: string | null
 }
 
 export interface FacetView {

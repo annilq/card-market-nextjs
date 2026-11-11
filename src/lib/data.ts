@@ -109,12 +109,9 @@ export const getSiteSettings = unstable_cache(
     })
     return {
       siteName: settings.siteName || '卡牌回购站',
+      intro: settings.intro ?? null,
       logo: toImageView(settings.logo),
       xAccount: settings.xAccount ?? null,
-      contactEmail: settings.contactEmail ?? null,
-      contactPhone: settings.contactPhone ?? null,
-      businessHours: settings.businessHours ?? null,
-      shopAddress: settings.shopAddress ?? null,
     }
   },
   ['site-settings'],
