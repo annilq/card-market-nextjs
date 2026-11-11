@@ -47,7 +47,21 @@ export type SaveState =
   | { kind: 'idle' }
   | { kind: 'saving' }
   | { kind: 'saved'; cardId: number }
-  | { kind: 'failed'; message: string; field?: SaveField }
+  | { kind: 'updating'; cardId: number }
+  | { kind: 'failed'; message: string; field?: SaveField; cardId?: number }
+
+/** 已经落到卡牌库的条目返回卡牌 id；更新失败也保留 id，便于继续重试。 */
+export function savedCardId(save: SaveState): number | null {
+  switch (save.kind) {
+    case 'saved':
+    case 'updating':
+      return save.cardId
+    case 'failed':
+      return save.cardId ?? null
+    default:
+      return null
+  }
+}
 
 export type BatchItem = {
   id: string
@@ -60,6 +74,16 @@ export type BatchItem = {
 }
 
 export type BatchState = { items: BatchItem[]; selectedId: string | null }
+
+export function draftEquals(a: CardDraft, b: CardDraft): boolean {
+  return (Object.keys(a) as (keyof CardDraft)[]).every((key) => a[key] === b[key])
+}
+
+/** 还没保存的条目算待处理；已保存的条目只有在表单被改过时才算有未保存修改。 */
+export function isItemDirty(item: BatchItem): boolean {
+  if (savedCardId(item.save) == null) return true
+  return item.savedSnapshot != null && !draftEquals(item.draft, item.savedSnapshot)
+}
 
 export type BatchAction =
   | { type: 'files/add'; items: BatchItem[] }
@@ -81,6 +105,7 @@ export type BatchAction =
   | { type: 'item/select'; id: string }
   | { type: 'item/remove'; id: string }
   | { type: 'draft/change'; id: string; changes: Partial<CardDraft> }
+  | { type: 'draft/bulk-change'; changes: Partial<CardDraft> }
   | { type: 'save/start'; id: string }
   | { type: 'save/succeeded'; id: string; cardId: number }
   | { type: 'save/failed'; id: string; message: string; field?: SaveField }
@@ -210,25 +235,54 @@ export function batchReducer(state: BatchState, action: BatchAction): BatchState
 
     case 'draft/change': {
       return updateItem(state, action.id, (item) => {
-        if (item.save.kind === 'saved') return item
+        if (item.save.kind === 'saving' || item.save.kind === 'updating') return item
+        const save =
+          item.save.kind === 'failed'
+            ? item.save.cardId != null
+              ? { kind: 'saved' as const, cardId: item.save.cardId }
+              : { kind: 'idle' as const }
+            : item.save
         return {
           ...item,
           draft: { ...item.draft, ...action.changes },
-          save: item.save.kind === 'failed' ? { kind: 'idle' } : item.save,
+          save,
         }
       })
     }
 
+    case 'draft/bulk-change': {
+      let changed = false
+      const items = state.items.map((item) => {
+        if (
+          item.save.kind === 'saving' ||
+          item.save.kind === 'updating' ||
+          savedCardId(item.save) != null
+        ) {
+          return item
+        }
+        changed = true
+        return {
+          ...item,
+          draft: { ...item.draft, ...action.changes },
+          save: item.save.kind === 'failed' ? ({ kind: 'idle' } as const) : item.save,
+        }
+      })
+      return changed ? { ...state, items } : state
+    }
+
     case 'save/start': {
       return updateItem(state, action.id, (item) => {
-        if (item.upload.kind !== 'ready' || item.save.kind === 'saving') return item
-        return { ...item, save: { kind: 'saving' } }
+        if (item.upload.kind !== 'ready') return item
+        if (item.save.kind === 'saving' || item.save.kind === 'updating') return item
+
+        const cardId = savedCardId(item.save)
+        return { ...item, save: cardId != null ? { kind: 'updating', cardId } : { kind: 'saving' } }
       })
     }
 
     case 'save/succeeded': {
       return updateItem(state, action.id, (item) => {
-        if (item.save.kind !== 'saving') return item
+        if (item.save.kind !== 'saving' && item.save.kind !== 'updating') return item
         return {
           ...item,
           save: { kind: 'saved', cardId: action.cardId },
@@ -239,10 +293,21 @@ export function batchReducer(state: BatchState, action: BatchAction): BatchState
 
     case 'save/failed': {
       return updateItem(state, action.id, (item) => {
-        if (item.save.kind !== 'saving') return item
+        if (item.save.kind !== 'saving' && item.save.kind !== 'updating') return item
+        if (item.save.kind !== 'updating') {
+          return {
+            ...item,
+            save: { kind: 'failed', message: action.message, field: action.field },
+          }
+        }
         return {
           ...item,
-          save: { kind: 'failed', message: action.message, field: action.field },
+          save: {
+            kind: 'failed',
+            message: action.message,
+            field: action.field,
+            cardId: item.save.cardId,
+          },
         }
       })
     }

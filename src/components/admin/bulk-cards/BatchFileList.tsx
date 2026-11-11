@@ -3,7 +3,7 @@
 import { Upload } from 'lucide-react'
 import React, { useRef, useState } from 'react'
 
-import type { BatchItem, UploadState } from './batch-state'
+import { isItemDirty, savedCardId, type BatchItem, type UploadState } from './batch-state'
 
 export type BatchFileListProps = {
   items: BatchItem[]
@@ -24,7 +24,10 @@ function progressPercent(upload: Extract<UploadState, { kind: 'uploading' }>): n
 }
 
 function statusLabel(item: BatchItem): string {
-  if (item.save.kind === 'saved') return '已保存'
+  const cardId = savedCardId(item.save)
+  if (item.save.kind === 'updating') return '更新中'
+  if (item.save.kind === 'failed' && cardId != null) return '更新失败'
+  if (cardId != null) return isItemDirty(item) ? '有修改' : '已保存'
   if (item.upload.kind === 'ready') {
     if (item.save.kind === 'saving') return '保存中'
     if (item.save.kind === 'failed') return '保存失败'
@@ -68,7 +71,7 @@ export function BatchFileList({
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const savedCount = items.filter((item) => item.save.kind === 'saved').length
+  const savedCount = items.filter((item) => savedCardId(item.save) != null).length
 
   const acceptFiles = (files: File[]): void => {
     if (files.length === 0) return
@@ -147,7 +150,7 @@ export function BatchFileList({
           {items.map((item) => {
             const selected = item.id === selectedId
             const uploading = item.upload.kind === 'uploading' ? item.upload : null
-            const saved = item.save.kind === 'saved'
+            const saved = savedCardId(item.save) != null
             const rowFailed = item.upload.kind === 'failed' || item.save.kind === 'failed'
             return (
               <li

@@ -7,11 +7,14 @@ import {
   batchReducer,
   createCardDraft,
   defaultAltFromFilename,
+  isItemDirty,
+  savedCardId,
   type BatchItem,
   type BatchState,
   type BulkCardsTaxonomy,
   type CardDraft,
 } from './batch-state'
+import { BulkApplyPanel, type BulkApplyChanges } from './BulkApplyPanel'
 import { CardDraftForm } from './CardDraftForm'
 import { CardSaveError, saveCard } from './cards-api'
 import { MediaUploadError, uploadMedia } from './media-uploader'
@@ -34,7 +37,18 @@ function nextUnsavedReady(items: BatchItem[], currentId: string): BatchItem | nu
   const index = items.findIndex((item) => item.id === currentId)
   if (index === -1) return null
   const ordered = [...items.slice(index + 1), ...items.slice(0, index)]
-  return ordered.find((item) => item.upload.kind === 'ready' && item.save.kind !== 'saved') ?? null
+  return (
+    ordered.find((item) => item.upload.kind === 'ready' && savedCardId(item.save) == null) ?? null
+  )
+}
+
+function hasEnteredDetails(draft: CardDraft): boolean {
+  return Boolean(
+    draft.name.trim() ||
+      draft.code.trim() ||
+      draft.price.trim() ||
+      draft.description.trim(),
+  )
 }
 
 export function BulkCardsClient({ apiRoute, taxonomy }: BulkCardsClientProps) {
@@ -130,6 +144,14 @@ export function BulkCardsClient({ apiRoute, taxonomy }: BulkCardsClientProps) {
       const item = state.items.find((candidate) => candidate.id === id)
       if (!item) return
 
+      if (
+        savedCardId(item.save) == null &&
+        hasEnteredDetails(item.draft) &&
+        !window.confirm('这张图片填写的信息尚未保存，确定移除？')
+      ) {
+        return
+      }
+
       if (item.upload.kind === 'ready') {
         try {
           const response = await fetch(`${apiRoute}/media/${item.upload.media.id}`, {
@@ -169,18 +191,23 @@ export function BulkCardsClient({ apiRoute, taxonomy }: BulkCardsClientProps) {
     async (id: string) => {
       const item = state.items.find((candidate) => candidate.id === id)
       if (!item || item.upload.kind !== 'ready') return
-      if (item.save.kind === 'saving' || item.save.kind === 'saved') return
+      if (item.save.kind === 'saving' || item.save.kind === 'updating') return
 
+      const existingCardId = savedCardId(item.save) ?? undefined
       dispatch({ type: 'save/start', id })
       try {
         const cardId = await saveCard({
           apiRoute,
           draft: item.draft,
           media: item.upload.media,
+          existingCardId,
         })
         dispatch({ type: 'save/succeeded', id, cardId })
-        const next = nextUnsavedReady(state.items, id)
-        if (next) dispatch({ type: 'item/select', id: next.id })
+        // 更新已存在的卡牌不跳走，方便连续修改；新建才自动切到下一张待填图片。
+        if (existingCardId == null) {
+          const next = nextUnsavedReady(state.items, id)
+          if (next) dispatch({ type: 'item/select', id: next.id })
+        }
       } catch (caught) {
         dispatch({
           type: 'save/failed',
@@ -193,7 +220,59 @@ export function BulkCardsClient({ apiRoute, taxonomy }: BulkCardsClientProps) {
     [apiRoute, state.items],
   )
 
+  const applyBulkChanges = useCallback(
+    (changes: BulkApplyChanges): number => {
+      const targets = state.items.filter(
+        (item) =>
+          savedCardId(item.save) == null &&
+          item.save.kind !== 'saving' &&
+          item.save.kind !== 'updating',
+      )
+      if (targets.length > 0) dispatch({ type: 'draft/bulk-change', changes })
+      return targets.length
+    },
+    [state.items],
+  )
+
+  const selectRelative = useCallback(
+    (delta: number) => {
+      const index = state.items.findIndex((item) => item.id === state.selectedId)
+      if (index === -1) return
+      const target = state.items[index + delta]
+      if (target) dispatch({ type: 'item/select', id: target.id })
+    },
+    [state.items, state.selectedId],
+  )
+
+  useEffect(() => {
+    const handler = (event: BeforeUnloadEvent): void => {
+      if (!state.items.some(isItemDirty)) return
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [state.items])
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (!event.altKey || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return
+      const target = event.target as HTMLElement | null
+      const typing =
+        target?.tagName === 'INPUT' ||
+        target?.tagName === 'TEXTAREA' ||
+        target?.tagName === 'SELECT' ||
+        target?.isContentEditable === true
+      if (typing) return
+      event.preventDefault()
+      selectRelative(event.key === 'ArrowLeft' ? -1 : 1)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [selectRelative])
+
   const selected = state.items.find((item) => item.id === state.selectedId) ?? null
+  const selectedIndex = state.items.findIndex((item) => item.id === state.selectedId)
   const selectedPreviewUrl = selected
     ? selected.upload.kind === 'ready'
       ? selected.upload.media.url || selected.previewUrl
@@ -239,16 +318,43 @@ export function BulkCardsClient({ apiRoute, taxonomy }: BulkCardsClientProps) {
                 src={selectedPreviewUrl ?? undefined}
               />
               <div className="min-w-0 flex-1">
-                <p className="break-all text-sm font-medium" title={selected.file.name}>
-                  {selected.file.name}
-                </p>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <p className="break-all text-sm font-medium" title={selected.file.name}>
+                    {selected.file.name}
+                  </p>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      className="rounded-sm border border-border px-2 py-1 text-xs hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={selectedIndex <= 0}
+                      onClick={() => selectRelative(-1)}
+                      type="button"
+                    >
+                      上一张
+                    </button>
+                    <span className="tabular px-1 text-xs text-muted-foreground">
+                      {selectedIndex + 1} / {state.items.length}
+                    </span>
+                    <button
+                      className="rounded-sm border border-border px-2 py-1 text-xs hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={selectedIndex >= state.items.length - 1}
+                      onClick={() => selectRelative(1)}
+                      type="button"
+                    >
+                      下一张
+                    </button>
+                  </div>
+                </div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {selected.upload.kind === 'ready'
-                    ? `${selected.upload.media.width} × ${selected.upload.media.height}`
+                    ? selected.upload.media.width > 0 && selected.upload.media.height > 0
+                      ? `${selected.upload.media.width} × ${selected.upload.media.height}`
+                      : '图片已上传'
                     : '上传完成后自动填入图片尺寸'}
                 </p>
               </div>
             </div>
+
+            <BulkApplyPanel onApply={applyBulkChanges} taxonomy={taxonomy} />
 
             <CardDraftForm
               item={selected}

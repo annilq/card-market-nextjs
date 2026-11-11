@@ -163,25 +163,30 @@ export async function saveCard(args: {
   apiRoute: string
   draft: CardDraft
   media: MediaRef
+  existingCardId?: number
 }): Promise<number> {
-  const { apiRoute, draft, media } = args
+  const { apiRoute, draft, media, existingCardId } = args
   const alt = draft.alt.trim()
+  const action = existingCardId != null ? '更新卡牌失败' : '保存卡牌失败'
 
   await updateMediaAlt(media, alt, apiRoute)
 
   let response: Response
   try {
-    response = await fetch(`${apiRoute}/cards`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(toCardPayload(draft, media.id)),
-    })
+    response = await fetch(
+      existingCardId != null ? `${apiRoute}/cards/${existingCardId}` : `${apiRoute}/cards`,
+      {
+        method: existingCardId != null ? 'PATCH' : 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(toCardPayload(draft, media.id)),
+      },
+    )
   } catch {
-    throw new CardSaveError('保存卡牌失败，请检查网络', 'card')
+    throw new CardSaveError(`${action}，请检查网络`, 'card')
   }
 
-  if (!response.ok) throw await failure(response, '保存卡牌失败', 'card')
+  if (!response.ok) throw await failure(response, action, 'card')
 
   let body: unknown
   try {

@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 import type { BatchItem, BulkCardsTaxonomy, CardDraft } from './batch-state'
+import { draftEquals, savedCardId } from './batch-state'
 import { hasDraftErrors, validateCardDraft } from './card-draft'
 import { TaxonomySelect } from './TaxonomySelect'
 
@@ -24,9 +25,13 @@ export type CardDraftFormProps = {
 
 export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFormProps) {
   const [submitted, setSubmitted] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
   const { draft, save } = item
-  const locked = save.kind === 'saved'
+  const cardId = savedCardId(save)
   const saving = save.kind === 'saving'
+  const updating = save.kind === 'updating'
+  const busy = saving || updating
+  const dirty = cardId != null && item.savedSnapshot != null && !draftEquals(draft, item.savedSnapshot)
   const validation = submitted ? validateCardDraft(draft) : {}
   const saveError = save.kind === 'failed' ? save : null
 
@@ -38,9 +43,19 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
   const seriesOptions = taxonomy.series.filter((option) => option.ipId === draft.ipId)
   const subSeriesOptions = taxonomy.subSeries.filter((option) => option.seriesId === draft.seriesId)
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (!(event.metaKey || event.ctrlKey) || event.key !== 'Enter') return
+      event.preventDefault()
+      formRef.current?.requestSubmit()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault()
-    if (locked || saving) return
+    if (busy || item.upload.kind !== 'ready') return
     setSubmitted(true)
     if (hasDraftErrors(validateCardDraft(draft))) return
     onSave()
@@ -71,7 +86,7 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
         {options.multiline ? (
           <textarea
             className={className}
-            disabled={locked}
+            disabled={busy}
             id={id}
             onChange={(event) =>
               onChange({ [field]: event.target.value } as Partial<CardDraft>)
@@ -82,7 +97,7 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
         ) : (
           <input
             className={className}
-            disabled={locked}
+            disabled={busy}
             id={id}
             inputMode={field === 'price' ? 'decimal' : undefined}
             min={field === 'price' ? 0 : undefined}
@@ -101,8 +116,8 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
   }
 
   return (
-    <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-      <fieldset className="flex flex-col gap-4" disabled={locked || saving}>
+    <form className="flex flex-col gap-4" onSubmit={handleSubmit} ref={formRef}>
+      <fieldset className="flex flex-col gap-4" disabled={busy}>
         <div className="grid gap-3 sm:grid-cols-2">
           {textField('name', '卡牌名称', { required: true, placeholder: '如 皮卡丘' })}
           <label className="flex min-w-0 flex-col gap-1.5" htmlFor="bulk-alt">
@@ -111,7 +126,7 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
             </span>
             <input
               className={`${INPUT_CLASS} ${errorFor('alt') ? 'border-destructive' : 'border-input'}`}
-              disabled={locked}
+              disabled={busy}
               id="bulk-alt"
               onChange={(event) => onChange({ alt: event.target.value })}
               value={draft.alt}
@@ -179,7 +194,7 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
             </label>
             <select
               className={`${INPUT_CLASS} border-input`}
-              disabled={locked}
+              disabled={busy}
               id="bulk-status"
               onChange={(event) => onChange({ status: event.target.value as CardDraft['status'] })}
               value={draft.status}
@@ -195,7 +210,7 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
             <input
               checked={draft.isHighValue}
               className="size-4 accent-[var(--primary)]"
-              disabled={locked}
+              disabled={busy}
               id="bulk-high-value"
               onChange={(event) => onChange({ isHighValue: event.target.checked })}
               type="checkbox"
@@ -213,23 +228,35 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
       <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
         <button
           className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={locked || saving || item.upload.kind !== 'ready'}
+          disabled={busy || item.upload.kind !== 'ready'}
           type="submit"
         >
-          {saving ? '保存中…' : locked ? '已保存' : '保存卡牌'}
+          {updating
+            ? '更新中…'
+            : saving
+              ? '保存中…'
+              : cardId != null
+                ? '更新卡牌'
+                : '保存卡牌'}
         </button>
 
-        {save.kind === 'saved' ? (
-          <p className="text-xs text-muted-foreground">
-            已保存为卡牌 #{save.cardId}，继续选择左侧下一张图片。
-          </p>
-        ) : saveError ? (
+        {saveError ? (
           <p className="text-xs text-destructive" role="alert">
             {saveError.message}
+          </p>
+        ) : cardId != null ? (
+          <p className="text-xs text-muted-foreground">
+            {dirty
+              ? `卡牌 #${cardId} 有未保存的修改，点击「更新卡牌」保存。`
+              : `已保存为卡牌 #${cardId}。`}
           </p>
         ) : item.upload.kind !== 'ready' ? (
           <p className="text-xs text-muted-foreground">图片上传完成后才能保存。</p>
         ) : null}
+
+        <p className="ml-auto text-[11px] text-muted-foreground">
+          ⌘/Ctrl + Enter 保存 · Alt + ←/→ 切换
+        </p>
       </div>
     </form>
   )
