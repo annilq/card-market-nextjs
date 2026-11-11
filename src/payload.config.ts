@@ -180,13 +180,13 @@ export default buildConfig({
   //     → 307 回 /admin/login，表现即「登录成功却进不去」。留空后 csrf 为空数组，
   //     extractJWT 直接采信同源 cookie，链路闭环。
   //   - 本地 dev：回退 localhost:3100，保证本地 SSR 的媒体绝对 URL 正确。
+  //     这里不能用 NEXT_PUBLIC_SITE_URL：它指向生产主域名，会让 csrf 只认生产 Origin，
+  //     浏览器带 Origin 的同源 POST（cookie 鉴权）在本地被拒绝成 403。
   // 注意：绝不能用 VERCEL_URL 兜底——它指向「每次部署专属域名」，与用户访问的主域名不是同一 host。
   serverURL:
     process.env.VERCEL === '1' || process.env.NODE_ENV === 'production'
       ? ''
-      : process.env.SITE_URL ||
-        process.env.NEXT_PUBLIC_SITE_URL ||
-        'http://localhost:3100',
+      : process.env.SITE_URL || 'http://localhost:3100',
   i18n: { supportedLanguages: { en, ja, zh }, fallbackLanguage: 'zh' },
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
   graphQL: { schemaOutputFile: path.resolve(dirname, '../schema.graphql') },
