@@ -51,7 +51,7 @@ const zh = {
 
   // 首页
   searchPlaceholder: '请输入卡牌名称 / 编号 / 罕见度进行搜索',
-  searchPlaceholderShort: '搜卡名 / 编号',
+  searchPlaceholderShort: '搜卡名 / 编号 / 罕见度',
   search: '搜索',
   catalogFilters: '卡牌筛选',
   catalogReset: '重置',
@@ -206,7 +206,7 @@ const ja: Record<MessageKey, string> = {
   contentLanguageSwitch: '中国語の原文を見る',
 
   searchPlaceholder: 'カード名 / 型番 / レアリティで検索',
-  searchPlaceholderShort: 'カード名 / 型番',
+  searchPlaceholderShort: 'カード名 / 型番 / レアリティ',
   search: '検索',
   catalogFilters: 'カードを絞り込む',
   catalogReset: 'リセット',
@@ -351,7 +351,7 @@ const en: Record<MessageKey, string> = {
   contentLanguageSwitch: 'View the Chinese original',
 
   searchPlaceholder: 'Card name / number / rarity',
-  searchPlaceholderShort: 'Name / number',
+  searchPlaceholderShort: 'Name / number / rarity',
   search: 'Search',
   catalogFilters: 'Filter cards',
   catalogReset: 'Reset',

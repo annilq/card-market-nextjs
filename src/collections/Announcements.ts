@@ -16,9 +16,9 @@ export const Announcements: CollectionConfig = {
     defaultColumns: ['title', 'isPinned', 'sort', 'publishedAt', 'status', 'publicLink'],
     group: { zh: '内容', en: 'Content', ja: 'コンテンツ' },
     description: {
-      zh: '前台可见 = 已发布 且 (发布时间为空 或 已到点)。未置顶：只按发布时间倒序；置顶：可同时置顶多条，组内按「置顶排序」升序，再按发布时间倒序。首页最多显示 5 条，其中置顶最多显示前 2 条。',
-      en: 'Visible when published and (publishedAt is empty or in the past). Unpinned: newest first. Pinned: multiple allowed, ordered by pin order then newest. Home shows at most 5, including at most 2 pinned.',
-      ja: '公開条件：公開ステータス かつ 公開日時が空または過去。固定なし：公開日時の新しい順。固定あり：複数可、固定順→公開日時の新しい順。トップは最大5件（固定は最大2件）。',
+      zh: '前台可见 = 已发布 且 (发布时间为空 或 已到点)。未置顶：只按发布时间倒序；置顶：可同时置顶多条，组内按「置顶排序」升序，再按发布时间倒序。首页最多显示 3 条：置顶优先（最多 3 条，按置顶排序），不足 3 条时按发布时间倒序补满，例如 3 条置顶 / 2 置顶 + 1 最新 / 1 置顶 + 2 最新 / 3 条最新。',
+      en: 'Visible when published and (publishedAt is empty or in the past). Unpinned: newest first. Pinned: multiple allowed, ordered by pin order then newest. Home shows at most 3: pinned first (up to 3, by pin order), then newest-first to fill the rest (3 pinned / 2 pinned + 1 newest / 1 pinned + 2 newest / 3 newest).',
+      ja: '公開条件：公開ステータス かつ 公開日時が空または過去。固定なし：公開日時の新しい順。固定あり：複数可、固定順→公開日時の新しい順。トップは最大3件：固定記事を優先（最大3件・固定順）、足りない分は公開日時の新しい順で埋めます（固定3件 / 固定2+最新1 / 固定1+最新2 / 最新3件）。',
     },
   },
   access: {
@@ -59,9 +59,9 @@ export const Announcements: CollectionConfig = {
           admin: {
             width: '50%',
             description: {
-              zh: '可同时置顶多条；首页只展示排序最靠前的 2 条置顶。',
-              en: 'Multiple pins allowed; home shows only the top 2 by pin order.',
-              ja: '複数固定できます。トップでは固定順の上位2件のみ表示。',
+              zh: '可同时置顶多条；首页最多展示 3 条置顶（按置顶排序），不足 3 条时用最新公告补满。',
+              en: 'Multiple pins allowed; home shows up to 3 pinned announcements (by pin order), filled with the newest when fewer.',
+              ja: '複数固定できます。トップは固定記事を最大3件（固定順）表示し、足りない分は最新記事で埋めます。',
             },
           },
         },

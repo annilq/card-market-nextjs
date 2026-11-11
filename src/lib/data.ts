@@ -192,7 +192,8 @@ function compareAnnouncements(a: AnnouncementSortInput, b: AnnouncementSortInput
  * 这也修掉了「置顶了 B，首页却看不到」的根因：旧实现先按时间取前 N 条再排置顶，
  * 不在时间窗口里的置顶公告永远进不来。
  *
- * maxPinned 只用于首页：先取排序最靠前的若干条置顶，再用最新公告补满 limit。
+ * maxPinned 只用于首页：前若干条名额优先给置顶（按置顶排序），剩余名额按时间倒序补满，
+ * 补位时**不排除置顶**——置顶超过 maxPinned 条时，多出来的回到时间序里参与。
  * 缓存 10 分钟，后台改完由 afterChange 钩子主动失效。
  */
 export const getAnnouncements = unstable_cache(
@@ -213,11 +214,16 @@ export const getAnnouncements = unstable_cache(
 
     let items = docs
     if (options.maxPinned != null) {
-      const pinned = docs.filter((doc) => doc.isPinned).slice(0, Math.min(options.maxPinned, limit))
-      const unpinned = docs
-        .filter((doc) => !doc.isPinned)
-        .slice(0, Math.max(0, limit - pinned.length))
-      items = [...pinned, ...unpinned]
+      // 前几个名额优先给置顶（按置顶排序）。剩余名额按时间倒序补满，
+      // 其余置顶公告也回到时间序里参与：否则「全是置顶、没有非置顶」时，
+      // 首页只会显示 maxPinned 条，明明没到上限却有公告被漏掉。
+      const head = docs.filter((doc) => doc.isPinned).slice(0, Math.min(options.maxPinned, limit))
+      const headIds = new Set(head.map((doc) => toId(doc.id)))
+      const rest = docs
+        .filter((doc) => !headIds.has(toId(doc.id)))
+        .sort((a, b) => announcementTime(b) - announcementTime(a))
+        .slice(0, Math.max(0, limit - head.length))
+      items = [...head, ...rest]
     } else {
       const start = (page - 1) * limit
       items = docs.slice(start, start + limit)

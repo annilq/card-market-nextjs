@@ -11,10 +11,10 @@ import type { Locale } from '@/lib/i18n/locales'
 import { localizeHref } from '@/lib/i18n/locales'
 import type { AnnouncementView } from '@/lib/types'
 
-/** 首页最多露出五条（置顶 + 最新合计），父页按同样的上限取数。 */
-export const HOME_NOTICE_COUNT = 5
-/** 置顶最多露出前两条，避免置顶过多把最新公告挤出首页。 */
-export const HOME_PINNED_COUNT = 2
+/** 首页最多露出三条（置顶优先 + 最新合计），父页按同样的上限取数。 */
+export const HOME_NOTICE_COUNT = 3
+/** 最多三个名额优先给置顶：3 条置顶 / 2 置顶 + 1 最新 / 1 置顶 + 2 最新 / 3 条最新。 */
+export const HOME_PINNED_COUNT = 3
 
 export function HomeNotices({
   items,
