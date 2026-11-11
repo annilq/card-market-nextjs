@@ -13,6 +13,22 @@ const relId = (value: unknown): string | number | null => {
   return value as string | number
 }
 
+const IP_LABEL = { en: 'IP', ja: 'IP', zh: 'IP / 大类' }
+const SERIES_LABEL = { en: 'Series', ja: 'シリーズ', zh: '系列' }
+
+/**
+ * 三级分类共用同一个客户端字段组件（复用 Payload 原生 relationship 下拉的外观）。
+ * `filterOptions` 只负责「下拉里能看到什么」，这里补的是两件它不做的事：
+ * 上级变了清空下级、上级没选时点击下级弹出「请先选择 X」的提醒。
+ */
+const cascadingField = (cascade: {
+  clearPaths?: string[]
+  prerequisites?: { label: Record<string, string>; path: string }[]
+}) => ({
+  clientProps: { cascade },
+  path: '@/components/admin/TaxonomyCascadeField#CascadingRelationshipField',
+})
+
 /**
  * 组合唯一键：(ip, series, subSeries, code)。
  * Payload 没有复合唯一索引，这里用「计算列 + unique」+ 钩子显式报错实现同等效果
@@ -89,7 +105,11 @@ export const Cards: CollectionConfig = {
           relationTo: 'ips',
           required: true,
           index: true,
-          admin: { width: '33%' },
+          // 根级：无前置条件；切换时连带清掉系列与子系列。
+          admin: {
+            width: '33%',
+            components: { Field: cascadingField({ clearPaths: ['series', 'subSeries'] }) },
+          },
         },
         {
           name: 'series',
@@ -98,7 +118,16 @@ export const Cards: CollectionConfig = {
           relationTo: 'series',
           required: true,
           index: true,
-          admin: { width: '33%' },
+          // 前置：必须先选 IP；本字段变化时清掉子系列。
+          admin: {
+            width: '33%',
+            components: {
+              Field: cascadingField({
+                clearPaths: ['subSeries'],
+                prerequisites: [{ label: IP_LABEL, path: 'ip' }],
+              }),
+            },
+          },
           filterOptions: ({ siblingData }) => {
             const ipId = relId((siblingData as { ip?: unknown } | undefined)?.ip)
             // 没选 IP 时返回 false（Payload 会转成空结果），否则下拉会把全部系列一次性拉出来。
@@ -112,7 +141,18 @@ export const Cards: CollectionConfig = {
           relationTo: 'sub-series',
           required: true,
           index: true,
-          admin: { width: '33%' },
+          // 前置链：IP → 系列。任一未选时点击都会提示先补哪一级。
+          admin: {
+            width: '33%',
+            components: {
+              Field: cascadingField({
+                prerequisites: [
+                  { label: IP_LABEL, path: 'ip' },
+                  { label: SERIES_LABEL, path: 'series' },
+                ],
+              }),
+            },
+          },
           filterOptions: ({ siblingData }) => {
             const seriesId = relId((siblingData as { series?: unknown } | undefined)?.series)
             // 没选系列时不列全量子系列；选了系列就只列它的子系列，下拉不会堆无关数据。

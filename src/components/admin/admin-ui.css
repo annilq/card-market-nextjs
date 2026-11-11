@@ -422,3 +422,58 @@ html[data-theme] a[href$='/forgot'] {
   color: var(--theme-elevation-1000);
   text-decoration: underline;
 }
+
+/* ---------- 卡牌分类三级联动（IP / 大类 → 系列 → 子系列） ----------
+   自定义 Field 组件在原生 relationship 外面多包了一层，宽度的 --field-width
+   由组件透传到这一层。这里只负责锁定态的视觉与覆盖层的点击热区。 */
+.cascade-field {
+  position: relative;
+  min-width: 0;
+}
+.cascade-field__control {
+  min-width: 0;
+}
+/* 未选上级时把原生下拉压暗，但保留「可点击」的观感（不是 disabled）。 */
+.cascade-field--locked .cascade-field__control {
+  opacity: 0.55;
+}
+.cascade-field__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.cascade-field__overlay:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.cascade-field__notice,
+.cascade-field__hint {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  /* 点说明文字也要落到下面的覆盖层，统一触发提醒 */
+  pointer-events: none;
+}
+.cascade-field__notice {
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--primary-soft);
+  color: var(--primary-soft-fg);
+  font-weight: 500;
+}
+.cascade-field__hint {
+  color: var(--muted-foreground);
+}
