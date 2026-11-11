@@ -19,7 +19,7 @@
 | [src/components/admin/DashboardView.tsx](../src/components/admin/DashboardView.tsx) | `views.dashboard`：替换 Payload 默认的「集合卡片墙」 |
 | [src/components/admin/LoginIntro.tsx](../src/components/admin/LoginIntro.tsx) | `beforeLogin`：登录页站名 |
 | [src/payload.config.ts](../src/payload.config.ts) → `admin.components` | 上面几个组件的挂载点 |
-| [src/middleware.ts](../src/middleware.ts) | 给首次访问后台的浏览器种下 `payload-theme=dark`，服务端首屏直接输出深色 |
+| [src/middleware.ts](../src/middleware.ts) | 给首次访问后台的浏览器种下 `payload-theme=light`，服务端首屏直接输出浅色；并把 `/admin` 请求的 `Accept-Language` 归一为 zh，后台默认中文（账号设置里仍可手动切换） |
 
 截图见 [docs/screenshots/](./screenshots/)（登录页 / 仪表盘 / 列表页，浅色与深色）。
 

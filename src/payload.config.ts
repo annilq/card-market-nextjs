@@ -71,8 +71,9 @@ export default buildConfig({
     },
     importMap: { baseDir: path.resolve(dirname) },
     dateFormat: 'yyyy-MM-dd HH:mm',
-    // 后台默认深色（新访客的 payload-theme cookie 由 src/middleware.ts 种下），
-    // 但仍保留「跟随系统 / 手动切换」两条路，所以这里不写死成 'dark'。
+    // 后台默认浅色（新访客的 payload-theme cookie 由 src/middleware.ts 种下），
+    // 但仍保留「跟随系统 / 手动切换」两条路，所以这里不写死成 'light'。
+    // 写死成 'light' 会让 getRequestTheme 直接忽略 cookie，顶栏切换按钮会失效。
     theme: 'all',
     // 账户头像：默认是 gravatar（按邮箱去 gravatar.com 取图，内网/离线常裂图且无兜底）。
     // 改成自定义组件——优先显示用户在「账户」页上传的头像，失败/没传则退回首字母圆，绝不裂图。
@@ -187,6 +188,10 @@ export default buildConfig({
     process.env.VERCEL === '1' || process.env.NODE_ENV === 'production'
       ? ''
       : process.env.SITE_URL || 'http://localhost:3100',
+  // 后台界面语言：默认中文（src/middleware.ts 把 /admin 请求的 Accept-Language 归一为 zh）。
+  // 保留 en / ja，运营仍可在「账户 → 设置」里手动切换（写入 payload-lng cookie，优先级最高）。
+  // 注意 fallbackLanguage 只是兜底，不是默认值：只要 supportedLanguages 里有 ja / en，
+  // 日文 / 英文浏览器的 Accept-Language 就会直接命中，中文浏览器才会走到 zh。
   i18n: { supportedLanguages: { en, ja, zh }, fallbackLanguage: 'zh' },
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
   graphQL: { schemaOutputFile: path.resolve(dirname, '../schema.graphql') },
