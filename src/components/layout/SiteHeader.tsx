@@ -95,7 +95,7 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
         {/* 顶行：语言 + 主题切换不再绝对定位贴视口边缘（那样在 1201–1535px 区间会
             压到同处右上角的 X·店铺图标），改为行内右端、≥2xl 才绝对定位。这里无需
             再为它预留 padding。 */}
-        <div className="flex h-16 items-center gap-3 max-md:gap-2 md:h-24 md:gap-6 text-lg">
+        <div className="flex h-16 items-center gap-3 max-md:gap-2 md:h-25 md:gap-6 text-lg">
           <Link
             href={localizeHref("/", locale)}
             aria-label={siteName}
