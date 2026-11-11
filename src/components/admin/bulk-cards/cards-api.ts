@@ -131,6 +131,10 @@ function guessField(message: string, fallback: SaveField): SaveField {
 }
 
 async function failure(response: Response, fallback: string, field: SaveField): Promise<CardSaveError> {
+  if (response.status === 401 || response.status === 403) {
+    return new CardSaveError('登录状态已失效或权限不足，请重新登录后再试', field)
+  }
+
   let body: unknown
   try {
     body = await response.json()

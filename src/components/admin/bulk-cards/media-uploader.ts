@@ -147,7 +147,13 @@ async function requestSignedUpload(
   }
 
   if (!response.ok) {
-    throw new MediaUploadError('request', `获取上传地址失败（HTTP ${response.status}）`)
+    const message =
+      response.status === 404
+        ? '当前环境未启用对象存储直传，请联系管理员配置 S3'
+        : response.status === 401 || response.status === 403
+          ? '没有上传权限或登录状态已失效，请重新登录'
+          : `获取上传地址失败（HTTP ${response.status}）`
+    throw new MediaUploadError('request', message)
   }
 
   return parseSignedUpload(await readJson(response, 'request'))
@@ -186,7 +192,9 @@ function putFile(args: {
     }
     xhr.onerror = () => {
       cleanup()
-      reject(new MediaUploadError('upload', '图片上传失败，请检查网络'))
+      reject(
+        new MediaUploadError('upload', '图片上传失败，请检查网络或对象存储的 CORS 配置'),
+      )
     }
     xhr.onabort = () => {
       cleanup()
@@ -235,7 +243,11 @@ async function createMedia(
   }
 
   if (!response.ok) {
-    throw new MediaUploadError('create', `创建素材失败（HTTP ${response.status}）`)
+    const message =
+      response.status === 401 || response.status === 403
+        ? '没有创建素材的权限或登录状态已失效，请重新登录'
+        : `创建素材失败（HTTP ${response.status}）`
+    throw new MediaUploadError('create', message)
   }
 
   const body = await readJson(response, 'create')

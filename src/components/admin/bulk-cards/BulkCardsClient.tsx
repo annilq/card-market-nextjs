@@ -51,7 +51,7 @@ function hasEnteredDetails(draft: CardDraft): boolean {
   )
 }
 
-export function BulkCardsClient({ apiRoute, taxonomy }: BulkCardsClientProps) {
+export function BulkCardsClient({ adminRoute, apiRoute, taxonomy }: BulkCardsClientProps) {
   const [state, dispatch] = useReducer(batchReducer, initialState)
   const [error, setError] = useState<string | null>(null)
   const startedRef = useRef<Set<string>>(new Set())
@@ -279,14 +279,42 @@ export function BulkCardsClient({ apiRoute, taxonomy }: BulkCardsClientProps) {
       : selected.previewUrl
     : null
 
+  const missingTaxonomy: { label: string; slug: string }[] = []
+  if (taxonomy.ips.length === 0) missingTaxonomy.push({ label: 'IP / 大类', slug: 'ips' })
+  if (taxonomy.series.length === 0) missingTaxonomy.push({ label: '系列', slug: 'series' })
+  if (taxonomy.subSeries.length === 0)
+    missingTaxonomy.push({ label: '子系列', slug: 'sub-series' })
+  if (taxonomy.rarities.length === 0) missingTaxonomy.push({ label: '稀有程度', slug: 'rarities' })
+  if (taxonomy.cardStatuses.length === 0)
+    missingTaxonomy.push({ label: '卡牌状态', slug: 'card-statuses' })
+
   return (
-    <div
-      className="flex h-[calc(100vh-100px)] min-h-[520px] flex-col gap-4 lg:flex-row"
-      data-admin-ui=""
-    >
+    <div className="flex flex-col gap-3" data-admin-ui="">
+      {missingTaxonomy.length > 0 ? (
+        <p
+          className="rounded-md border border-dashed border-destructive/40 bg-destructive/5 px-4 py-2.5 text-xs text-destructive"
+          role="alert"
+        >
+          缺少分类数据：
+          {missingTaxonomy.map((gap, index) => (
+            <React.Fragment key={gap.slug}>
+              {index > 0 ? '、' : null}
+              <a
+                className="underline underline-offset-2"
+                href={`${adminRoute}/collections/${gap.slug}`}
+              >
+                {gap.label}
+              </a>
+            </React.Fragment>
+          ))}
+          。请先新增并启用分类，否则卡牌必填项无法完成。
+        </p>
+      ) : null}
+
+      <div className="flex min-h-[520px] flex-col gap-4 lg:h-[calc(100vh-100px)] lg:flex-row">
       <aside
         aria-label="待处理图片"
-        className="flex min-h-[320px] flex-col overflow-hidden rounded-lg border border-border bg-card lg:min-h-0 lg:w-[360px] lg:shrink-0"
+        className="flex max-h-[45vh] min-h-[320px] flex-col overflow-hidden rounded-lg border border-border bg-card lg:max-h-none lg:min-h-0 lg:w-[360px] lg:shrink-0"
       >
         <BatchFileList
           items={state.items}
@@ -370,6 +398,7 @@ export function BulkCardsClient({ apiRoute, taxonomy }: BulkCardsClientProps) {
           </div>
         )}
       </section>
+      </div>
     </div>
   )
 }
