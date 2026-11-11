@@ -11,9 +11,9 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 
-import { CardCard } from '@/components/CardCard'
 import { Pagination } from '@/components/Pagination'
 import { CatalogFilters } from '@/components/catalog/CatalogFilters'
+import { CatalogCard } from '@/components/catalog/CatalogCard'
 import { getCards, getFacets, getSiteSettings } from '@/lib/data'
 import { parseCardSearch, numOf, rawOf, csvOrNull, type CardSearchParams } from '@/lib/card-search'
 import { getTranslator } from '@/lib/i18n/t'
@@ -93,7 +93,7 @@ export default async function CardsPage({ params, searchParams }: Props) {
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
       {result.items.map((card, i) => (
         // 首行 5 张设 priority（列表页第一屏能看到的卡片），优化 LCP。
-        <CardCard key={card.id} card={card} locale={locale} priority={i < 5} />
+        <CatalogCard key={card.id} card={card} locale={locale} priority={i < 5} />
       ))}
     </div>
   )
