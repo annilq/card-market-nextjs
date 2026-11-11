@@ -298,7 +298,7 @@ export function BulkCardsClient({ adminRoute, apiRoute, taxonomy }: BulkCardsCli
     missingTaxonomy.push({ label: '卡牌状态', slug: 'card-statuses' })
 
   return (
-    <div className="flex flex-col gap-3" data-admin-ui="">
+    <div className="flex flex-col gap-3 mt-3" data-admin-ui="">
       {missingTaxonomy.length > 0 ? (
         <p
           className="rounded-md border border-dashed border-destructive/40 bg-destructive/5 px-4 py-2.5 text-xs text-destructive"

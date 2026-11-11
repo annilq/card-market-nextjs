@@ -211,7 +211,7 @@ export function BatchFileList({
           </div>
         </div>
       ) : (
-        <ul aria-label="待处理图片列表" className="flex-1 overflow-y-auto">
+        <ul aria-label="待处理图片列表" className="flex-1 list-none overflow-y-auto pl-0">
           {items.map((item) => {
             const selected = item.id === selectedId
             const uploading = item.upload.kind === 'uploading' ? item.upload : null
