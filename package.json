@@ -14,7 +14,8 @@
     "reinit": "node --env-file=.env --import tsx scripts/reinit.ts",
     "indexes": "node --env-file=.env --import tsx scripts/ensure-indexes.ts",
     "bench": "node --env-file=.env --import tsx scripts/bench.ts",
-    "check:message": "node --env-file=.env --import tsx scripts/check-action.ts"
+    "check:message": "node --env-file=.env --import tsx scripts/check-action.ts",
+    "check:access": "node --env-file=.env --import tsx scripts/check-access-role-queries.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1161.0",

@@ -56,29 +56,34 @@ function toRoleId(role: Role | number | string | null | undefined): number | str
  * 解析当前登录用户的角色文档（带请求级缓存）。
  * 使用 overrideAccess 直接查库，避免与 roles 集合自身的访问规则相互递归。
  */
-export async function resolveUserRole(req: PayloadRequest): Promise<Role | null> {
+export function resolveUserRole(req: PayloadRequest): Promise<Role | null> {
   const user = req.user as (User & { role?: Role | number | string | null }) | undefined
-  if (!user || user.role == null) return null
+  if (!user || user.role == null) return Promise.resolve(null)
 
-  const cached = (req as unknown as Record<string, unknown>).__roleDoc
-  if (cached !== undefined) return cached as Role | null
+  // Payload 会在同一请求里并发执行所有集合 / 字段的访问检查。缓存 Promise 而不是
+  // 查询结果，让这些调用共享同一次 roles 查询；只缓存结果会让它们全部在第一次
+  // 查询返回前各自查库，形成 N+1。
+  const cache = req as unknown as Record<string, unknown>
+  const cached = cache.__roleDocPromise
+  if (cached !== undefined) return cached as Promise<Role | null>
 
-  const roleId = toRoleId(user.role)
-  let role: Role | null = null
-  if (roleId != null) {
+  const pending = (async (): Promise<Role | null> => {
+    const roleId = toRoleId(user.role)
+    if (roleId == null) return null
     try {
-      role = (await req.payload.findByID({
+      return (await req.payload.findByID({
         collection: 'roles',
         id: roleId,
         overrideAccess: true,
         depth: 0,
       })) as Role
     } catch {
-      role = null
+      return null
     }
-  }
-  ;(req as unknown as Record<string, unknown>).__roleDoc = role
-  return role
+  })()
+
+  cache.__roleDocPromise = pending
+  return pending
 }
 
 /** 当前用户是否为「管理员」角色（拥有全部权限）。匿名用户一律 false。 */
