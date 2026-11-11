@@ -9,20 +9,16 @@ import {
   defaultAltFromFilename,
   type BatchItem,
   type BatchState,
+  type BulkCardsTaxonomy,
+  type CardDraft,
 } from './batch-state'
+import { CardDraftForm } from './CardDraftForm'
+import { CardSaveError, saveCard } from './cards-api'
 import { MediaUploadError, uploadMedia } from './media-uploader'
 
 import '../admin-ui.css'
 
-export type TaxonomyOption = { id: number; name: string }
-
-export type BulkCardsTaxonomy = {
-  ips: TaxonomyOption[]
-  series: (TaxonomyOption & { ipId: number })[]
-  subSeries: (TaxonomyOption & { seriesId: number })[]
-  rarities: TaxonomyOption[]
-  cardStatuses: TaxonomyOption[]
-}
+export type { BulkCardsTaxonomy, TaxonomyOption } from './batch-state'
 
 export type BulkCardsClientProps = {
   adminRoute: string
@@ -34,7 +30,14 @@ const MAX_CONCURRENT_UPLOADS = 3
 
 const initialState: BatchState = { items: [], selectedId: null }
 
-export function BulkCardsClient({ apiRoute }: BulkCardsClientProps) {
+function nextUnsavedReady(items: BatchItem[], currentId: string): BatchItem | null {
+  const index = items.findIndex((item) => item.id === currentId)
+  if (index === -1) return null
+  const ordered = [...items.slice(index + 1), ...items.slice(0, index)]
+  return ordered.find((item) => item.upload.kind === 'ready' && item.save.kind !== 'saved') ?? null
+}
+
+export function BulkCardsClient({ apiRoute, taxonomy }: BulkCardsClientProps) {
   const [state, dispatch] = useReducer(batchReducer, initialState)
   const [error, setError] = useState<string | null>(null)
   const startedRef = useRef<Set<string>>(new Set())
@@ -158,6 +161,38 @@ export function BulkCardsClient({ apiRoute }: BulkCardsClientProps) {
     dispatch({ type: 'upload/retry', id })
   }, [])
 
+  const changeDraft = useCallback((id: string, changes: Partial<CardDraft>) => {
+    dispatch({ type: 'draft/change', id, changes })
+  }, [])
+
+  const saveItem = useCallback(
+    async (id: string) => {
+      const item = state.items.find((candidate) => candidate.id === id)
+      if (!item || item.upload.kind !== 'ready') return
+      if (item.save.kind === 'saving' || item.save.kind === 'saved') return
+
+      dispatch({ type: 'save/start', id })
+      try {
+        const cardId = await saveCard({
+          apiRoute,
+          draft: item.draft,
+          media: item.upload.media,
+        })
+        dispatch({ type: 'save/succeeded', id, cardId })
+        const next = nextUnsavedReady(state.items, id)
+        if (next) dispatch({ type: 'item/select', id: next.id })
+      } catch (caught) {
+        dispatch({
+          type: 'save/failed',
+          id,
+          message: caught instanceof CardSaveError ? caught.message : '保存卡牌失败',
+          field: caught instanceof CardSaveError ? caught.field : 'card',
+        })
+      }
+    },
+    [apiRoute, state.items],
+  )
+
   const selected = state.items.find((item) => item.id === state.selectedId) ?? null
   const selectedPreviewUrl = selected
     ? selected.upload.kind === 'ready'
@@ -196,31 +231,32 @@ export function BulkCardsClient({ apiRoute }: BulkCardsClientProps) {
 
         {selected ? (
           <>
-            {/* 媒体经过 302 跳到 B2，next/image 无法优化，必须用原生 img。 */}
-            <img
-              alt={selected.draft.alt || selected.file.name}
-              className="max-h-[420px] max-w-full self-start rounded-md border border-border bg-secondary object-contain"
-              src={selectedPreviewUrl ?? undefined}
-            />
-            <p className="break-all text-sm font-medium" title={selected.file.name}>
-              {selected.file.name}
-            </p>
-            <label className="flex max-w-[420px] flex-col gap-1.5">
-              <span className="text-sm font-medium">替代文本</span>
-              <input
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                onChange={(event) =>
-                  dispatch({
-                    type: 'draft/change',
-                    id: selected.id,
-                    changes: { alt: event.target.value },
-                  })
-                }
-                type="text"
-                value={selected.draft.alt}
+            <div className="flex flex-wrap items-start gap-4">
+              {/* 媒体经过 302 跳到 B2，next/image 无法优化，必须用原生 img。 */}
+              <img
+                alt={selected.draft.alt || selected.file.name}
+                className="max-h-[260px] max-w-full rounded-md border border-border bg-secondary object-contain"
+                src={selectedPreviewUrl ?? undefined}
               />
-            </label>
-            <p className="text-xs text-muted-foreground">卡牌信息表单将在下一阶段接入</p>
+              <div className="min-w-0 flex-1">
+                <p className="break-all text-sm font-medium" title={selected.file.name}>
+                  {selected.file.name}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {selected.upload.kind === 'ready'
+                    ? `${selected.upload.media.width} × ${selected.upload.media.height}`
+                    : '上传完成后自动填入图片尺寸'}
+                </p>
+              </div>
+            </div>
+
+            <CardDraftForm
+              item={selected}
+              key={selected.id}
+              onChange={(changes) => changeDraft(selected.id, changes)}
+              onSave={() => void saveItem(selected.id)}
+              taxonomy={taxonomy}
+            />
           </>
         ) : (
           <div className="flex flex-1 items-center justify-center text-center">

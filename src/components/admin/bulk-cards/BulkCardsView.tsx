@@ -4,7 +4,8 @@ import { redirect } from 'next/navigation'
 import React from 'react'
 import type { AdminViewServerProps } from 'payload'
 
-import { BulkCardsClient, type BulkCardsTaxonomy, type TaxonomyOption } from './BulkCardsClient'
+import type { BulkCardsTaxonomy, TaxonomyOption } from './batch-state'
+import { BulkCardsClient } from './BulkCardsClient'
 
 function toOption(doc: TaxonomyOption): TaxonomyOption {
   return { id: doc.id, name: doc.name }

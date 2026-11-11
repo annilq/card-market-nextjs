@@ -23,13 +23,19 @@ function progressPercent(upload: Extract<UploadState, { kind: 'uploading' }>): n
   return Math.min(100, Math.round((upload.sent / upload.total) * 100))
 }
 
-function statusLabel(upload: UploadState): string {
-  switch (upload.kind) {
+function statusLabel(item: BatchItem): string {
+  if (item.save.kind === 'saved') return '已保存'
+  if (item.upload.kind === 'ready') {
+    if (item.save.kind === 'saving') return '保存中'
+    if (item.save.kind === 'failed') return '保存失败'
+  }
+
+  switch (item.upload.kind) {
     case 'queued':
     case 'requesting':
       return '排队中'
     case 'uploading':
-      return `上传中 ${progressPercent(upload)}%`
+      return `上传中 ${progressPercent(item.upload)}%`
     case 'processing':
       return '处理中'
     case 'ready':
@@ -37,6 +43,12 @@ function statusLabel(upload: UploadState): string {
     case 'failed':
       return '上传失败'
   }
+}
+
+function failureMessage(item: BatchItem): string | undefined {
+  if (item.upload.kind === 'failed') return item.upload.message
+  if (item.save.kind === 'failed') return item.save.message
+  return undefined
 }
 
 function thumbnailUrl(item: BatchItem): string {
@@ -56,6 +68,7 @@ export function BatchFileList({
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const savedCount = items.filter((item) => item.save.kind === 'saved').length
 
   const acceptFiles = (files: File[]): void => {
     if (files.length === 0) return
@@ -96,7 +109,7 @@ export function BatchFileList({
         <div>
           <h1 className="text-[15px] font-semibold leading-6">批量上架</h1>
           <p className="tabular mt-0.5 text-xs text-muted-foreground">
-            {items.length} 张待处理
+            {items.length} 张图片{savedCount > 0 ? ` · ${savedCount} 已保存` : ''}
           </p>
         </div>
         <button
@@ -134,6 +147,8 @@ export function BatchFileList({
           {items.map((item) => {
             const selected = item.id === selectedId
             const uploading = item.upload.kind === 'uploading' ? item.upload : null
+            const saved = item.save.kind === 'saved'
+            const rowFailed = item.upload.kind === 'failed' || item.save.kind === 'failed'
             return (
               <li
                 className={`relative flex items-center gap-1 border-b border-l-2 border-b-border pl-2 pr-1.5 last:border-b-0 ${
@@ -152,7 +167,7 @@ export function BatchFileList({
                   {/* 媒体经过 302 跳到 B2，next/image 无法优化，必须用原生 img。 */}
                   <img
                     alt={item.draft.alt || item.file.name}
-                    className="size-10 shrink-0 rounded-sm object-cover"
+                    className={`size-10 shrink-0 rounded-sm object-cover ${saved ? 'opacity-60' : ''}`}
                     height={40}
                     loading="lazy"
                     src={thumbnailUrl(item)}
@@ -168,12 +183,10 @@ export function BatchFileList({
                     <span className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
                       <span className="tabular">{formatSize(item.file.size)}</span>
                       <span
-                        className={
-                          item.upload.kind === 'failed' ? 'text-destructive' : undefined
-                        }
-                        title={item.upload.kind === 'failed' ? item.upload.message : undefined}
+                        className={rowFailed ? 'text-destructive' : undefined}
+                        title={failureMessage(item)}
                       >
-                        {statusLabel(item.upload)}
+                        {statusLabel(item)}
                       </span>
                     </span>
                   </span>
@@ -189,15 +202,17 @@ export function BatchFileList({
                   </button>
                 ) : null}
 
-                <button
-                  aria-label={`移除 ${item.file.name}`}
-                  className="flex size-6 shrink-0 items-center justify-center rounded-sm text-sm leading-none text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                  onClick={() => onRemove(item.id)}
-                  title="移除"
-                  type="button"
-                >
-                  ×
-                </button>
+                {saved ? null : (
+                  <button
+                    aria-label={`移除 ${item.file.name}`}
+                    className="flex size-6 shrink-0 items-center justify-center rounded-sm text-sm leading-none text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => onRemove(item.id)}
+                    title="移除"
+                    type="button"
+                  >
+                    ×
+                  </button>
+                )}
 
                 {uploading ? (
                   <span

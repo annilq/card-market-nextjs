@@ -1,3 +1,13 @@
+export type TaxonomyOption = { id: number; name: string }
+
+export type BulkCardsTaxonomy = {
+  ips: TaxonomyOption[]
+  series: (TaxonomyOption & { ipId: number })[]
+  subSeries: (TaxonomyOption & { seriesId: number })[]
+  rarities: TaxonomyOption[]
+  cardStatuses: TaxonomyOption[]
+}
+
 export type MediaRef = {
   id: number
   alt: string
@@ -16,8 +26,6 @@ export type UploadState =
   | { kind: 'ready'; media: MediaRef }
   | { kind: 'failed'; phase: 'request' | 'upload' | 'create'; message: string }
 
-export type SaveState = { kind: 'idle' }
-
 export type CardDraft = {
   alt: string
   name: string
@@ -32,6 +40,14 @@ export type CardDraft = {
   isHighValue: boolean
   description: string
 }
+
+export type SaveField = keyof CardDraft | 'card' | 'media'
+
+export type SaveState =
+  | { kind: 'idle' }
+  | { kind: 'saving' }
+  | { kind: 'saved'; cardId: number }
+  | { kind: 'failed'; message: string; field?: SaveField }
 
 export type BatchItem = {
   id: string
@@ -65,6 +81,9 @@ export type BatchAction =
   | { type: 'item/select'; id: string }
   | { type: 'item/remove'; id: string }
   | { type: 'draft/change'; id: string; changes: Partial<CardDraft> }
+  | { type: 'save/start'; id: string }
+  | { type: 'save/succeeded'; id: string; cardId: number }
+  | { type: 'save/failed'; id: string; message: string; field?: SaveField }
 
 export function defaultAltFromFilename(name: string): string {
   const withoutExtension = name.replace(/\.[^.]+$/, '').trim()
@@ -190,10 +209,42 @@ export function batchReducer(state: BatchState, action: BatchAction): BatchState
     }
 
     case 'draft/change': {
-      return updateItem(state, action.id, (item) => ({
-        ...item,
-        draft: { ...item.draft, ...action.changes },
-      }))
+      return updateItem(state, action.id, (item) => {
+        if (item.save.kind === 'saved') return item
+        return {
+          ...item,
+          draft: { ...item.draft, ...action.changes },
+          save: item.save.kind === 'failed' ? { kind: 'idle' } : item.save,
+        }
+      })
+    }
+
+    case 'save/start': {
+      return updateItem(state, action.id, (item) => {
+        if (item.upload.kind !== 'ready' || item.save.kind === 'saving') return item
+        return { ...item, save: { kind: 'saving' } }
+      })
+    }
+
+    case 'save/succeeded': {
+      return updateItem(state, action.id, (item) => {
+        if (item.save.kind !== 'saving') return item
+        return {
+          ...item,
+          save: { kind: 'saved', cardId: action.cardId },
+          savedSnapshot: item.draft,
+        }
+      })
+    }
+
+    case 'save/failed': {
+      return updateItem(state, action.id, (item) => {
+        if (item.save.kind !== 'saving') return item
+        return {
+          ...item,
+          save: { kind: 'failed', message: action.message, field: action.field },
+        }
+      })
     }
 
     default:
