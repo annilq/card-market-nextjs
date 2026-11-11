@@ -38,6 +38,7 @@ import { AdminProviders as AdminProviders_f1687a21d4a9f2d81c356a10e59ecdc1 } fro
 import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
 import { DashboardView as DashboardView_8d5ccf53266e3797f61e9453e2f2d431 } from '@/components/admin/DashboardView'
 import { HelpView as HelpView_b49611ccd828469519fd79e264a9eb51 } from '@/components/admin/HelpView'
+import { BulkCardsView as BulkCardsView_5cf67a04b30fda7277328471b9a4595b } from '@/components/admin/bulk-cards/BulkCardsView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
@@ -82,5 +83,6 @@ export const importMap = {
   "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,
   "@/components/admin/DashboardView#DashboardView": DashboardView_8d5ccf53266e3797f61e9453e2f2d431,
   "@/components/admin/HelpView#HelpView": HelpView_b49611ccd828469519fd79e264a9eb51,
+  "@/components/admin/bulk-cards/BulkCardsView#BulkCardsView": BulkCardsView_5cf67a04b30fda7277328471b9a4595b,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

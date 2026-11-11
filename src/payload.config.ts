@@ -102,6 +102,12 @@ export default buildConfig({
           path: '/help',
           meta: { title: '后台操作帮助' },
         },
+        bulkCards: {
+          Component: '@/components/admin/bulk-cards/BulkCardsView#BulkCardsView',
+          path: '/bulk-cards',
+          exact: true,
+          meta: { title: '批量上架' },
+        },
       },
     },
   },

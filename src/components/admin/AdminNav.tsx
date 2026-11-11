@@ -57,6 +57,10 @@ export function AdminNav({ payload, permissions, visibleEntities }: Props) {
     },
   ]
 
+  const canBulkCreate =
+    permissions?.collections?.cards?.create === true &&
+    permissions?.collections?.media?.create === true
+
   for (const collection of payload.config.collections) {
     const { slug } = collection
     if (!visibleEntities.collections.includes(slug)) continue
@@ -69,6 +73,16 @@ export function AdminNav({ payload, permissions, visibleEntities }: Props) {
       label: toLabel(collection.labels?.plural, slug),
       slug,
     })
+
+    if (slug === 'cards' && canBulkCreate) {
+      items.push({
+        href: `${adminRoute}/bulk-cards`,
+        icon: 'bulk-cards',
+        label: '批量上架',
+        slug: 'bulk-cards',
+        exact: true,
+      })
+    }
   }
 
   for (const global of payload.config.globals) {

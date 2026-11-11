@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   Store,
   Tags,
+  Upload,
   Users,
 } from 'lucide-react'
 
@@ -31,6 +32,7 @@ export const ENTITY_ICONS = {
   help: HelpCircle,
   banners: RectangleHorizontal,
   cards: Package,
+  'bulk-cards': Upload,
   'card-statuses': ShieldCheck,
   'info-pages': FileText,
   ips: Tags,
@@ -49,6 +51,7 @@ export const ENTITY_DESCRIPTIONS: Record<string, string> = {
   announcements: '公告：置顶、定时发布',
   banners: '首页轮播图与跳转链接',
   cards: '商品主体：名称、编号、价格、图片、描述',
+  'bulk-cards': '一次上传多张卡图，批量新建卡牌',
   'card-statuses': '卡牌状态及其展示顺序与高亮标识',
   'info-pages': '审核用静态信息页',
   ips: '卡牌所属 IP / 大分类',
