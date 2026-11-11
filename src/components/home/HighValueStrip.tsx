@@ -13,8 +13,8 @@
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 
-import { CardCard } from '@/components/CardCard'
 import { getTranslator } from '@/lib/i18n/t'
+import { HighValueCard } from './HighValueCard'
 import type { Locale } from '@/lib/i18n/locales'
 import { localizeHref } from '@/lib/i18n/locales'
 import type { CardView } from '@/lib/types'
@@ -73,7 +73,7 @@ export function HighValueStrip({
     const tick = () => {
       if (!enabledRef.current || reducedRef.current || !canRotateRef.current) return
       if (hoverRef.current || focusRef.current || interactingRef.current) return
-      const step = (track.firstElementChild?.getBoundingClientRect().width ?? 0) + 12 // 卡宽 + gap-3
+      const step = (track.firstElementChild?.getBoundingClientRect().width ?? 0) + 16 // 卡宽 + gap-4
       const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 4
       if (atEnd) track.scrollTo({ left: 0, behavior: 'smooth' }) // 到尾循环回起点
       else track.scrollBy({ left: step, behavior: 'smooth' })
@@ -154,12 +154,13 @@ export function HighValueStrip({
           if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
           focusRef.current = false
         }}
-        className="strip-fade flex snap-x snap-mandatory gap-3 overflow-x-auto rounded-xl pb-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-strong"
+        className="strip-fade flex snap-x snap-mandatory gap-4 overflow-x-auto pb-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-strong"
       >
         {items.map((c) => (
-          // 卡位 224px：参考图的横条是 5 张 ≈227px 卡位铺满整行。
-          <div key={c.id} className="w-44 shrink-0 snap-start sm:w-56">
-            <CardCard card={c} locale={locale} compact />
+          // 卡位 220px：内容列 1168 − 4 × gap 16 = 1104，正好 5 张铺满首屏。
+          // （设计图内容列 1200，卡位 228；这里按站点实际列宽等比收窄。）
+          <div key={c.id} className="w-44 shrink-0 snap-start sm:w-[220px]">
+            <HighValueCard card={c} locale={locale} />
           </div>
         ))}
       </div>
