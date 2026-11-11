@@ -399,7 +399,6 @@ html.dark .map-tiles {
   overflow: hidden;
   border-radius: 1rem;
   border: 1px solid var(--color-border);
-  background: var(--color-accent);
   touch-action: pan-y;
   user-select: none;
   -webkit-user-select: none;
@@ -426,7 +425,6 @@ html.dark .map-tiles {
     height: clamp(320px, 42vw, 520px);
     border-radius: 0;
     border: none;
-    background: #0b0c12;
     overflow: hidden;
   }
   .banner-stage .banner-slide {

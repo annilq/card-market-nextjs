@@ -45,7 +45,8 @@ function bannerSlideStyle(off: number): BannerVars {
   // 距激活图 ±1 / ±2 的横向错位：42% / 76%。
   const sign = off > 0 ? 1 : -1
   const bx = (a === 1 ? 42 : 76) * sign
-  const bs = 1 - 0.16 * a // 每远一层缩小 16%
+  const bs = 1 // 每远一层缩小 6%
+  // const bs = 1 - 0.06 * a // 每远一层缩小 6%
   const bo = Math.max(0, 1 - 0.55 * (0.55 * a)) // 半透明
   const bb = 1 - 0.35 * a // 压暗
   const bz = 30 - a * 10
@@ -300,10 +301,10 @@ export function BannerCarousel({ banners }: { banners: BannerView[] }) {
               className="group/dot flex h-9 w-9 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
               <span
-                className={`h-2 rounded-full transition-all duration-200 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] ${
+                className={`size-3 rounded-full transition-colors duration-200 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] ${
                   i === idx
-                    ? 'w-6 bg-white'
-                    : 'w-2 bg-white/60 group-hover/dot:bg-white/90'
+                    ? 'bg-[#222CFF]'
+                    : 'bg-white/60 group-hover/dot:bg-white/90'
                 }`}
               />
             </button>
