@@ -7,8 +7,8 @@
 //   - 那个是**多选**：分面勾完还要再点一次才收起面板。
 // 首页是浅层浏览（tab 一按就换一批卡），/cards 是检索（要能叠加条件）。
 //
-// 外观按参考项目实测：整块品牌红底白字，右侧滑出、占 88vw（上限 420px）；
-// 「分类」是二级——左竖 tab 选主系列，右列选子系列，子系列第一项是「全部」，
+// 外观按参考项目实测：整块品牌红底白字，右侧滑出、占 92vw（上限 520px）；
+// 「分类」是二级——左竖 tab 选主系列（44%），右列选子系列，子系列第一项是「全部」，
 // 用来「只要主系列、不要子系列」。
 
 import { useRef, useState } from 'react'
@@ -102,13 +102,15 @@ export function HomeFilterSheet({
         className="sheet-fade absolute inset-0 bg-black/45"
       />
 
+      {/* 宽度：设计图的两列在日语下会挤成两行，桌面加宽到 520px；
+          手机上仍给 92vw 的上限，避免在 375px 屏上溢出。 */}
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
-        className="sheet-in absolute inset-y-0 right-0 flex w-[min(420px,88vw)] flex-col bg-brand text-white outline-none"
+        className="sheet-in absolute inset-y-0 right-0 flex w-[min(520px,92vw)] flex-col bg-brand text-white outline-none"
       >
         <div className="flex h-14 shrink-0 items-center justify-between px-4">
           <span className="text-base font-bold">{title}</span>
@@ -131,7 +133,9 @@ export function HomeFilterSheet({
             // 二级：左竖 tab 选主系列，右列选子系列。两列各自滚动——
             // 主系列或子系列都可能很长，整体滚动会把另一列顶出视野。
             <div className="flex min-h-0 flex-1">
-              <div className="w-[32%] shrink-0 overflow-y-auto bg-black/15">
+              {/* 主系列给 44%：日语系列名常常一屏两行，窄列会挤成竖排；
+                  子系列多是短名，让出宽度反而更好扫。 */}
+              <div className="w-[44%] shrink-0 overflow-y-auto bg-black/15">
                 {series.map((s) => (
                   <button
                     key={s.id}

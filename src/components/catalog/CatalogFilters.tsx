@@ -597,9 +597,11 @@ export function CatalogFilters({
         )}
 
         {/* 三个筛选做成触发控件：点一下，右侧滑出选择面板。
-            移动端改为横向滚动单行，桌面(sm 及以上)换行；「重置」始终在行尾、不随滚动被推走。 */}
-        <div className="flex items-center gap-x-2 gap-y-1">
-          <div className="flex min-w-0 flex-1 gap-x-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:pb-0">
+            移动端改为横向滚动单行；桌面(sm 及以上)按设计图改成「标签在上、值在下」，
+            控件之间留大间距，并在整排下方画一条分隔线（结果从线下方开始）。
+            「重置」始终在行尾、不随滚动被推走。 */}
+        <div className="flex items-center gap-x-2 gap-y-1 sm:items-end sm:border-b sm:border-border-strong/60 sm:pb-8">
+          <div className="flex min-w-0 flex-1 gap-x-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:gap-x-28 sm:overflow-visible sm:pb-0">
           <FilterButton
             label={t('filterSeries')}
             current={seriesText}
@@ -812,8 +814,16 @@ function IpTab({
 }
 
 /**
- * 触发控件：整颗是按钮，标签（实心）与当前值（弱化）同行，右侧一个 chevron
- * 表示「会展开」。高度 40px，与上面的 IP tab 同高，一排控件才不会高低不齐。
+ * 触发控件：整颗是按钮，点击右滑出选择面板。
+ *
+ * 两种排布：
+ * - 手机：标签与当前值同一行（40px 高、可横滑），维持原来的紧凑工具条；
+ * - `sm` 及以上：按设计图改成上下布局——标签 18px 加粗，下一行是当前值 + 右侧
+ *   chevron，没有底色/边框，三个控件之间留出大间距，整排读起来像表头而不是按钮。
+ *   底部分隔线由外层容器画（见 home 分支），这里只负责文字。
+ *
+ * 上下布局用纯 CSS 断点切换，不依赖 JS 的 matchMedia：服务端首帧就是对的，
+ * 不会出现先渲染手机版、水合后再跳成桌面版的抖动。
  */
 function FilterButton({
   current,
@@ -829,23 +839,25 @@ function FilterButton({
       type="button"
       onClick={onClick}
       aria-haspopup="dialog"
-      className="inline-flex h-10 shrink-0 min-w-0 max-w-full items-center gap-1.5 rounded px-3 text-sm transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted"
+      className="inline-flex h-10 shrink-0 min-w-0 max-w-full items-center gap-1.5 rounded px-3 text-sm transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted sm:h-auto sm:flex-col sm:items-start sm:gap-3 sm:rounded-none sm:px-0 sm:py-0 sm:text-left sm:hover:bg-transparent"
     >
-      <span className="shrink-0 font-bold text-fg">{label}</span>
-      <span className="min-w-0 truncate text-muted">{current}</span>
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        aria-hidden="true"
-        className="shrink-0"
-      >
-        <path d="m9 6 6 6-6 6" />
-      </svg>
+      <span className="shrink-0 font-bold text-fg sm:text-lg">{label}</span>
+      <span className="flex min-w-0 max-w-full items-center gap-2 sm:gap-8">
+        <span className="min-w-0 truncate text-muted sm:text-lg sm:text-body">{current}</span>
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          aria-hidden="true"
+          className="shrink-0 text-fg sm:size-[18px]"
+        >
+          <path d="m9 6 6 6-6 6" />
+        </svg>
+      </span>
     </button>
   )
 }
