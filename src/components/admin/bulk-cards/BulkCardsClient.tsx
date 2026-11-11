@@ -1,5 +1,6 @@
 'use client'
 
+import { toast } from '@payloadcms/ui'
 import React, { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 
 import { BatchFileList } from './BatchFileList'
@@ -203,6 +204,14 @@ export function BulkCardsClient({ adminRoute, apiRoute, taxonomy }: BulkCardsCli
           existingCardId,
         })
         dispatch({ type: 'save/succeeded', id, cardId })
+        // 保存成功后给一条全局提示：右侧表单滚出视野时，列表里的状态变化不容易被注意到。
+        const name = item.draft.name.trim()
+        const shortName = name.length > 16 ? `${name.slice(0, 16)}…` : name
+        toast.success(
+          existingCardId == null
+            ? `已保存「${shortName}」为卡牌 #${cardId}`
+            : `卡牌 #${cardId}「${shortName}」已更新`,
+        )
         // 更新已存在的卡牌不跳走，方便连续修改；新建才自动切到下一张待填图片。
         if (existingCardId == null) {
           const next = nextUnsavedReady(state.items, id)
