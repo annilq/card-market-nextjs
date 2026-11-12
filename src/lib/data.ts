@@ -48,6 +48,27 @@ const relName = (value: unknown): string | null => {
 
 const relFlag = (value: unknown, key: string): boolean => Boolean(value && typeof value === 'object' && (value as Record<string, unknown>)[key])
 
+/**
+ * 派生尺寸的 URL，但只在它与原图长宽比一致时返回。
+ *
+ * 旧配置把 thumb / card 写成 480×480 / 800×800，sharp 按 cover 居中裁切：
+ * 竖版卡面的上下会被切掉，首页再按 5:7 显示又切一次。改配置只影响新上传的图，
+ * 已生成的派生图仍是裁切版，所以这里按长宽比把关——比例变了的派生图不是
+ * 「这张图的缩略图」，返回 null 让调用方退回原图。2% 容差吸收像素取整。
+ */
+function intactSizeUrl(
+  media: Media,
+  size: { url?: string | null; width?: number | null; height?: number | null } | undefined,
+): string | null {
+  if (!size?.url) return null
+  const originalWidth = media.width
+  const originalHeight = media.height
+  if (!originalWidth || !originalHeight || !size.width || !size.height) return size.url
+  const originalRatio = originalWidth / originalHeight
+  const sizeRatio = size.width / size.height
+  return Math.abs(sizeRatio - originalRatio) / originalRatio <= 0.02 ? size.url : null
+}
+
 function toImageView(value: unknown): ImageView | null {
   if (!value || typeof value !== 'object') return null
   const media = value as Media
@@ -56,9 +77,9 @@ function toImageView(value: unknown): ImageView | null {
     alt: media.alt ?? '',
     width: media.width ?? null,
     height: media.height ?? null,
-    thumbUrl: media.sizes?.thumb?.url ?? null,
-    cardUrl: media.sizes?.card?.url ?? null,
-    bannerUrl: media.sizes?.banner?.url ?? null,
+    thumbUrl: intactSizeUrl(media, media.sizes?.thumb),
+    cardUrl: intactSizeUrl(media, media.sizes?.card),
+    bannerUrl: intactSizeUrl(media, media.sizes?.banner),
   }
 }
 

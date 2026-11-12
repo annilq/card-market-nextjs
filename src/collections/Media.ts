@@ -27,9 +27,12 @@ export const Media: CollectionConfig = {
     focalPoint: true,
     // 原图重编码为 webp 降体积（不影响已生成的 imageSizes；imageSizes 如需同样压缩见各 size 的 formatOptions）
     formatOptions: { format: 'webp', options: { quality: 82 } },
+    // thumb / card 只给宽度：sharp 在同时给出宽高时按 cover 居中裁切，
+    // 竖版卡面（5:7）的上下一整条会被切掉。只给宽度即等比缩放，卡面完整。
+    // banner 保持 1920×900：轮播图位本来就是固定横幅，裁切是有意的。
     imageSizes: [
-      { name: 'thumb', width: 480, height: 480, position: 'centre' },
-      { name: 'card', width: 800, height: 800, position: 'centre' },
+      { name: 'thumb', width: 480 },
+      { name: 'card', width: 800 },
       { name: 'banner', width: 1920, height: 900, position: 'centre' },
     ],
     // 媒体响应默认不带 Cache-Control，浏览器回访会重新下载（Lighthouse 实测约 66 KiB）。
