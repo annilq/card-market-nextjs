@@ -15,27 +15,11 @@
 import Link from 'next/link'
 
 import { CardImage } from '@/components/CardImage'
+import { statusBadgeClass } from '@/lib/card-status'
 import { formatYen } from '@/lib/format'
 import { getTranslator } from '@/lib/i18n/t'
 import { localizeHref, type Locale } from '@/lib/i18n/locales'
 import type { CardView } from '@/lib/types'
-
-/**
- * 卡牌状态徽章配色。
- *
- * 状态是后台可增删的自由文本（`card-statuses`），设计图只给了三种；
- * 因此这里按名称做一次归一化匹配，认不出来的状态回到品牌红——宁可少一种颜色，
- * 也不要让某个新状态变成透明/无底色。匹配用大写后的关键词，中日英任一写法的
- * 常见词都收进来。
- */
-export function statusBadgeClass(name: string | null): string {
-  const n = (name ?? '').trim().toUpperCase()
-  if (!n) return 'bg-brand'
-  if (/PSA|GRAD|鑑定|鉴定/.test(n)) return 'bg-[#db261d]'
-  if (/裸|RAW|BARE|SINGLE|未鑑定|未鉴定/.test(n)) return 'bg-[#1a2aff]'
-  if (/BOX|PACK|SEAL|包装|未開封|未开封/.test(n)) return 'bg-[#28c83b]'
-  return 'bg-brand'
-}
 
 export function HighValueCard({ card, locale }: { card: CardView; locale: Locale }) {
   const t = getTranslator(locale)
@@ -83,7 +67,7 @@ export function HighValueCard({ card, locale }: { card: CardView; locale: Locale
 
         {card.code && <div className="mt-1 truncate text-base text-faint">{card.code}</div>}
 
-        <div className="mt-auto pt-4 text-right text-[28px] font-bold leading-none tabular-nums text-price">
+        <div className="mt-auto pt-2 text-right text-xl font-bold leading-none tabular-nums text-price">
           {card.price != null
             ? t('priceTag', { price: formatYen(card.price) })
             : t('priceOnRequest')}

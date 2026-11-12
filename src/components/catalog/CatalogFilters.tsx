@@ -520,8 +520,8 @@ export function CatalogFilters({
     </div>
   )
 
-  // 首页：IP tab 条（参考图那一排「宝可梦 / 海贼王」）+ 三个触发控件
-  // （分类 / 类型 / 排序）+ 计数与 chips + 结果。
+  // 首页：IP tab 条（参考图那一排「宝可梦 / 海贼王」，右端带计数与 chips）
+  // + 三个触发控件（分类 / 类型 / 排序）+ 结果。
   //
   // 与参考项目的唯一差别在 IpTab 的深色态（见它的注释）：参考项目那块浅粉
   // 在近黑底上是突兀的亮斑，且它配的文字色在两套主题下都只有 2.3:1。
@@ -559,16 +559,18 @@ export function CatalogFilters({
 
     return (
       <div role="group" aria-label={t('catalogFilters')}>
-        {facets.ips.length > 0 && (
-          // IP 切换 tab：桌面(sm 及以上)左排 tab、右贴「全部 →」；
-          // 移动端改为「tab 横向滚动单行 + 全部 → 落到下方靠右」，不再折行错位。
-          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 gap-x-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:pb-0">
-              <IpTab
+        {/* IP 切换 tab：桌面(sm 及以上)左排 tab、右贴计数与「全部 →」；
+            移动端改为「tab 横向滚动单行 + 右端一组落到下方靠右」，不再折行错位。 */}
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          {facets.ips.length > 0 && (
+            // tab 之间不留缝：设计图里这一排是连续的一条底带，缝隙会把它切成
+            // 几颗孤立按钮，与 IpTab 注释里「整排读作一条带子」的意图相反。
+            <div className="flex min-w-0 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:pb-0">
+              {/*<IpTab
                 active={ipSel.size === 0}
                 onClick={resetHome}
                 label={t('facetAllIps')}
-              />
+              />*/}
               {facets.ips.map((ip) => (
                 <IpTab
                   key={ip.id}
@@ -586,22 +588,30 @@ export function CatalogFilters({
                 />
               ))}
             </div>
+          )}
+          {/* 右端一组：结果计数、已选条件、以及「全部 →」。
+              设计图里分隔线下 30px 就是网格，计数不单独占一行，收进 tab 行右端。 */}
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-1 self-end sm:ml-auto sm:self-auto">
+            <span className="text-sm text-muted tabular-nums">
+              {t('catalogCount', { total })}
+            </span>
+            <FilterChips chips={chips} className="flex flex-wrap items-center justify-end gap-2" />
             {/* 「全部 →」在桌面贴右缘；移动端落到 tab 条下方、靠右对齐，不孤行错位。 */}
             <Link
               href={localizeHref('/cards', locale)}
-              className="shrink-0 self-end text-right text-sm text-muted transition hover:text-fg hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted sm:self-auto"
+              className="shrink-0 text-right text-sm text-muted transition hover:text-fg hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted"
             >
               {t('viewAll')}
             </Link>
           </div>
-        )}
+        </div>
 
         {/* 三个筛选做成触发控件：点一下，右侧滑出选择面板。
             移动端改为横向滚动单行；桌面(sm 及以上)按设计图改成「标签在上、值在下」，
             控件之间留大间距，并在整排下方画一条分隔线（结果从线下方开始）。
             「重置」始终在行尾、不随滚动被推走。 */}
-        <div className="flex items-center gap-x-2 gap-y-1 sm:items-end sm:border-b sm:border-border-strong/60 sm:pb-8">
-          <div className="flex min-w-0 flex-1 gap-x-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:gap-x-28 sm:overflow-visible sm:pb-0">
+        <div className="flex items-center gap-x-2 gap-y-1 sm:items-end sm:border-b sm:border-border-strong sm:pb-8">
+          <div className="flex min-w-0 flex-1 gap-x-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:gap-x-32 sm:overflow-visible sm:pb-0">
           <FilterButton
             label={t('filterSeries')}
             current={seriesText}
@@ -622,23 +632,18 @@ export function CatalogFilters({
               没有可重置项时禁用而不是隐藏，按钮位置才不会在筛选前后跳动。 */}
           </div>
 
-          <button
+          {/*<button
             type="button"
             onClick={resetHome}
             disabled={clearableCount === 0 && value.sort === DEFAULT_CARD_SORT && !value.q}
             className="ml-auto shrink-0 whitespace-nowrap py-1 text-sm text-muted transition-colors duration-150 hover:text-fg hover:underline disabled:cursor-default disabled:text-faint disabled:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted"
           >
             {t('catalogReset')}
-          </button>
+          </button>*/}
         </div>
 
-        {/* 结果计数与已选条件同一行：改了两处之后，答案就在结果旁边。 */}
-        <div className="mt-4 mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-          <span className="text-sm text-muted tabular-nums">{t('catalogCount', { total })}</span>
-          <FilterChips chips={chips} className="flex flex-wrap items-center gap-2" />
-        </div>
-
-        {results}
+        {/* 分隔线到网格 30px（设计图实测）。计数与 chips 已收进上方 tab 行右端。 */}
+        <div className="mt-[30px]">{results}</div>
 
         {homeField && (
           <HomeFilterSheet
@@ -839,10 +844,10 @@ function FilterButton({
       type="button"
       onClick={onClick}
       aria-haspopup="dialog"
-      className="inline-flex h-10 shrink-0 min-w-0 max-w-full items-center gap-1.5 rounded px-3 text-sm transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted sm:h-auto sm:flex-col sm:items-start sm:gap-3 sm:rounded-none sm:px-0 sm:py-0 sm:text-left sm:hover:bg-transparent"
+      className="inline-flex h-10 shrink-0 min-w-0 max-w-full items-center gap-1.5 rounded px-3 text-sm transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted sm:h-auto sm:flex-col sm:items-start sm:gap-1.5 sm:rounded-none sm:px-0 sm:py-0 sm:text-left sm:hover:bg-transparent"
     >
-      <span className="shrink-0 font-bold text-fg sm:text-lg">{label}</span>
-      <span className="flex min-w-0 max-w-full items-center gap-2 sm:gap-8">
+      <span className="shrink-0 font-bold text-fg sm:text-xl">{label}</span>
+      <span className="flex min-w-0 max-w-full items-center gap-2 sm:gap-12">
         <span className="min-w-0 truncate text-muted sm:text-lg sm:text-body">{current}</span>
         <svg
           width="14"

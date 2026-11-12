@@ -110,7 +110,7 @@ export function HomeFilterSheet({
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
-        className="sheet-in absolute inset-y-0 right-0 flex w-[min(520px,92vw)] flex-col bg-brand text-white outline-none"
+        className="sheet-in absolute inset-y-0 right-0 flex w-[min(560px,92vw)] flex-col bg-brand text-white outline-none"
       >
         <div className="flex h-14 shrink-0 items-center justify-between px-4">
           <span className="text-base font-bold">{title}</span>
@@ -135,14 +135,14 @@ export function HomeFilterSheet({
             <div className="flex min-h-0 flex-1">
               {/* 主系列给 44%：日语系列名常常一屏两行，窄列会挤成竖排；
                   子系列多是短名，让出宽度反而更好扫。 */}
-              <div className="w-[44%] shrink-0 overflow-y-auto bg-black/15">
+              <div className="w-[46%] shrink-0 overflow-y-auto bg-black/15">
                 {series.map((s) => (
                   <button
                     key={s.id}
                     type="button"
                     onClick={() => setTabId(s.id)}
                     aria-current={s.id === tabId}
-                    className={`${row} px-3 text-sm ${
+                    className={`${row} px-3 text-xl ${
                       s.id === tabId ? 'bg-black/15 font-bold' : 'font-medium text-white'
                     }`}
                   >

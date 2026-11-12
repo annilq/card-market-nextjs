@@ -37,7 +37,7 @@ export async function SiteFooter({ settings }: { settings: SiteSettingsView }) {
       {/* 参考图的页脚：近黑底、左侧 logo、右侧「帮助中心」标题 + 链接栅格，
           底部一行居中的版权。链接栅格 2 列起、sm 起 3 列：手机上三列会把
           「个人信息收集」挤成两行。每格 py-1.5 把点击高度抬到 28px（WCAG 2.5.8 要 24px）。 */}
-      <div className="mx-auto flex max-w-[1200px] flex-col gap-12 px-4 pt-20 md:flex-row md:items-start md:justify-between md:gap-16">
+      <div className="mx-auto flex max-w-[1232px] flex-col gap-12 px-4 pt-20 md:flex-row md:items-start md:justify-between md:gap-16">
         <div className="shrink-0">
           {/* 后台没传 logo 就退回站点名文字，不留空白图位：一张占位图对访客
               来说和「图片挂了」没有区别。 */}

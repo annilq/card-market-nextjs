@@ -23,7 +23,7 @@ export function HomeCardGrid({ cards, locale }: { cards: CardView[]; locale: Loc
   return (
     <>
       {/* 桌面 8 列（设计图：1200 内容列 → 143px 卡位 + 8px 列距），
-          窄屏依次退到 6 / 4 / 3 / 2 列。行距 24px，与设计图的 293px 行高一致。 */}
+          窄屏依次退到 6 / 4 / 3 / 2 列。行距 24px（设计图约 23px）。 */}
       <div className="grid grid-cols-2 gap-x-2 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
         {cards.map((c, i) => (
           // 首屏第一行（最多 8 列）预加载图片，优化 LCP。

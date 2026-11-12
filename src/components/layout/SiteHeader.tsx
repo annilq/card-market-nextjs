@@ -91,8 +91,8 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
 
   return (
     <header className="md:sticky top-0 z-99 bg-brand text-white">
-      <div className="mx-auto max-w-[1200px] px-4">
-        {/* 顶行：语言 + 主题切换不再绝对定位贴视口边缘（那样在 1201–1535px 区间会
+      <div className="mx-auto max-w-[1232px] px-4">
+        {/* 顶行：语言 + 主题切换不再绝对定位贴视口边缘（那样在 1233–1535px 区间会
             压到同处右上角的 X·店铺图标），改为行内右端、≥2xl 才绝对定位。这里无需
             再为它预留 padding。 */}
         <div className="flex h-16 items-center gap-3 max-md:gap-2 md:h-25 md:gap-6 text-lg">

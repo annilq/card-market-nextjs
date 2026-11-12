@@ -127,7 +127,8 @@ export default async function FrontendLayout({ children }: { children: ReactNode
       <body className="flex min-h-screen flex-col">
         <I18nProvider>
           <SiteHeader settings={settings} />
-          <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-6">{children}</main>
+          {/* 1232 = 设计图内容列 1200 + 两侧各 16 的留白（px-4）。 */}
+          <main className="mx-auto w-full max-w-[1232px] flex-1 px-4 py-6">{children}</main>
           <SiteFooter settings={settings} />
         </I18nProvider>
       </body>
