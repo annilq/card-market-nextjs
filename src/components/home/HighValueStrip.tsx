@@ -1,16 +1,19 @@
 'use client'
 
-// 首页高价买取横条（从 TanStack Start 版移植）。单行横向滚动，不换行、无箭头。
+// 首页高价买取横条（从 TanStack Start 版移植）。单行横向滚动，不换行、不自动轮播。
 //
-// 三处细节是「横条」这个形态特有的，网格里不需要：
+// 四处细节是「横条」这个形态特有的，网格里不需要：
 //
 // 1. **右缘渐隐。** 横条默认裁在最后一张卡的中间，看起来像布局出错。
-//    右缘一层 `mask-image` 渐隐告诉人「还能往右」，且不需要画箭头。
-// 2. **吸附滚动。** 手机上用手指甩时，卡片停在卡位边界而不是任意偏移。
-// 3. **卡位略宽。** 原来 144px（`w-36`）在 3:4 图位里只有 108px 高的图，
+//    右缘一层 `mask-image` 渐隐告诉人「还能往右」；滚到末尾后渐隐撤掉，
+//    否则最后一张卡会一直被裁掉一角。
+// 2. **左右箭头。** 内容宽度超过容器时才出现，桌面用户不用去够滚动条；
+//    到两端时对应一侧淡出。手机上仍可直接甩动。
+// 3. **吸附滚动。** 手机上用手指甩时，卡片停在卡位边界而不是任意偏移。
+// 4. **卡位略宽。** 原来 144px（`w-36`）在 3:4 图位里只有 108px 高的图，
 //    卡名与价格挤成两行小字；改成 160px 后价格不再截断。
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 
 import { getTranslator } from '@/lib/i18n/t'
@@ -20,8 +23,8 @@ import { localizeHref } from '@/lib/i18n/locales'
 import type { CardView } from '@/lib/types'
 import { useReducedMotion } from '@/lib/use-reduced-motion'
 
-/** 自动轮播间隔。 */
-const AUTOPLAY_MS = 4500
+/** 卡片间距，与下方 `gap-4` 一致；翻页步长 = 卡宽 + 间距。 */
+const CARD_GAP = 16
 
 export function HighValueStrip({
   items,
@@ -34,82 +37,41 @@ export function HighValueStrip({
   const reducedMotion = useReducedMotion()
 
   const trackRef = useRef<HTMLDivElement | null>(null)
-  // 卡片没溢出视口就没有可轮播的余量：内容少时保持普通横滑，不自动滚。
-  const canRotateRef = useRef(false)
-  // 三种暂停原因分开记，tick 现场判断，避免计时器闭包读到旧状态。
-  const hoverRef = useRef(false)
-  const focusRef = useRef(false)
-  const interactingRef = useRef(false)
-  const reducedRef = useRef(reducedMotion)
-  const enabledRef = useRef(items.length > 1) // <=1 张卡完全不轮播
-  const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // 渲染期同步，让「减少动态 / 卡片数」变化后下一次 tick 立即生效。
-  reducedRef.current = reducedMotion
-  enabledRef.current = items.length > 1
+  // 箭头只在内容溢出容器时出现；到两端时各自禁用。滚动时同步，
+  // 拖拽 / 按钮翻页 / 窗口缩放都能拿到正确的端点状态。
+  const [overflowing, setOverflowing] = useState(false)
+  const [atStart, setAtStart] = useState(true)
+  const [atEnd, setAtEnd] = useState(false)
 
   // 量一次 scrollWidth / clientWidth，并随窗口尺寸与列表变化重算。
   useEffect(() => {
     const track = trackRef.current
     if (!track) return
-    const measure = () => {
-      canRotateRef.current = track.scrollWidth > track.clientWidth + 8
+    const sync = () => {
+      setOverflowing(track.scrollWidth > track.clientWidth + 8)
+      setAtStart(track.scrollLeft <= 4)
+      setAtEnd(track.scrollLeft + track.clientWidth >= track.scrollWidth - 4)
     }
-    measure()
-    const ro = new ResizeObserver(measure)
+    sync()
+    const ro = new ResizeObserver(sync)
     ro.observe(track)
-    window.addEventListener('resize', measure)
+    track.addEventListener('scroll', sync, { passive: true })
+    window.addEventListener('resize', sync)
     return () => {
       ro.disconnect()
-      window.removeEventListener('resize', measure)
+      track.removeEventListener('scroll', sync)
+      window.removeEventListener('resize', sync)
     }
   }, [items])
 
-  // 常驻 interval，每次 tick 都从 ref 现读开关，不会捕获过期的 canRotate。
-  useEffect(() => {
+  // 点箭头切换一张卡：位移正好一个卡位，停下时落在吸附点上。
+  const scrollByCard = (direction: -1 | 1) => {
     const track = trackRef.current
     if (!track) return
-
-    const tick = () => {
-      if (!enabledRef.current || reducedRef.current || !canRotateRef.current) return
-      if (hoverRef.current || focusRef.current || interactingRef.current) return
-      const step = (track.firstElementChild?.getBoundingClientRect().width ?? 0) + 16 // 卡宽 + gap-4
-      const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 4
-      if (atEnd) track.scrollTo({ left: 0, behavior: 'smooth' }) // 到尾循环回起点
-      else track.scrollBy({ left: step, behavior: 'smooth' })
-    }
-    const timer = setInterval(tick, AUTOPLAY_MS)
-
-    // 用户按下指针/触摸时暂停，松手后稍等再续播，免得和用户拖拽抢滚动。
-    const pause = () => {
-      interactingRef.current = true
-      if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current)
-    }
-    const resume = () => {
-      if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current)
-      resumeTimerRef.current = setTimeout(() => {
-        interactingRef.current = false
-      }, 1200)
-    }
-    track.addEventListener('pointerdown', pause)
-    track.addEventListener('touchstart', pause)
-    // 手指/指针可能划出横条才松开，收尾挂在 window 上；cancel 一并兜住。
-    window.addEventListener('pointerup', resume)
-    window.addEventListener('pointercancel', resume)
-    window.addEventListener('touchend', resume)
-    window.addEventListener('touchcancel', resume)
-
-    return () => {
-      clearInterval(timer)
-      if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current)
-      track.removeEventListener('pointerdown', pause)
-      track.removeEventListener('touchstart', pause)
-      window.removeEventListener('pointerup', resume)
-      window.removeEventListener('pointercancel', resume)
-      window.removeEventListener('touchend', resume)
-      window.removeEventListener('touchcancel', resume)
-    }
-  }, [])
+    const step = (track.firstElementChild?.getBoundingClientRect().width ?? 0) + CARD_GAP
+    track.scrollBy({ left: direction * step, behavior: reducedMotion ? 'auto' : 'smooth' })
+  }
 
   return (
     <section>
@@ -131,38 +93,64 @@ export function HighValueStrip({
           {t('viewAll')}
         </Link>
       </div>
-      {/* 可聚焦的滚动区域：键盘用户需先聚焦容器才能用方向键横向滚动。 */}
-      <div
-        ref={trackRef}
-        role="region"
-        aria-label={t('highValueBuys')}
-        tabIndex={0}
-        onMouseEnter={() => {
-          // 只在可悬停的桌面设备暂停：触摸会合成 mouseenter，否则点一下就永久停播。
-          if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-            hoverRef.current = true
-          }
-        }}
-        onMouseLeave={() => {
-          if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-            hoverRef.current = false
-          }
-        }}
-        onFocus={() => { focusRef.current = true }}
-        onBlur={(e) => {
-          // 焦点在容器内换卡片时保持暂停，真正离开才恢复。
-          if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
-          focusRef.current = false
-        }}
-        className="strip-fade flex snap-x snap-mandatory gap-4 overflow-x-auto pb-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-strong"
-      >
-        {items.map((c) => (
-          // 卡位 220px：内容列 1168 − 4 × gap 16 = 1104，正好 5 张铺满首屏。
-          // （设计图内容列 1200，卡位 228；这里按站点实际列宽等比收窄。）
-          <div key={c.id} className="w-44 shrink-0 snap-start sm:w-[220px]">
-            <HighValueCard card={c} locale={locale} />
-          </div>
-        ))}
+      {/* 箭头是滚动区的兄弟节点：滚动区带右缘 mask，箭头放里面会被一起渐隐。 */}
+      <div className="relative">
+        {/* 可聚焦的滚动区域：键盘用户需先聚焦容器才能用方向键横向滚动。 */}
+        <div
+          ref={trackRef}
+          role="region"
+          aria-label={t('highValueBuys')}
+          tabIndex={0}
+          className={`flex snap-x snap-mandatory gap-4 overflow-x-auto pb-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-strong ${atEnd ? '' : 'strip-fade'}`}
+        >
+          {items.map((c) => (
+            // 卡位 227px：内容列 1200 − 4 × gap 16 = 1136，5 张正好铺满首屏
+            //（设计图卡位 228，1px 取整差落在右缘渐隐里）。
+            <div key={c.id} className="w-44 shrink-0 snap-start sm:w-[227px]">
+              <HighValueCard card={c} locale={locale} />
+            </div>
+          ))}
+        </div>
+
+        {/* 只有内容真正溢出时才出现箭头；到两端时对应的一侧淡出。 */}
+        {overflowing && (
+          <>
+            <button
+              type="button"
+              aria-label={t('stripPrev')}
+              disabled={atStart}
+              onClick={() => scrollByCard(-1)}
+              className="absolute left-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-fg shadow-md transition-[opacity,background-color] duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-strong disabled:pointer-events-none disabled:opacity-0"
+            >
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-5 w-5">
+                <path
+                  d="M12.5 5 7.5 10l5 5"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            <button
+              type="button"
+              aria-label={t('stripNext')}
+              disabled={atEnd}
+              onClick={() => scrollByCard(1)}
+              className="absolute right-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-fg shadow-md transition-[opacity,background-color] duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-strong disabled:pointer-events-none disabled:opacity-0"
+            >
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-5 w-5">
+                <path
+                  d="M7.5 5l5 5-5 5"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </>
+        )}
       </div>
     </section>
   )
