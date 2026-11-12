@@ -166,6 +166,15 @@ function announcementTime(doc: AnnouncementSortInput): number {
 }
 
 /**
+ * 前台展示用的发布时间：新公告在发布时由 beforeChange 自动补 publishedAt；
+ * 历史数据可能仍为空，此时回退到创建时间——那些公告创建时即已可见，
+ * 创建时间就是它们实际的上线时间。返回 null 只发生在两个字段都缺失的异常数据上。
+ */
+function announcementPublishedAt(doc: AnnouncementSortInput): string | null {
+  return doc.publishedAt ?? doc.createdAt ?? null
+}
+
+/**
  * 公告排序：置顶组在前，组内按 sort 升序、再按时间倒序；
  * 未置顶组的 sort 不参与排序——它们只按时间倒序。
  */
@@ -233,7 +242,7 @@ export const getAnnouncements = unstable_cache(
           title: doc.title,
           // 列表视图从不渲染正文；详情页由 getAnnouncement 单独取回完整文档。
           bodyHtml: '',
-          publishedAt: doc.publishedAt ?? null,
+          publishedAt: announcementPublishedAt(doc),
           isPinned: Boolean(doc.isPinned),
         }),
       ),
@@ -242,7 +251,9 @@ export const getAnnouncements = unstable_cache(
     }
   },
   // unstable_cache 默认已把函数参数（options）纳入缓存键，不同 limit/page 组合各自独立缓存。
-  undefined,
+  // keyParts 带版本：发布时间展示逻辑上线后强制换一次缓存键，避免旧缓存里 publishedAt 为空
+  // 的视图继续把日期藏掉（缓存 TTL 10 分钟，不换键会有一段时间的「看起来没修好」）。
+  ['announcements-published-at-v1'],
   { revalidate: 600, tags: ['announcements'] },
 )
 
@@ -260,7 +271,7 @@ export const getAnnouncement = unstable_cache(
         id: toId(doc.id),
         title: doc.title,
         bodyHtml: renderRichText(doc.body),
-        publishedAt: doc.publishedAt ?? null,
+        publishedAt: announcementPublishedAt(doc),
         isPinned: Boolean(doc.isPinned),
       }
     } catch {
@@ -268,7 +279,8 @@ export const getAnnouncement = unstable_cache(
     }
   },
   // unstable_cache 默认已把函数参数（id）纳入缓存键。后台改完由 afterChange 钩子主动失效。
-  undefined,
+  // keyParts 版本同上：换键一次，让旧缓存里的空 publishedAt 失效。
+  ['announcement-published-at-v1'],
   { revalidate: 86400, tags: ['announcements'] },
 )
 

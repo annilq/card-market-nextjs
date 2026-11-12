@@ -1,9 +1,30 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 
 import { publishedAnnouncementOnly } from '@/access'
 import { moduleRead, roleAction } from '@/access/roles'
 import { linkField, sortField, sortFieldLabel, statusField } from '@/fields/shared'
 import { revalidateHook } from '@/lib/revalidate'
+
+/**
+ * 发布时补发布时间：运营通常只把状态切成「已发布」，不会特意再填一次时间。
+ * 留空意味着「立即发布」，因此把发布瞬间写进 publishedAt——前台列表、详情页
+ * 和排序都依赖这个字段，留空会让日期整行消失。
+ *
+ * 只在真正发布且没有时间时补：定时发布（未来时间）和已填写的过去时间都原样保留；
+ * 草稿 / 归档不写，等状态切到已发布时再补。
+ */
+const setPublishTimeOnPublish: CollectionBeforeChangeHook = ({ data, originalDoc }) => {
+  const status = data.status ?? originalDoc?.status
+  // 表单显式清空（null）也视为「没填」，按立即发布处理；字段未提交时沿用原值。
+  const publishedAt =
+    data.publishedAt !== undefined ? data.publishedAt : originalDoc?.publishedAt
+
+  if (status === 'published' && !publishedAt) {
+    data.publishedAt = new Date().toISOString()
+  }
+
+  return data
+}
 
 export const Announcements: CollectionConfig = {
   slug: 'announcements',
@@ -16,7 +37,7 @@ export const Announcements: CollectionConfig = {
     defaultColumns: ['title', 'isPinned', 'sort', 'publishedAt', 'status', 'publicLink'],
     group: { zh: '内容', en: 'Content', ja: 'コンテンツ' },
     description: {
-      zh: '前台可见 = 已发布 且 (发布时间为空 或 已到点)。未置顶：只按发布时间倒序；置顶：可同时置顶多条，组内按「置顶排序」升序，再按发布时间倒序。首页最多显示 3 条：置顶优先（最多 3 条，按置顶排序），不足 3 条时按发布时间倒序补满，例如 3 条置顶 / 2 置顶 + 1 最新 / 1 置顶 + 2 最新 / 3 条最新。',
+      zh: '前台可见 = 已发布 且 (发布时间为空或已到点)。发布时间留空时，发布瞬间自动填为当前时间。未置顶：只按发布时间倒序；置顶：可同时置顶多条，组内按「置顶排序」升序，再按发布时间倒序。首页最多显示 3 条：置顶优先（最多 3 条，按置顶排序），不足 3 条时按发布时间倒序补满，例如 3 条置顶 / 2 置顶 + 1 最新 / 1 置顶 + 2 最新 / 3 条最新。',
       en: 'Visible when published and (publishedAt is empty or in the past). Unpinned: newest first. Pinned: multiple allowed, ordered by pin order then newest. Home shows at most 3: pinned first (up to 3, by pin order), then newest-first to fill the rest (3 pinned / 2 pinned + 1 newest / 1 pinned + 2 newest / 3 newest).',
       ja: '公開条件：公開ステータス かつ 公開日時が空または過去。固定なし：公開日時の新しい順。固定あり：複数可、固定順→公開日時の新しい順。トップは最大3件：固定記事を優先（最大3件・固定順）、足りない分は公開日時の新しい順で埋めます（固定3件 / 固定2+最新1 / 固定1+最新2 / 最新3件）。',
     },
@@ -28,6 +49,8 @@ export const Announcements: CollectionConfig = {
     delete: roleAction('announcements', 'delete'),
   },
   hooks: {
+    // 发布时若没填发布时间，自动写为当前时间；之后再按需触发缓存失效。
+    beforeChange: [setPublishTimeOnPublish],
     // 公告变动 → 公告缓存立即失效。
     afterChange: [revalidateHook('announcements')],
     afterDelete: [revalidateHook('announcements')],
@@ -46,7 +69,11 @@ export const Announcements: CollectionConfig = {
           admin: {
             width: '50%',
             date: { pickerAppearance: 'dayAndTime' },
-            description: { zh: '留空 = 立即展示；未来时间 = 定时发布', en: 'Empty = show now; future = scheduled', ja: '空 = すぐ表示 / 未来 = 予約投稿' },
+            description: {
+              zh: '留空 = 发布时自动填为当前时间并立即展示；未来时间 = 定时发布',
+              en: 'Empty = auto-fill with the publish time and show now; future = scheduled',
+              ja: '空 = 公開時に現在時刻を自動設定してすぐ表示 / 未来 = 予約投稿',
+            },
             components: { Cell: '@/components/admin/AdminDateCell#AdminDateCell' },
           },
         },
