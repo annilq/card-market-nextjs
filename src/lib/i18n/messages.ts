@@ -106,7 +106,7 @@ const zh = {
   cardDetailLink: '查看详情',
   closeCard: '关闭卡牌弹窗',
   cardStatus: '卡牌状态',
-  rarityLabel: '稀有程度',
+  rarityLabel: '罕见度',
   description: '描述',
   backToList: '返回列表',
   inquireCard: '咨询此卡',

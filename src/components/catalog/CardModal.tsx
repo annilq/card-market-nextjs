@@ -57,6 +57,9 @@ export function CardModal({
   useDialog({ open: true, onClose, containerRef: ref })
   const img = card.images[0]
   const src = img?.cardUrl || img?.url
+  // 「高价买取 / 不减额买取」压在图角（与列表卡、横条卡一致），
+  // 信息列里不再重复一颗，因此下面给 CardInfo 传 showBuyback={false}。
+  const buybackLabel = card.isHighValue ? t('highValue') : card.isNoDeduction ? t('noDeduction') : null
 
   return (
     <div className="fixed inset-0 z-999 flex items-center justify-center p-4">
@@ -88,7 +91,7 @@ export function CardModal({
         </button>
 
         <div className="w-[47%] shrink-0">
-          <div className="aspect-[3/4] overflow-hidden rounded-lg bg-surface-2">
+          <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-surface-2">
             {src ? (
               // 加载占位 + 淡入由 CardImage 统一处理（媒体走 S3 签名 302，用原生 <img>）。
               <CardImage
@@ -101,6 +104,13 @@ export function CardModal({
                 {t('noImageShort')}
               </div>
             )}
+            {buybackLabel && (
+              // 压在图左上角：与列表卡同一颗标、同一位置；图位的圆角会裁掉
+              // 左上角，因此用全圆角胶囊、不额外加边。
+              <span className="absolute left-0 top-0 z-10 flex h-7.5 items-center rounded-full bg-brand px-2.5 text-xs font-semibold text-white">
+                {buybackLabel}
+              </span>
+            )}
           </div>
         </div>
 
@@ -108,6 +118,7 @@ export function CardModal({
           <CardInfo
             card={card}
             locale={locale}
+            showBuyback={false}
             actions={
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 {/* 咨询此卡：把卡牌 id 带进留言页的卡牌上下文（`?card=<id>`）。 */}
