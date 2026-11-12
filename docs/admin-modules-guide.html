@@ -201,7 +201,7 @@
           <li><code>name</code>（卡牌名称）：必填。</li>
           <li><code>ip</code> / <code>series</code> / <code>subSeries</code>：三个联动下拉。选了 IP 后系列只显示该 IP 下的，选了系列后子系列只显示该系列下的。</li>
           <li><code>rarity</code>（稀有程度）：关联到稀有度维度。</li>
-          <li><code>code</code>（收藏编号）：例如 <code>123/197</code>，同一 IP + 系列 + 子系列下编号不能重复。</li>
+          <li><code>code</code>（编号）：例如 <code>123/197</code>，同一 IP + 系列 + 子系列下编号不能重复。</li>
           <li><code>price</code>（卖价）：数字，前台按价格展示。</li>
           <li><code>images</code>（卡牌图片）：可多选，从"图片"集合里挑。</li>
           <li><code>isHighValue</code>（高价买取）：纯标记，供前台"只看精品"筛选使用。</li>
@@ -224,7 +224,7 @@
           <li>已保存的卡牌可以继续修改字段，按钮会变成「更新卡牌」，保存时更新原记录而不是新建。</li>
           <li>快捷键：<code>⌘/Ctrl + Enter</code> 保存当前卡牌，<code>Alt + ←/→</code> 切换图片。</li>
           <li>有未保存内容时关闭或刷新页面会弹出确认；移除已填写但未保存的图片也会先确认。</li>
-          <li>编号重复的报错显示在「收藏编号」下方，改号后再存即可。</li>
+          <li>编号重复的报错显示在「编号」下方，改号后再存即可。</li>
         </ul>
         <div class="note">移除一张已上传但未保存的图片会同时删除对应素材；已保存卡牌使用的图片不会被删除。批量上架与普通卡牌表单写入同一张表，保存后立即出现在「卡牌」列表。</div>
       </section>

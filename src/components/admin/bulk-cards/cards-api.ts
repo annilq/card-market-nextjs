@@ -125,7 +125,7 @@ function messageFromBody(body: unknown, fallback: string): string {
 }
 
 function guessField(message: string, fallback: SaveField): SaveField {
-  // 卡片的唯一键在服务端报错，前端只能按文案把错误落回「收藏编号」字段。
+  // 卡片的唯一键在服务端报错，前端只能按文案把错误落回「编号」字段。
   if (message.includes('编号已存在')) return 'code'
   return fallback
 }

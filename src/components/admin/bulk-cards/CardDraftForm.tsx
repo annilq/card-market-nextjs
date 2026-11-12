@@ -175,7 +175,7 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
             placeholder="请选择"
             value={draft.rarityId}
           />
-          {textField('code', '收藏编号', { placeholder: '如 123/197' })}
+          {textField('code', '编号', { placeholder: '如 123/197' })}
           {textField('price', '卖价', { placeholder: '如 320', type: 'number' })}
         </div>
 

@@ -110,7 +110,7 @@ function buildSections(origin: string): { examples: { example: string; label: st
         },
         {
           title: '编号重复',
-          body: '同一 IP / 系列 / 子系列下编号不能重复。报错会显示在「收藏编号」下方，改号后再存即可。',
+          body: '同一 IP / 系列 / 子系列下编号不能重复。报错会显示在「编号」下方，改号后再存即可。',
         },
       ],
     },

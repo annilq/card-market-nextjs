@@ -50,7 +50,7 @@ export const Cards: CollectionConfig = {
     useAsTitle: 'name',
     defaultColumns: ['name', 'code', 'ip', 'price', 'isHighValue', 'isNoDeduction', 'status', 'publicLink'],
     group: { zh: '商品', en: 'Catalog', ja: '商品' },
-    // 后台列表搜索覆盖卡名 / 收藏编号 / 稀有度名称。
+    // 后台列表搜索覆盖卡名 / 编号 / 稀有度名称。
     // 稀有度是关系字段，直接写 'rarity' 会被 Payload 的 like 降级成 equals（按 ID 比），
     // 必须写嵌套路径 'rarity.name' 才会 JOIN rarities 表按名称做子串匹配。
     listSearchableFields: ['name', 'code', 'rarity.name'],
@@ -175,7 +175,7 @@ export const Cards: CollectionConfig = {
         },
         {
           name: 'code',
-          label: { zh: '收藏编号', en: 'Code', ja: 'コレクション番号' },
+          label: { zh: '编号', en: 'Code', ja: 'コレクション番号' },
           type: 'text',
           index: true,
           admin: { width: '33%', placeholder: { zh: '如 123/197', en: 'e.g. 123/197', ja: '例 123/197' } },

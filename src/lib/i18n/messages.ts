@@ -101,7 +101,7 @@ const zh = {
   // 卡牌详情
   cardNotFound: '未找到该卡牌（可能已下架）。',
   backToCards: '返回卡牌列表',
-  cardCode: '收藏编号 {code}',
+  cardCode: '编号 {code}',
   cardNameLabel: '名称',
   cardDetailLink: '查看详情',
   closeCard: '关闭卡牌弹窗',
@@ -112,7 +112,7 @@ const zh = {
   inquireCard: '咨询此卡',
   galleryLabel: '卡牌图片，可用左右方向键切换',
   galleryThumb: '第 {n} 张图片',
-  cardCodeLabel: '收藏编号',
+  cardCodeLabel: '编号',
   listedAt: '上架时间',
 
   // 店铺
