@@ -566,11 +566,11 @@ export function CatalogFilters({
             // tab 之间不留缝：设计图里这一排是连续的一条底带，缝隙会把它切成
             // 几颗孤立按钮，与 IpTab 注释里「整排读作一条带子」的意图相反。
             <div className="flex min-w-0 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:pb-0">
-              {/*<IpTab
+              <IpTab
                 active={ipSel.size === 0}
                 onClick={resetHome}
                 label={t('facetAllIps')}
-              />*/}
+              />
               {facets.ips.map((ip) => (
                 <IpTab
                   key={ip.id}
@@ -591,19 +591,18 @@ export function CatalogFilters({
           )}
           {/* 右端一组：结果计数、已选条件、以及「全部 →」。
               设计图里分隔线下 30px 就是网格，计数不单独占一行，收进 tab 行右端。 */}
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-1 self-end sm:ml-auto sm:self-auto">
+          {/*<div className="flex shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-1 self-end sm:ml-auto sm:self-auto">
             <span className="text-sm text-muted tabular-nums">
               {t('catalogCount', { total })}
             </span>
             <FilterChips chips={chips} className="flex flex-wrap items-center justify-end gap-2" />
-            {/* 「全部 →」在桌面贴右缘；移动端落到 tab 条下方、靠右对齐，不孤行错位。 */}
             <Link
               href={localizeHref('/cards', locale)}
               className="shrink-0 text-right text-sm text-muted transition hover:text-fg hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted"
             >
               {t('viewAll')}
             </Link>
-          </div>
+          </div>*/}
         </div>
 
         {/* 三个筛选做成触发控件：点一下，右侧滑出选择面板。
