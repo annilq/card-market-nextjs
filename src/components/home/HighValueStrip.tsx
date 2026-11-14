@@ -16,6 +16,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 
+import { CardModal } from '@/components/catalog/CardModal'
 import { getTranslator } from '@/lib/i18n/t'
 import { HighValueCard } from './HighValueCard'
 import type { Locale } from '@/lib/i18n/locales'
@@ -43,6 +44,9 @@ export function HighValueStrip({
   const [overflowing, setOverflowing] = useState(false)
   const [atStart, setAtStart] = useState(true)
   const [atEnd, setAtEnd] = useState(false)
+
+  // 弹窗状态放在横条这一层：整条横条只挂一个弹窗，点哪张就换成哪张。
+  const [open, setOpen] = useState<CardView | null>(null)
 
   // 量一次 scrollWidth / clientWidth，并随窗口尺寸与列表变化重算。
   useEffect(() => {
@@ -107,7 +111,7 @@ export function HighValueStrip({
             // 卡位 227px：内容列 1200 − 4 × gap 16 = 1136，5 张正好铺满首屏
             //（设计图卡位 228，1px 取整差落在右缘渐隐里）。
             <div key={c.id} className="w-44 shrink-0 snap-start sm:w-[227px]">
-              <HighValueCard card={c} locale={locale} />
+              <HighValueCard card={c} locale={locale} onOpen={setOpen} />
             </div>
           ))}
         </div>
@@ -152,6 +156,8 @@ export function HighValueStrip({
           </>
         )}
       </div>
+
+      {open && <CardModal card={open} locale={locale} onClose={() => setOpen(null)} />}
     </section>
   )
 }

@@ -21,7 +21,16 @@ import { getTranslator } from '@/lib/i18n/t'
 import { localizeHref, type Locale } from '@/lib/i18n/locales'
 import type { CardView } from '@/lib/types'
 
-export function HighValueCard({ card, locale }: { card: CardView; locale: Locale }) {
+export function HighValueCard({
+  card,
+  locale,
+  onOpen,
+}: {
+  card: CardView
+  locale: Locale
+  /** 给了这个回调，普通左键点击就改成弹出卡牌弹窗而不是跳详情页。 */
+  onOpen?: (card: CardView) => void
+}) {
   const t = getTranslator(locale)
   const img = card.images[0]
   // 横条卡位只有 228px，缩略图足够；没有缩略图再退到 cardUrl / 原图。
@@ -32,6 +41,14 @@ export function HighValueCard({ card, locale }: { card: CardView; locale: Locale
     <Link
       href={localizeHref(`/cards/${card.id}`, locale)}
       prefetch
+      onClick={(e) => {
+        if (!onOpen) return
+        // 修饰键与中键留给浏览器：那是在要求「开新标签 / 新窗口」，
+        // 拦下来会把用户想开的新标签页变成一个弹窗。
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+        e.preventDefault()
+        onOpen(card)
+      }}
       className="group flex h-full flex-col overflow-hidden rounded border border-transparent bg-surface p-4 shadow-[0_1px_2px_rgb(15_23_42_/_0.06)] transition-[box-shadow,border-color] duration-150 hover:border-border hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted"
     >
       {/* 图框：白卡内缩 15px 的浅灰块，尺寸本身就是 5:7；图框自己的 padding
