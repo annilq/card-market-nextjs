@@ -105,7 +105,9 @@ export function HighValueStrip({
           role="region"
           aria-label={t('highValueBuys')}
           tabIndex={0}
-          className={`flex snap-x snap-mandatory gap-4 overflow-x-auto pb-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-strong ${atEnd ? '' : 'strip-fade'}`}
+          // 滚动条隐藏但滚动保留：右缘渐隐与箭头已经承担「还能往右」的提示，
+          // 露出系统滚动条会在卡片下方多出一条横线。
+          className={`flex snap-x snap-mandatory gap-4 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-strong ${atEnd ? '' : 'strip-fade'}`}
         >
           {items.map((c) => (
             // 卡位 227px：内容列 1200 − 4 × gap 16 = 1136，5 张正好铺满首屏
