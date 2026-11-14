@@ -192,14 +192,14 @@ async function main() {
     collection: 'rarities',
     data: { name: 'SSR', sort: 1, enabled: true },
   })
-  // 卡牌状态是可增删的维度：accent 决定前台是否显示原来「有包装」的强调样式。
+  // 卡牌状态是可增删的维度：color 决定前台状态徽章的底色。
   const rawStatus = await payload.create({
     collection: 'card-statuses',
-    data: { name: '裸卡', sort: 1, enabled: true, accent: false },
+    data: { name: '裸卡', sort: 1, enabled: true, color: 'blue' },
   })
   await payload.create({
     collection: 'card-statuses',
-    data: { name: '有包装', sort: 2, enabled: true, accent: true },
+    data: { name: '有包装', sort: 2, enabled: true, color: 'green' },
   })
 
   // 卡牌

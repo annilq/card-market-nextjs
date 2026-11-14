@@ -5,7 +5,7 @@
 // 价格压在列底、右对齐、品牌红、约 24px。
 //
 // 状态与罕见度是两件事：PSA10 / 裸卡是「卡牌状态」，UR 是「罕见度」。
-// 状态占顶部徽章（后台可增删的自由文本，配色走 `statusBadgeClass`），
+// 状态占顶部徽章（后台可增删，配色取 `cardStatusColor`），
 // 罕见度回到表格第三行——不再把罕见度做成徽章、把状态写成一行。
 //
 // 「高价买取 / 不减额买取」标签不属于信息列：它压在图角上（与列表卡一致），
@@ -58,10 +58,10 @@ export function CardInfo({
       {(statusLabel || buybackLabel) && (
         <div className="flex flex-wrap items-center gap-2">
           {statusLabel && (
-            // 状态徽章配色与列表卡同一套：PSA10 红、裸卡蓝、BOX 绿，
-            // 认不出来的状态回到品牌红。
+            // 颜色来自后台 card-statuses.color（预设见 src/lib/card-status.ts），
+            // 与横条卡共用同一套徽章色。
             <span
-              className={`rounded-full px-2.5 py-1 text-xs font-bold text-white ${statusBadgeClass(statusLabel)}`}
+              className={`rounded-full px-2.5 py-1 text-xs font-bold ${statusBadgeClass(card.cardStatusColor)}`}
             >
               {statusLabel}
             </span>

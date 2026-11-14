@@ -46,7 +46,11 @@ const relName = (value: unknown): string | null => {
   return null
 }
 
-const relFlag = (value: unknown, key: string): boolean => Boolean(value && typeof value === 'object' && (value as Record<string, unknown>)[key])
+const relString = (value: unknown, key: string): string | null => {
+  if (!value || typeof value !== 'object') return null
+  const field = (value as Record<string, unknown>)[key]
+  return typeof field === 'string' ? field : null
+}
 
 /**
  * 派生尺寸的 URL，但只在它与原图长宽比一致时返回。
@@ -112,7 +116,7 @@ function toCardView(doc: any, withDescription = false): CardView {
     isNoDeduction: Boolean(doc.isNoDeduction),
     cardStatusId: relId(doc.cardStatus),
     cardStatusName: relName(doc.cardStatus),
-    cardStatusAccent: relFlag(doc.cardStatus, 'accent'),
+    cardStatusColor: relString(doc.cardStatus, 'color'),
     descriptionHtml: withDescription ? renderRichText(doc.description) : '',
     createdAt: doc.createdAt,
   }

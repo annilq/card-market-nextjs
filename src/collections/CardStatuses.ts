@@ -3,6 +3,7 @@ import type { CollectionConfig } from 'payload'
 import { enabledOnly } from '@/access'
 import { moduleRead, roleAction } from '@/access/roles'
 import { enabledField, sortField } from '@/fields/shared'
+import { CARD_STATUS_COLOR_OPTIONS } from '@/lib/card-status'
 import { revalidateHook } from '@/lib/revalidate'
 
 export const CardStatuses: CollectionConfig = {
@@ -13,7 +14,7 @@ export const CardStatuses: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'sort', 'enabled', 'accent'],
+    defaultColumns: ['name', 'sort', 'enabled', 'color'],
     group: { zh: '分类', en: 'Taxonomy', ja: '分類' },
   },
   access: {
@@ -23,24 +24,26 @@ export const CardStatuses: CollectionConfig = {
     delete: roleAction('card-statuses', 'delete'),
   },
   hooks: {
-    // 维度（卡牌状态）变动 → 筛选维度缓存立即失效。
-    afterChange: [revalidateHook('facets')],
-    afterDelete: [revalidateHook('facets')],
+    // 维度（卡牌状态）变动 → 筛选维度缓存与卡牌列表缓存（徽章颜色烘在 CardView 里）立即失效。
+    afterChange: [revalidateHook('facets', 'cards')],
+    afterDelete: [revalidateHook('facets', 'cards')],
   },
   fields: [
     { name: 'name', label: { zh: '名称', en: 'Name', ja: '名称' }, type: 'text', required: true, index: true },
     sortField(),
     enabledField(),
     {
-      name: 'accent',
-      label: { zh: '高亮标识', en: 'Highlight', ja: '強調表示' },
-      type: 'checkbox',
-      defaultValue: false,
+      name: 'color',
+      label: { zh: '颜色', en: 'Color', ja: '色' },
+      type: 'select',
+      options: CARD_STATUS_COLOR_OPTIONS,
+      defaultValue: 'red',
+      required: true,
       admin: {
         description: {
-          zh: '勾选后，属于该状态的卡牌在前台显示强调样式（原来「有包装」卡的特殊标识）。',
-          en: 'Cards in this condition get the accent styling previously used for packaged cards.',
-          ja: 'この状態のカードに、従来「パッケージあり」に使っていた強調表示を付けます。',
+          zh: '前台卡牌状态徽章的底色。新增状态时选一个预设即可，改名不会影响颜色。',
+          en: 'Badge color for this condition on the storefront. Pick a preset when adding a status; renaming does not change the color.',
+          ja: 'ストアのカード状態バッジの背景色。新しい状態を追加するときにプリセットを選んでください。名前を変えても色は変わりません。',
         },
       },
     },

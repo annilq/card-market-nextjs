@@ -35,7 +35,8 @@ export interface CardView {
   isNoDeduction: boolean
   cardStatusId: number | null
   cardStatusName: string | null
-  cardStatusAccent: boolean
+  /** 后台 card-statuses.color 的语义色值（red / blue / …），用于前台徽章。 */
+  cardStatusColor: string | null
   descriptionHtml: string
   createdAt: string
 }

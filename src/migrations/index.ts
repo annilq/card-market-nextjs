@@ -13,6 +13,7 @@ import * as migration_20261110_221000_card_statuses from './20261110_221000_card
 import * as migration_20261110_234500_no_deduction_buyback from './20261110_234500_no_deduction_buyback';
 import * as migration_20261111_003500_buyback_sort from './20261111_003500_buyback_sort';
 import * as migration_20261112_000000_announcement_published_at from './20261112_000000_announcement_published_at';
+import * as migration_20261114_000000_card_status_color from './20261114_000000_card_status_color';
 
 export const migrations = [
   {
@@ -89,5 +90,10 @@ export const migrations = [
     up: migration_20261112_000000_announcement_published_at.up,
     down: migration_20261112_000000_announcement_published_at.down,
     name: '20261112_000000_announcement_published_at',
+  },
+  {
+    up: migration_20261114_000000_card_status_color.up,
+    down: migration_20261114_000000_card_status_color.down,
+    name: '20261114_000000_card_status_color',
   },
 ];

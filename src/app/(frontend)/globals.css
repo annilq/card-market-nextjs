@@ -44,6 +44,17 @@
   --color-accent: #db261d; /* 主按钮底色：与品牌红同一支 */
   --color-on-accent: #ffffff; /* 主按钮文字 */
 
+  /* 卡牌状态徽章（后台 card-statuses.color 的六个预设）。
+     白字压在每一支上都过正文级 4.5:1：红 4.89、蓝 7.45、绿 5.02、
+     琥珀 5.02、紫 5.70、灰 7.49。深色主题不覆盖——徽章是实心色块，
+     与页面底色无关，保持两套主题同一识别色。 */
+  --color-status-red: #db261d;
+  --color-status-blue: #1a2aff;
+  --color-status-green: #15803d;
+  --color-status-amber: #b45309;
+  --color-status-violet: #7c3aed;
+  --color-status-slate: #475569;
+
   /* 语义强调色。原来在组件里直接写 Tailwind 调色板名（text-rose-600 等），
      换主题时只有带 dark: 前缀的那些会跟着变，容易漏。统一成令牌后
      组件只写一次 `text-price`，两套主题各给一值。
@@ -60,14 +71,6 @@
   --color-success: #047857; /* 提交成功（5.48:1 白 / 4.7:1 在 15% 底色上） */
   --color-danger: #c70036; /* 提交失败（与置顶同色：同一支红，只是换用途） */
   --color-danger-bg: rgb(255 32 86 / 0.15);
-
-  /* 柜藏级（card_status = packaged）：评级壳 / 密封 / 收藏柜里的卡。
-     全站只有一支红（钱）与一支琥珀（高价买取），再加一支紫只表达这一件事：
-     「这张卡值得跑一趟店里」。作用面极小——4px 签名条 + 徽章文字——
-     所以它不会变成第二支「品牌色」，也不会与价格抢视线。
-     浅色 #7c3aed 在白卡片 6.4:1；深色 #c4b5fd 在夜卡片 9.0:1。 */
-  --color-vault: #7c3aed;
-  --color-vault-bg: rgb(124 58 237 / 0.08);
 }
 
 /* 浅色为默认（:root 已由 @theme 注入对应值），这里只显式声明 color-scheme。 */
@@ -114,10 +117,6 @@ html.dark {
   --color-success: #34d399;
   --color-danger: #ff8fa2;
   --color-danger-bg: rgb(255 32 86 / 0.15);
-
-  /* 黑底上紫色要提亮两档才读得到；同色相，不换成另一个色。 */
-  --color-vault: #c4b5fd;
-  --color-vault-bg: rgb(196 181 253 / 0.14);
 }
 
 /* 基础样式放进 @layer base：确保 Tailwind 的 utilities 层（如 text-on-accent）

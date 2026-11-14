@@ -10,7 +10,7 @@
 //   浅灰图框 #FAFAFA——图框自身再留 ~13px 内边距，商品图 contain 居中，
 //   所以图框的灰底会露在商品四周（评级壳两侧约 22px、裸卡约 13px）。
 //   图框下 13 文字；状态徽章高 24；标题 18/26 两行截断；编号 16 灰；
-//   价格 28 加粗右对齐、贴底。徽章三色：PSA10 #db261d / 裸卡 #1a2aff / BOX #28c83b。
+//   价格 28 加粗右对齐、贴底。徽章底色由后台卡牌状态的 color 字段决定。
 
 import Link from 'next/link'
 
@@ -57,7 +57,7 @@ export function HighValueCard({ card, locale }: { card: CardView; locale: Locale
         <div className="line-clamp-2 text-lg font-bold leading-[26px] text-fg">
           {status && (
             <span
-              className={`mr-2 inline-flex h-6 translate-y-[-1px] items-center rounded-md px-2.5 align-middle text-sm font-semibold text-white ${statusBadgeClass(status)}`}
+              className={`mr-2 inline-flex h-6 translate-y-[-1px] items-center rounded-md px-2.5 align-middle text-sm font-semibold ${statusBadgeClass(card.cardStatusColor)}`}
             >
               {status}
             </span>

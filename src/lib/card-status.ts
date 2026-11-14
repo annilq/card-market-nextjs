@@ -1,17 +1,40 @@
 /**
- * 卡牌类型（后台 `card-statuses`）徽章配色。
+ * 卡牌状态（后台 `card-statuses`）徽章配色。
  *
- * 状态是后台可增删的自由文本，设计图只给了三种；因此这里按名称做一次归一化
- * 匹配，认不出来的状态回到品牌红——宁可少一种颜色，也不要让某个新状态变成
- * 透明/无底色。匹配用大写后的关键词，中日英任一写法的常见词都收进来。
+ * 颜色是后台的显式字段（`color`），不再按名称猜：运营新增「PSA10」「裸卡」
+ * 以外的状态时，直接在卡牌状态里选一个颜色即可，改名也不会改变徽章。
  *
- * 横条卡与网格卡共用同一套颜色，避免同一个「PSA10」在两处显示成两种颜色。
+ * 颜色用语义值存库（red / blue / …），具体色值落在 `globals.css` 的
+ * `--color-status-*` 令牌上；这样浅色 / 深色主题可以在样式层统一调整，
+ * 组件与数据库都只认语义名。
+ *
+ * 未知值（例如历史数据或以后删掉的预设）回落到品牌红，避免徽章变成透明。
  */
-export function statusBadgeClass(name: string | null): string {
-  const n = (name ?? '').trim().toUpperCase()
-  if (!n) return 'bg-brand'
-  if (/PSA|GRAD|鑑定|鉴定/.test(n)) return 'bg-[#db261d]'
-  if (/裸|RAW|BARE|SINGLE|未鑑定|未鉴定/.test(n)) return 'bg-[#1a2aff]'
-  if (/BOX|PACK|SEAL|包装|未開封|未开封/.test(n)) return 'bg-[#28c83b]'
-  return 'bg-brand'
+export type CardStatusColor = 'red' | 'blue' | 'green' | 'amber' | 'violet' | 'slate'
+
+/** 后台 `card-statuses.color` 的可选预设。标签随 Payload 的 i18n 走。 */
+export const CARD_STATUS_COLOR_OPTIONS: {
+  value: CardStatusColor
+  label: { zh: string; en: string; ja: string }
+}[] = [
+  { value: 'red', label: { zh: '红色', en: 'Red', ja: '赤' } },
+  { value: 'blue', label: { zh: '蓝色', en: 'Blue', ja: '青' } },
+  { value: 'green', label: { zh: '绿色', en: 'Green', ja: '緑' } },
+  { value: 'amber', label: { zh: '琥珀色', en: 'Amber', ja: '琥珀色' } },
+  { value: 'violet', label: { zh: '紫色', en: 'Violet', ja: '紫' } },
+  { value: 'slate', label: { zh: '灰色', en: 'Slate', ja: 'グレー' } },
+]
+
+const BADGE_CLASS: Record<CardStatusColor, string> = {
+  red: 'bg-status-red text-white',
+  blue: 'bg-status-blue text-white',
+  green: 'bg-status-green text-white',
+  amber: 'bg-status-amber text-white',
+  violet: 'bg-status-violet text-white',
+  slate: 'bg-status-slate text-white',
+}
+
+/** 状态色值 → 徽章类名。所有卡位共用一套，避免同一状态在两处显示成两种颜色。 */
+export function statusBadgeClass(color: string | null | undefined): string {
+  return BADGE_CLASS[(color ?? '') as CardStatusColor] ?? 'bg-brand text-white'
 }

@@ -43,7 +43,6 @@ export function CardCard({
   const t = getTranslator(locale)
   const img = card.images[0]
   const src = compact ? img?.thumbUrl || img?.url : img?.cardUrl || img?.url
-  const accent = card.cardStatusAccent
   const isScarce = !!card.rarityName && ['SSR', 'UR'].includes(card.rarityName)
   const buybackLabel = card.isHighValue ? t('highValue') : card.isNoDeduction ? t('noDeduction') : null
 
@@ -91,14 +90,6 @@ export function CardCard({
           <div className="flex h-full w-full items-center justify-center text-sm text-hint">
             {t('noImage')}
           </div>
-        )}
-        {accent && (
-          <span aria-hidden="true" className="absolute inset-y-0 left-0 z-10 w-1 bg-vault" />
-        )}
-        {accent && card.cardStatusName && (
-          <span className="absolute left-2 top-2 z-10 rounded bg-surface px-1.5 py-0.5 text-[11px] font-medium text-vault shadow-sm">
-            {card.cardStatusName}
-          </span>
         )}
       </div>
 

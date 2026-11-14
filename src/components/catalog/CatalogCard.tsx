@@ -9,8 +9,8 @@
 // 设计实测（1920 画板，内容列 1200）：
 //   8 列 gap 8；图位 143×200（5:7，object-cover）；图下 12 文字；
 //   标题两行、编号 14 灰、价格 24 加粗右对齐；行距 24。
-//   标题设计是 16/20，这里按需求放大到 18/22 加粗；类型便签放在标题最前，
-//   与横条卡同一套配色。稀有度不展示（列表里没有这个字段的位置）。
+//   标题设计是 16/20，这里按需求放大到 18/22 加粗。稀有度不展示
+//   （列表里没有这个字段的位置）。
 //   「高价买取」红标 80×30，压在图左上角（内缩 4），右下圆角。
 //
 // 客户端组件的原因与旧 CardCard 相同：给了 `onOpen` 时普通左键改成就地弹窗，
@@ -19,7 +19,6 @@
 import Link from 'next/link'
 
 import { CardImage } from '@/components/CardImage'
-import { statusBadgeClass } from '@/lib/card-status'
 import { formatYen } from '@/lib/format'
 import { getTranslator } from '@/lib/i18n/t'
 import { localizeHref, type Locale } from '@/lib/i18n/locales'
@@ -44,7 +43,6 @@ export function CatalogCard({
   const src = img?.cardUrl || img?.thumbUrl || img?.url
   // 设计图只给了「高价买取」；「不减额买取」沿用同一颗标（与旧卡片的信息层级一致）。
   const badge = card.isHighValue ? t('highValue') : card.isNoDeduction ? t('noDeduction') : null
-  const status = card.cardStatusName?.trim()
 
   return (
     <Link

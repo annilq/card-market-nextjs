@@ -52,7 +52,7 @@ export const ENTITY_DESCRIPTIONS: Record<string, string> = {
   banners: '首页轮播图与跳转链接',
   cards: '商品主体：名称、编号、价格、图片、描述',
   'bulk-cards': '一次上传多张卡图，批量新建卡牌',
-  'card-statuses': '卡牌状态及其展示顺序与高亮标识',
+  'card-statuses': '卡牌状态及其展示顺序与徽章颜色',
   'info-pages': '审核用静态信息页',
   ips: '卡牌所属 IP / 大分类',
   media: '图片素材（卡牌图、banner、门店照片）',
