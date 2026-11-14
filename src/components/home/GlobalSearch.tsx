@@ -50,7 +50,7 @@ export function GlobalSearch() {
       </div>
       <button
         type="submit"
-        className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-[10px] bg-[radial-gradient(circle_at_0%_0%,#BCBCBC_0%,#FFFFFF_100%)] px-4 text-sm text-slate-700 transition hover:brightness-95"
+        className="inline-flex cursor-pointer h-10 shrink-0 items-center gap-1.5 rounded-[10px] bg-[radial-gradient(circle_at_0%_0%,#BCBCBC_0%,#FFFFFF_100%)] px-4 text-sm text-slate-700 transition hover:brightness-95"
       >
         <svg
           width="16"

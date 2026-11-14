@@ -806,7 +806,7 @@ function IpTab({
       onClick={onClick}
       aria-pressed={active}
       className={
-        `inline-flex h-10 shrink-0 items-center px-5 text-xl transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted ` +
+        `inline-flex h-10 cursor-pointer shrink-0 items-center px-5 text-xl transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted ` +
         (active
           ? 'bg-brand text-white'
           : 'bg-[#F2E2E3] text-muted hover:bg-[#f6dadc] hover:text-fg dark:bg-surface-2 dark:text-muted dark:hover:bg-border')
@@ -843,7 +843,7 @@ function FilterButton({
       type="button"
       onClick={onClick}
       aria-haspopup="dialog"
-      className="inline-flex h-10 shrink-0 min-w-0 max-w-full items-center gap-1.5 rounded px-3 text-sm transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted sm:h-auto sm:flex-col sm:items-start sm:gap-1.5 sm:rounded-none sm:px-0 sm:py-0 sm:text-left sm:hover:bg-transparent"
+      className="inline-flex h-10 cursor-pointer shrink-0 min-w-0 max-w-full items-center gap-1.5 rounded px-3 text-sm transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted sm:h-auto sm:flex-col sm:items-start sm:gap-1.5 sm:rounded-none sm:px-0 sm:py-0 sm:text-left sm:hover:bg-transparent"
     >
       <span className="shrink-0 font-bold text-fg sm:text-xl">{label}</span>
       <span className="flex min-w-0 max-w-full items-center gap-2 sm:gap-12">

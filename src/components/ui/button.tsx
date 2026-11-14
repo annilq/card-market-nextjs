@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
  * （`variant` / `size`），不再直接拼一串工具类。
  */
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border text-sm font-medium outline-none transition-[background-color,border-color,box-shadow,color] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-transparent disabled:pointer-events-none disabled:opacity-45 aria-invalid:border-destructive [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex shrink-0 items-center cursor-pointer justify-center gap-1.5 whitespace-nowrap rounded-md border text-sm font-medium outline-none transition-[background-color,border-color,box-shadow,color] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-transparent disabled:pointer-events-none disabled:opacity-45 aria-invalid:border-destructive [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
