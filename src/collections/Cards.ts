@@ -195,6 +195,8 @@ export const Cards: CollectionConfig = {
       type: 'relationship',
       relationTo: 'media',
       hasMany: true,
+      // 选图要能看见缩略图：select 模式只渲染 alt 文本，drawer 打开媒体列表并带预览。
+      admin: { appearance: 'drawer' },
     },
     {
       name: 'description',
