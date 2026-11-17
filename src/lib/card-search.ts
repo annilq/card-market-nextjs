@@ -7,7 +7,8 @@
 // 参数表（读两写法、写只写逗号）：
 //   ip / series / sub / rarity  多选 ID，逗号分隔（也接受重复参数 `ip=1&ip=2`）
 //   status                      卡牌状态 ID，逗号分隔
-//   hv=1                        只看高价买取
+//   hv=1                        只查高价买取
+//   nd=1                        只看不减额买取
 //   min / max                   价格区间
 //   q                           关键词（由顶栏搜索带入，这里只负责读出来）
 //   sort                        排序，取值见 CARD_SORTS
@@ -83,7 +84,8 @@ export function parseCardSearch(
     subSeriesIds: idListOf(sp, 'sub'),
     rarityIds: idListOf(sp, 'rarity'),
     cardStatusIds: idListOf(sp, 'status'),
-    highValueOnly: rawOf(sp, 'hv') != null,
+    highValueOnly: rawOf(sp, 'hv') === '1',
+    noDeductionOnly: rawOf(sp, 'nd') != null,
     minPrice: numOf(sp, 'min'),
     maxPrice: numOf(sp, 'max'),
     q: rawOf(sp, 'q'),

@@ -14,6 +14,7 @@
 import Link from 'next/link'
 
 import { formatYen } from '@/lib/format'
+import { buybackBadge } from '@/lib/card-badge'
 import { getTranslator } from '@/lib/i18n/t'
 import type { Locale } from '@/lib/i18n/locales'
 import { localizeHref } from '@/lib/i18n/locales'
@@ -44,7 +45,8 @@ export function CardCard({
   const img = card.images[0]
   const src = compact ? img?.thumbUrl || img?.url : img?.cardUrl || img?.url
   const isScarce = !!card.rarityName && ['SSR', 'UR'].includes(card.rarityName)
-  const buybackLabel = card.isHighValue ? t('highValue') : card.isNoDeduction ? t('noDeduction') : null
+  const badgeInfo = buybackBadge(card)
+  const buybackLabel = badgeInfo ? t(badgeInfo.label) : null
 
   return (
     <Link
@@ -70,7 +72,7 @@ export function CardCard({
         {buybackLabel && (
           // z-10：图片在 hover 时 scale 出 transform、自成一层，按 DOM 顺序会盖在
           // 位于它之前的徽章上；抬一层保证「高价买取」悬停时不被放大的图遮住。
-          <span className="absolute left-1 top-1 z-10 rounded-xl bg-brand px-1.5 py-0.5 text-[11px] text-white">
+          <span className={`absolute left-1 top-1 z-10 rounded-xl ${badgeInfo!.className} px-1.5 py-0.5 text-[11px] text-white`}>
             {buybackLabel}
           </span>
         )}
@@ -102,7 +104,11 @@ export function CardCard({
         )}
         <div className="mt-2 flex items-baseline justify-end gap-2">
           <span className="text-[20px] font-bold tabular-nums text-price">
-            {card.price != null ? t('priceTag', { price: formatYen(card.price) }) : t('priceOnRequest')}
+            {card.stopBuyback
+              ? t('stopBuyback')
+              : card.price != null
+                ? t('priceTag', { price: formatYen(card.price) })
+                : t('priceOnRequest')}
           </span>
           {!compact && card.rarityName && (
             <span className={`text-xs text-faint ${isScarce ? 'font-semibold' : ''}`}>

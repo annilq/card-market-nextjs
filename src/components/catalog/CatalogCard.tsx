@@ -19,6 +19,7 @@
 import Link from 'next/link'
 
 import { CardImage } from '@/components/CardImage'
+import { buybackBadge } from '@/lib/card-badge'
 import { formatYen } from '@/lib/format'
 import { getTranslator } from '@/lib/i18n/t'
 import { localizeHref, type Locale } from '@/lib/i18n/locales'
@@ -41,8 +42,8 @@ export function CatalogCard({
   const img = card.images[0]
   // 网格卡位 143–175px：cardUrl 与缩略图都够用，优先更清晰的 cardUrl。
   const src = img?.cardUrl || img?.thumbUrl || img?.url
-  // 设计图只给了「高价买取」；「不减额买取」沿用同一颗标（与旧卡片的信息层级一致）。
-  const badge = card.isHighValue ? t('highValue') : card.isNoDeduction ? t('noDeduction') : null
+  const badgeInfo = buybackBadge(card)
+  const badge = badgeInfo ? t(badgeInfo.label) : null
 
   return (
     <Link
@@ -76,7 +77,7 @@ export function CatalogCard({
           )}
           {badge && (
             // 压在图左上角：图位的圆角会裁掉徽章左上角，因此只给右下圆角。
-            <span className="absolute top-0 left-0 rounded-full bg-brand px-2 h-7.5 font-semibold flex items-center justify-center text-white">
+            <span className={`absolute top-0 left-0 rounded-full ${badgeInfo!.className} px-2 h-7.5 font-semibold flex items-center justify-center text-white`}>
               {badge}
             </span>
           )}
@@ -90,9 +91,11 @@ export function CatalogCard({
         {/* 编号行固定占一行：缺编号的卡不会把价格往上顶，整行价格保持同一条线。 */}
         <div className="mt-1 truncate text-sm text-faint leading-none">{card.code||"无"}</div>
         <div className="mt-2 text-right text-xl font-bold leading-none tabular-nums text-price">
-          {card.price != null
-            ? t('priceTag', { price: formatYen(card.price) })
-            : t('priceOnRequest')}
+          {card.stopBuyback
+            ? t('stopBuyback')
+            : card.price != null
+              ? t('priceTag', { price: formatYen(card.price) })
+              : t('priceOnRequest')}
         </div>
       </div>
     </Link>

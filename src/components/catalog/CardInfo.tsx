@@ -17,6 +17,7 @@
 // 价格离卡名越近，而这一页要卖的就是「哪个卡、多少钱」。
 import type { ReactNode } from 'react'
 
+import { buybackBadge } from '@/lib/card-badge'
 import { statusBadgeClass } from '@/lib/card-status'
 import { formatYen } from '@/lib/format'
 import type { Locale } from '@/lib/i18n/locales'
@@ -44,13 +45,8 @@ export function CardInfo({
 }) {
   const t = getTranslator(locale)
   const statusLabel = card.cardStatusName?.trim() || null
-  const buybackLabel = showBuyback
-    ? card.isHighValue
-      ? t('highValue')
-      : card.isNoDeduction
-        ? t('noDeduction')
-        : null
-    : null
+  const badgeInfo = buybackBadge(card)
+  const buybackLabel = showBuyback && badgeInfo ? t(badgeInfo.label) : null
   const nameClass = 'min-w-0 break-words font-medium text-fg'
 
   return (
@@ -67,7 +63,7 @@ export function CardInfo({
             </span>
           )}
           {buybackLabel && (
-            <span className="rounded-full bg-brand px-2.5 py-1 text-xs text-white">
+            <span className={`rounded-full ${badgeInfo!.className} px-2.5 py-1 text-xs text-white`}>
               {buybackLabel}
             </span>
           )}
@@ -88,6 +84,9 @@ export function CardInfo({
             <span className="min-w-0 break-words tabular-nums text-fg">{card.code}</span>
           </InfoRow>
         )}
+        <InfoRow label={t('cardStatus')}>
+          <span className="min-w-0 break-words text-fg">{statusLabel ?? '—'}</span>
+        </InfoRow>
         <InfoRow label={t('rarityLabel')}>
           <span className="min-w-0 break-words text-fg">{card.rarityName ?? '—'}</span>
         </InfoRow>
@@ -96,9 +95,11 @@ export function CardInfo({
       {/* mt-auto：被拉高的容器里（弹窗）价格落到列底；text-right 让它贴右下角
           （附件实测价格在卡片右下）。详情页这一列不拉伸，价格紧跟三行、同样右对齐。 */}
       <div className="mt-auto pt-4 text-right text-2xl font-bold tabular-nums text-price">
-        {card.price != null
-          ? t('priceTag', { price: formatYen(card.price) })
-          : t('priceOnRequest')}
+        {card.stopBuyback
+          ? t('stopBuyback')
+          : card.price != null
+            ? t('priceTag', { price: formatYen(card.price) })
+            : t('priceOnRequest')}
       </div>
 
       {actions}

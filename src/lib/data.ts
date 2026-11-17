@@ -19,7 +19,8 @@ import type { Media } from '@/payload-types'
 
 export type { SiteSettingsView }
 
-const SORT_MAP: Record<CardSort, string> = {
+const SORT_MAP: Record<CardSort, string | string[]> = {
+  default: ['-isNoDeduction', '-isHighValue', '-price'],
   price_desc: '-price',
   price_asc: 'price',
   newest: '-createdAt',
@@ -114,6 +115,7 @@ function toCardView(doc: any, withDescription = false): CardView {
     images: toImages(doc.images),
     isHighValue: Boolean(doc.isHighValue),
     isNoDeduction: Boolean(doc.isNoDeduction),
+    stopBuyback: Boolean(doc.stopBuyback),
     cardStatusId: relId(doc.cardStatus),
     cardStatusName: relName(doc.cardStatus),
     cardStatusColor: relString(doc.cardStatus, 'color'),
@@ -322,7 +324,8 @@ export const getCards = unstable_cache(
     if (query.subSeriesIds?.length) and.push({ subSeries: { in: query.subSeriesIds } })
     if (query.rarityIds?.length) and.push({ rarity: { in: query.rarityIds } })
     if (query.cardStatusIds?.length) and.push({ cardStatus: { in: query.cardStatusIds } })
-    if (query.highValueOnly) and.push({ or: [{ isHighValue: { equals: true } }, { isNoDeduction: { equals: true } }] })
+    if (query.highValueOnly) and.push({ isHighValue: { equals: true } })
+    if (query.noDeductionOnly) and.push({ isNoDeduction: { equals: true } })
     if (query.minPrice != null || query.maxPrice != null) {
       const price: Where = {}
       if (query.minPrice != null) price.greater_than_equal = query.minPrice
@@ -340,7 +343,7 @@ export const getCards = unstable_cache(
       overrideAccess: false,
       where: and.length ? { and } : {},
       sort: SORT_MAP[query.sort ?? DEFAULT_CARD_SORT],
-      limit: query.limit ?? 24,
+      limit: query.limit ?? 48,
       page: query.page ?? 1,
     })
 
@@ -378,9 +381,7 @@ export async function getLatestCards(limit = 8): Promise<CardView[]> {
   return result.items
 }
 
-/** 首页「高价买取」栏目。
- *  横条现同时纳入高价买取与不减额买取两类卡牌。按后台排序号升序（未设序号的按 Postgres
- *  ASC 默认 NULLS LAST 垫后），同序号再按发布时间倒序；最多 10 张，交给前端轮播。 */
+/** 首页「不减额买取」栏目：只取不减额买取卡牌，按后台排序号升序，最多 10 张。 */
 export const getHighValueCards = unstable_cache(
   async (limit = 10): Promise<CardView[]> => {
     const payload = await getPayloadClient()
@@ -388,7 +389,7 @@ export const getHighValueCards = unstable_cache(
       collection: 'cards',
       depth: 1,
       overrideAccess: false,
-      where: { or: [{ isHighValue: { equals: true } }, { isNoDeduction: { equals: true } }] },
+      where: { isNoDeduction: { equals: true } },
       sort: ['sort', '-createdAt'],
       limit,
     })

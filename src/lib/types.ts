@@ -1,10 +1,10 @@
 // 面向页面的视图模型：把 Payload 的文档（含关系 ID / 富文本 JSON）收敛成页面能直接渲染的形状。
 // 这样页面组件不需要知道 Payload 的关系展开规则，也不需要自己转富文本。
 
-export type CardSort = 'price_desc' | 'price_asc' | 'newest' | 'oldest'
+export type CardSort = 'default' | 'price_desc' | 'price_asc' | 'newest' | 'oldest'
 
-export const CARD_SORTS: CardSort[] = ['price_desc', 'price_asc', 'newest', 'oldest']
-export const DEFAULT_CARD_SORT: CardSort = 'price_desc'
+export const CARD_SORTS: CardSort[] = ['default', 'price_desc', 'price_asc', 'newest', 'oldest']
+export const DEFAULT_CARD_SORT: CardSort = 'default'
 
 export interface ImageView {
   url: string
@@ -33,6 +33,7 @@ export interface CardView {
   images: ImageView[]
   isHighValue: boolean
   isNoDeduction: boolean
+  stopBuyback: boolean
   cardStatusId: number | null
   cardStatusName: string | null
   /** 后台 card-statuses.color 的语义色值（red / blue / …），用于前台徽章。 */
@@ -97,6 +98,7 @@ export interface CardQuery {
   rarityIds?: number[]
   cardStatusIds?: number[]
   highValueOnly?: boolean
+  noDeductionOnly?: boolean
   minPrice?: number
   maxPrice?: number
   q?: string

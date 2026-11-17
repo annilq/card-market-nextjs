@@ -10,6 +10,7 @@
 //   ip / series / sub / rarity  多选 ID，逗号分隔（也接受重复参数 ip=1&ip=2）
 //   status                      卡牌状态 ID，逗号分隔
 //   hv=1                        只看高价买取
+//   nd=1                        只看不减额买取
 //   min / max                   价格区间
 //   q                           关键词（由顶栏搜索带入，这里只负责保留）
 //   sort                        排序，取值见 CARD_SORTS
@@ -41,6 +42,7 @@ const PARAM = {
   rarity: 'rarity',
   status: 'status',
   highValue: 'hv',
+  noDeduction: 'nd',
   min: 'min',
   max: 'max',
   q: 'q',
@@ -64,6 +66,7 @@ export interface CatalogFilterValue {
   rarityIds: number[]
   cardStatusIds: number[]
   highValueOnly: boolean
+  noDeductionOnly: boolean
   minPrice?: number
   maxPrice?: number
   q?: string
@@ -121,7 +124,8 @@ function readValue(sp: URLSearchParams): CatalogFilterValue {
     subSeriesIds: idsOf(sp, PARAM.sub),
     rarityIds: idsOf(sp, PARAM.rarity),
     cardStatusIds: idsOf(sp, PARAM.status),
-    highValueOnly: firstOf(sp, PARAM.highValue) != null,
+    highValueOnly: firstOf(sp, PARAM.highValue) === '1',
+    noDeductionOnly: firstOf(sp, PARAM.noDeduction) != null,
     minPrice: numOf(sp, PARAM.min),
     maxPrice: numOf(sp, PARAM.max),
     q: firstOf(sp, PARAM.q),
@@ -240,6 +244,7 @@ export function CatalogFilters({
       [PARAM.rarity]: null,
       [PARAM.status]: null,
       [PARAM.highValue]: null,
+      [PARAM.noDeduction]: null,
       [PARAM.min]: null,
       [PARAM.max]: null,
     })
@@ -257,6 +262,7 @@ export function CatalogFilters({
       [PARAM.rarity]: null,
       [PARAM.status]: null,
       [PARAM.highValue]: null,
+      [PARAM.noDeduction]: null,
       [PARAM.min]: null,
       [PARAM.max]: null,
       [PARAM.q]: null,
@@ -287,6 +293,7 @@ export function CatalogFilters({
       value.cardStatusIds.length >
       0 ||
     value.highValueOnly ||
+    value.noDeductionOnly ||
     value.minPrice != null ||
     value.maxPrice != null ||
     !!value.q
@@ -299,6 +306,7 @@ export function CatalogFilters({
     value.rarityIds.length +
     value.cardStatusIds.length +
     (value.highValueOnly ? 1 : 0) +
+    (value.noDeductionOnly ? 1 : 0) +
     (value.minPrice != null || value.maxPrice != null ? 1 : 0) +
     (value.q ? 1 : 0)
 
@@ -311,6 +319,7 @@ export function CatalogFilters({
     value.rarityIds.length +
     value.cardStatusIds.length +
     (value.highValueOnly ? 1 : 0) +
+    (value.noDeductionOnly ? 1 : 0) +
     (value.minPrice != null || value.maxPrice != null ? 1 : 0)
 
   /**
@@ -383,6 +392,9 @@ export function CatalogFilters({
   if (value.highValueOnly) {
     chips.push({ key: 'hv', label: t('highValueOnly'), patch: { [PARAM.highValue]: null } })
   }
+  if (value.noDeductionOnly) {
+    chips.push({ key: 'nd', label: t('noDeduction'), patch: { [PARAM.noDeduction]: null } })
+  }
   if (value.minPrice != null || value.maxPrice != null) {
     // 价格区间合成一枚 chip：min 与 max 读起来是同一个条件的两端。
     const parts: string[] = []
@@ -441,6 +453,15 @@ export function CatalogFilters({
         {t('highValueOnly')}
       </label>
 
+      <label className="flex min-h-9 items-center gap-2 text-sm text-muted">
+        <input
+          type="checkbox"
+          checked={value.noDeductionOnly}
+          onChange={(e) => push({ [PARAM.noDeduction]: e.target.checked ? '1' : null })}
+        />
+        {t('noDeduction')}
+      </label>
+
       <div className="space-y-1 text-sm">
         <div className="font-medium">{t('priceRange')}</div>
         <div className="flex items-center gap-2">
@@ -488,6 +509,7 @@ export function CatalogFilters({
       aria-label={t('filterSort')}
       className="h-9 rounded-lg border border-border-strong bg-surface px-2 text-sm text-fg outline-none transition-colors duration-150 hover:border-muted focus:border-muted"
     >
+      <option value="default">{t('sortDefault')}</option>
       <option value="price_desc">{t('sortPriceDesc')}</option>
       <option value="price_asc">{t('sortPriceAsc')}</option>
       <option value="newest">{t('sortNewest')}</option>
@@ -551,6 +573,7 @@ export function CatalogFilters({
       ...facets.cardStatuses.map((s) => ({ value: String(s.id), label: s.name })),
     ]
     const sortOptions: HomeFilterOption[] = [
+      { value: 'default', label: t('sortDefault') },
       { value: 'price_desc', label: t('sortPriceDesc') },
       { value: 'price_asc', label: t('sortPriceAsc') },
       { value: 'newest', label: t('sortNewest') },
@@ -566,11 +589,11 @@ export function CatalogFilters({
             // tab 之间不留缝：设计图里这一排是连续的一条底带，缝隙会把它切成
             // 几颗孤立按钮，与 IpTab 注释里「整排读作一条带子」的意图相反。
             <div className="flex min-w-0 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:pb-0">
-              <IpTab
+              {/*<IpTab
                 active={ipSel.size === 0}
                 onClick={resetHome}
                 label={t('facetAllIps')}
-              />
+              />*/}
               {facets.ips.map((ip) => (
                 <IpTab
                   key={ip.id}
@@ -623,7 +646,7 @@ export function CatalogFilters({
           />
           <FilterButton
             label={t('filterSort')}
-            current={sortOptions.find((o) => o.value === value.sort)?.label ?? t('sortPriceDesc')}
+            current={sortOptions.find((o) => o.value === value.sort)?.label ?? t('sortDefault')}
             onClick={() => setHomeField('sort')}
           />
 

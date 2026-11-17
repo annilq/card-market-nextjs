@@ -23,7 +23,7 @@ import { getOrigin } from '@/lib/site-url'
 
 export const dynamic = 'force-dynamic'
 
-const PAGE_SIZE = 24
+const PAGE_SIZE = 48
 
 /**
  * 结果网格的锚点 id。
@@ -61,6 +61,7 @@ function buildCardsHref(locale: Locale, query: CardQuery, page: number): string 
   put('rarity', csvOrNull(query.rarityIds))
   put('status', csvOrNull(query.cardStatusIds))
   if (query.highValueOnly) sp.set('hv', '1')
+  if (query.noDeductionOnly) sp.set('nd', '1')
   if (query.minPrice != null) sp.set('min', String(query.minPrice))
   if (query.maxPrice != null) sp.set('max', String(query.maxPrice))
   if (query.q) sp.set('q', query.q)

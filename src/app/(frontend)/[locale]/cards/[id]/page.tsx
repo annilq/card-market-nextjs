@@ -83,7 +83,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // 标题带卡名（站名由根布局的 `%s | 站名` 模板追加，这里不重复拼），
   // 描述带价格 / 编号 / 罕见度 / 成色，分享图用第一张卡图。
   const facts = [
-    card.price != null ? t('priceTag', { price: formatYen(card.price) }) : t('priceOnRequest'),
+    card.stopBuyback
+      ? t('stopBuyback')
+      : card.price != null
+        ? t('priceTag', { price: formatYen(card.price) })
+        : t('priceOnRequest'),
     card.code ? t('cardCode', { code: card.code }) : '',
     card.rarityName ?? '',
     card.cardStatusName ?? '',
@@ -144,8 +148,11 @@ export default async function CardDetailPage({ params }: Props) {
   }
 
   const inquireHref = localizeHref(`/message?card=${card.id}`, locale)
-  const priceLabel =
-    card.price != null ? t('priceTag', { price: formatYen(card.price) }) : t('priceOnRequest')
+  const priceLabel = card.stopBuyback
+    ? t('stopBuyback')
+    : card.price != null
+      ? t('priceTag', { price: formatYen(card.price) })
+      : t('priceOnRequest')
   const taxonomy = [card.ipName, card.seriesName, card.subSeriesName].filter(Boolean).join(' · ')
 
   return (
