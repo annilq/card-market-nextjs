@@ -1,6 +1,6 @@
 'use client'
 
-import { GripVertical } from 'lucide-react'
+import { ArrowDown, ArrowUp, GripVertical } from 'lucide-react'
 import Link from 'next/link'
 import React, { useState } from 'react'
 
@@ -58,43 +58,118 @@ export function NoDeductionList({ adminRoute, apiRoute, canUpdate, cards, page, 
     void persist(next)
   }
 
+  /** 上/下箭头：与拖动共用同一套重排 + 持久化逻辑。 */
+  function move(index: number, delta: number) {
+    if (saving) return
+    const target = index + delta
+    if (target < 0 || target >= rows.length) return
+    const next = [...rows]
+    const [moved] = next.splice(index, 1)
+    next.splice(target, 0, moved)
+    void persist(next)
+  }
+
+  const sortable = canUpdate && !saving
+
   return (
     <div className="admin-no-deduction">
-      <div className="mb-4 flex items-baseline justify-between">
-        <h1 className="text-2xl font-semibold">不减额买取</h1>
-        <span className="text-sm text-muted-foreground">共 {total} 张，按 sort 升序拖动排序</span>
+      <div className="admin-no-deduction__header">
+        <div className="admin-no-deduction__heading">
+          <h1 className="admin-no-deduction__title">不减额买取</h1>
+          <p className="admin-no-deduction__hint">拖动排序手柄，或点击 ↑ / ↓ 调整首页展示顺序</p>
+        </div>
+        <span className="admin-no-deduction__count">共 {total} 张</span>
       </div>
 
-      {message ? <p className="mb-3 text-sm" role="status">{message}</p> : null}
+      {message ? (
+        <p className="admin-no-deduction__message" role="status">
+          {message}
+        </p>
+      ) : null}
 
-      <ul className="divide-y divide-border rounded-md border border-border">
-        {rows.map((row, index) => (
-          <li
-            className={`flex items-center gap-3 px-3 py-2 ${dragIndex === index ? 'opacity-40' : ''}`}
-            draggable={canUpdate && !saving}
-            key={row.id}
-            onDragEnd={() => setDragIndex(null)}
-            onDragOver={(event) => event.preventDefault()}
-            onDragStart={() => setDragIndex(index)}
-            onDrop={() => drop(index)}
-          >
-            {canUpdate ? <GripVertical aria-hidden="true" className="size-4 text-muted-foreground" /> : null}
-            <span className="w-8 text-right text-xs text-muted-foreground">{index + 1}</span>
-            <Link className="flex-1 hover:underline" href={`${adminRoute}/collections/cards/${row.id}`}>
-              {row.name}
-            </Link>
-            <span className="text-xs text-muted-foreground">{row.code ?? '—'}</span>
-            <span className="w-12 text-right text-xs text-muted-foreground">{row.sort ?? '—'}</span>
-          </li>
-        ))}
-      </ul>
+      <div className="admin-no-deduction__table-wrap">
+        <table className="admin-no-deduction__table">
+          <thead>
+            <tr>
+              {canUpdate ? <th className="admin-no-deduction__actions-head" scope="col">排序</th> : null}
+              <th className="admin-no-deduction__index-head" scope="col">#</th>
+              <th scope="col">卡牌名称</th>
+              <th scope="col">编号</th>
+              <th className="admin-no-deduction__sort-head" scope="col">Sort</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, index) => (
+              <tr
+                className={`${dragIndex === index ? 'admin-no-deduction__row--dragging' : ''} ${
+                  saving ? 'admin-no-deduction__row--saving' : ''
+                }`}
+                draggable={sortable}
+                key={row.id}
+                onDragEnd={() => setDragIndex(null)}
+                onDragOver={(event) => event.preventDefault()}
+                onDragStart={() => setDragIndex(index)}
+                onDrop={() => drop(index)}
+              >
+                {canUpdate ? (
+                  <td className="admin-no-deduction__actions">
+                    <div className="admin-no-deduction__action-group">
+                      <span className="admin-no-deduction__drag-handle" aria-hidden="true" title="拖动排序">
+                        <GripVertical size={16} />
+                      </span>
+                      <div className="admin-no-deduction__arrows">
+                        <button
+                          aria-label={`上移 ${row.name}`}
+                          className="admin-no-deduction__arrow"
+                          disabled={!sortable || index === 0}
+                          onClick={() => move(index, -1)}
+                          title="上移"
+                          type="button"
+                        >
+                          <ArrowUp size={14} aria-hidden="true" />
+                        </button>
+                        <button
+                          aria-label={`下移 ${row.name}`}
+                          className="admin-no-deduction__arrow"
+                          disabled={!sortable || index === rows.length - 1}
+                          onClick={() => move(index, 1)}
+                          title="下移"
+                          type="button"
+                        >
+                          <ArrowDown size={14} aria-hidden="true" />
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                ) : null}
+                <td className="admin-no-deduction__index">{index + 1}</td>
+                <td className="admin-no-deduction__name">
+                  <Link href={`${adminRoute}/collections/cards/${row.id}`}>{row.name}</Link>
+                </td>
+                <td className="admin-no-deduction__code">{row.code ?? '—'}</td>
+                <td className="admin-no-deduction__sort">{row.sort ?? '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-      <nav className="mt-4 flex items-center gap-3 text-sm">
-        <Link aria-disabled={page <= 1} href={`${adminRoute}/no-deduction-buyback?page=${Math.max(1, page - 1)}`}>
+      <nav className="admin-no-deduction__pagination" aria-label="分页">
+        <Link
+          aria-disabled={page <= 1}
+          className={page <= 1 ? 'admin-no-deduction__page-link--disabled' : undefined}
+          href={`${adminRoute}/no-deduction-buyback?page=${Math.max(1, page - 1)}`}
+        >
           上一页
         </Link>
-        <span>{page} / {totalPages}</span>
-        <Link aria-disabled={page >= totalPages} href={`${adminRoute}/no-deduction-buyback?page=${Math.min(totalPages, page + 1)}`}>
+        <span>
+          {page} / {totalPages}
+        </span>
+        <Link
+          aria-disabled={page >= totalPages}
+          className={page >= totalPages ? 'admin-no-deduction__page-link--disabled' : undefined}
+          href={`${adminRoute}/no-deduction-buyback?page=${Math.min(totalPages, page + 1)}`}
+        >
           下一页
         </Link>
       </nav>

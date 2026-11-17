@@ -790,6 +790,217 @@ select {
   flex-shrink: 0;
 }
 
+/* ---------- 7c. 不减额买取列表 ----------
+   与「卡牌」集合列表共用同一套表面：面板 + 1px 描边 + 圆角，表头一条带子，
+   行间发丝线，hover 用 elevation-50。排序控件收进一列，跟图标按钮同一套尺寸。 */
+.admin-no-deduction {
+  /* 自定义视图在 Gutter 里，没有 .collection-list__wrap 的外壳；这里自己包一层。 */
+  max-width: 1200px;
+  margin: 16px 24px 24px;
+  padding: 20px;
+  border: 1px solid var(--theme-border-color);
+  border-radius: var(--style-radius-l);
+  background-color: var(--panel-bg);
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--theme-text);
+}
+
+.admin-no-deduction__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.admin-no-deduction__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-no-deduction__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.admin-no-deduction__hint,
+.admin-no-deduction__count {
+  margin: 0;
+  color: var(--theme-elevation-650);
+  font-size: 12px;
+}
+
+.admin-no-deduction__message {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--theme-border-color);
+  border-radius: var(--style-radius-s);
+  background-color: var(--theme-elevation-50);
+  color: var(--theme-elevation-800);
+  font-size: 13px;
+}
+
+.admin-no-deduction__table-wrap {
+  overflow-x: auto;
+}
+
+.admin-no-deduction__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.admin-no-deduction__table th {
+  height: 32px;
+  padding: 0 12px;
+  background-color: var(--theme-elevation-100);
+  border-bottom: 1px solid var(--theme-border-color);
+  color: var(--theme-elevation-650);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.admin-no-deduction__table td {
+  padding: 10px 12px;
+  border-top: 1px solid var(--theme-border-color);
+  color: var(--theme-elevation-1000);
+  vertical-align: middle;
+}
+
+.admin-no-deduction__table tbody tr:first-child td {
+  border-top: 0;
+}
+
+.admin-no-deduction__table tbody tr:hover {
+  background-color: var(--theme-elevation-50);
+}
+
+.admin-no-deduction__table tbody tr[draggable='true'] {
+  cursor: grab;
+}
+
+.admin-no-deduction__row--dragging {
+  opacity: 0.4;
+}
+
+.admin-no-deduction__row--saving {
+  pointer-events: none;
+}
+
+.admin-no-deduction__actions-head,
+.admin-no-deduction__actions {
+  width: 120px;
+}
+
+.admin-no-deduction__action-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-no-deduction__drag-handle {
+  display: inline-flex;
+  align-items: center;
+  color: var(--theme-elevation-550);
+  cursor: grab;
+}
+
+.admin-no-deduction__arrows {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-no-deduction__arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--theme-border-color);
+  border-radius: var(--style-radius-s);
+  background-color: transparent;
+  color: var(--theme-elevation-700);
+  cursor: pointer;
+  transition: background-color 120ms ease-out, color 120ms ease-out, border-color 120ms ease-out;
+}
+
+.admin-no-deduction__arrow:hover:not(:disabled) {
+  border-color: var(--theme-elevation-550);
+  background-color: var(--theme-elevation-100);
+  color: var(--theme-elevation-1000);
+}
+
+.admin-no-deduction__arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.admin-no-deduction__arrow:focus-visible,
+.admin-no-deduction__table a:focus-visible,
+.admin-no-deduction__pagination a:focus-visible {
+  outline: var(--accessibility-outline);
+  outline-offset: var(--accessibility-outline-offset);
+}
+
+.admin-no-deduction__index-head,
+.admin-no-deduction__index,
+.admin-no-deduction__sort-head,
+.admin-no-deduction__sort,
+.admin-no-deduction__code {
+  color: var(--theme-elevation-650);
+  font-size: 12px;
+}
+
+.admin-no-deduction__index,
+.admin-no-deduction__sort {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-no-deduction__name a {
+  color: var(--theme-elevation-1000);
+  text-decoration: none;
+}
+
+.admin-no-deduction__name a:hover {
+  text-decoration: underline;
+}
+
+.admin-no-deduction__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 16px;
+  color: var(--theme-elevation-700);
+  font-size: 13px;
+}
+
+.admin-no-deduction__pagination a {
+  color: var(--theme-elevation-800);
+  text-decoration: none;
+}
+
+.admin-no-deduction__pagination a:hover {
+  color: var(--theme-elevation-1000);
+  text-decoration: underline;
+}
+
+.admin-no-deduction__page-link--disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
 /* 状态胶囊（StatusCell）：22px 高、12px 字，横向扫列表时能一眼分出三档。
    四档对比度：浅色 5.4:1 / 6.4:1，深色 9:1 上下，都在 4.5:1 之上。 */
 .admin-status {
