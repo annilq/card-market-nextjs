@@ -85,6 +85,8 @@ export type CardPayload = {
   images: number[]
   status: CardDraft['status']
   isHighValue: boolean
+  isNoDeduction: boolean
+  stopBuyback: boolean
   code?: string
   price?: number
   description?: LexicalRoot
@@ -102,6 +104,8 @@ export function toCardPayload(draft: CardDraft, mediaId: number): CardPayload {
     images: [mediaId],
     status: draft.status,
     isHighValue: draft.isHighValue,
+    isNoDeduction: draft.isNoDeduction,
+    stopBuyback: draft.stopBuyback,
     ...(draft.code.trim() ? { code: draft.code.trim() } : {}),
     ...(draft.price.trim() ? { price: Number(draft.price) } : {}),
     ...(description ? { description: toLexical(description) } : {}),

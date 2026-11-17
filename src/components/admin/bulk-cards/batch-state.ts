@@ -38,6 +38,8 @@ export type CardDraft = {
   price: string
   status: 'draft' | 'published' | 'archived'
   isHighValue: boolean
+  isNoDeduction: boolean
+  stopBuyback: boolean
   description: string
 }
 
@@ -128,6 +130,8 @@ export function createCardDraft(alt: string): CardDraft {
     price: '',
     status: 'draft',
     isHighValue: false,
+    isNoDeduction: false,
+    stopBuyback: false,
     description: '',
   }
 }

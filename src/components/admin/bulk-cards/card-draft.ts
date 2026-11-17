@@ -20,7 +20,9 @@ export function validateCardDraft(draft: CardDraft): CardDraftErrors {
     if (draft[field] == null) errors[field] = message
   }
 
-  if (draft.price.trim()) {
+  if (!draft.stopBuyback && !draft.price.trim()) {
+    errors.price = '请填写卖价，或勾选「停止买取」'
+  } else if (draft.price.trim()) {
     const price = Number(draft.price)
     if (!Number.isFinite(price) || price < 0) errors.price = '卖价必须是不小于 0 的数字'
   }

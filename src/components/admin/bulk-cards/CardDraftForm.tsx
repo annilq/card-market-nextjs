@@ -212,10 +212,40 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
               className="size-4 accent-[var(--primary)]"
               disabled={busy}
               id="bulk-high-value"
-              onChange={(event) => onChange({ isHighValue: event.target.checked })}
+              onChange={(event) =>
+                onChange(event.target.checked
+                  ? { isHighValue: true, isNoDeduction: false }
+                  : { isHighValue: false })
+              }
               type="checkbox"
             />
             <span className="text-sm">高价买取</span>
+          </label>
+          <label className="flex items-center gap-2 self-end pb-1.5" htmlFor="bulk-no-deduction">
+            <input
+              checked={draft.isNoDeduction}
+              className="size-4 accent-[var(--primary)]"
+              disabled={busy}
+              id="bulk-no-deduction"
+              onChange={(event) =>
+                onChange(event.target.checked
+                  ? { isNoDeduction: true, isHighValue: false }
+                  : { isNoDeduction: false })
+              }
+              type="checkbox"
+            />
+            <span className="text-sm">不减额买取</span>
+          </label>
+          <label className="flex items-center gap-2 self-end pb-1.5" htmlFor="bulk-stop-buyback">
+            <input
+              checked={draft.stopBuyback}
+              className="size-4 accent-[var(--primary)]"
+              disabled={busy}
+              id="bulk-stop-buyback"
+              onChange={(event) => onChange({ stopBuyback: event.target.checked })}
+              type="checkbox"
+            />
+            <span className="text-sm">停止买取</span>
           </label>
         </div>
 
