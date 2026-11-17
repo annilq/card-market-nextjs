@@ -9,10 +9,11 @@
 //     因此可以被分享、可以后退、刷新不丢，刷新后首屏就是筛完的结果。
 //
 // 数据在服务端一次性取齐（Promise.all），页面本身是 async server component。
+// 首页也分页（每页 48 张，8 列 × 6 行）：分页链接保留筛选条件，条件变化由
+// CatalogFilters.push 统一删掉 `page` 回到第 1 页；第 2 页起 noindex 避免重复内容。
 
 import { cache } from 'react'
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { CatalogFilters } from '@/components/catalog/CatalogFilters'
@@ -21,6 +22,7 @@ import { BannerCarousel } from '@/components/home/BannerCarousel'
 import { HighValueStrip } from '@/components/home/HighValueStrip'
 import { HomeCardGrid } from '@/components/home/HomeCardGrid'
 import { HOME_NOTICE_COUNT, HOME_PINNED_COUNT, HomeNotices } from '@/components/home/HomeNotices'
+import { Pagination } from '@/components/Pagination'
 import {
   getAnnouncements,
   getBanners,
@@ -29,13 +31,43 @@ import {
   getHighValueCards,
   getSiteSettings,
 } from '@/lib/data'
-import { parseCardSearch, type CardSearchParams } from '@/lib/card-search'
+import { parseCardSearch, numOf, rawOf, csvOrNull, type CardSearchParams } from '@/lib/card-search'
+import { DEFAULT_CARD_SORT, type CardQuery } from '@/lib/types'
 import { DEFAULT_LOCALE, LOCALES, localizeHref, type Locale } from '@/lib/i18n/locales'
 import { absUrl, getOrigin } from '@/lib/site-url'
 import { getTranslator } from '@/lib/i18n/t'
 
 /** 首页卡牌网格每页数量：8 列 × 6 行。 */
 const HOME_PAGE_SIZE = 48
+
+/** 结果网格的锚点：翻页后回到网格顶端（与 /cards 一致）。 */
+const CARD_GRID_ID = 'card-grid'
+
+/**
+ * 翻页链接：保留当前全部筛选条件，只换 `page`，并带回网格锚点。
+ * 与 `/cards` 的 buildCardsHref 同一套参数表，只是 base 改成首页路径。
+ */
+function buildHomeHref(locale: Locale, query: CardQuery, page: number): string {
+  const sp = new URLSearchParams()
+  const put = (key: string, value: string | null) => {
+    if (value != null) sp.set(key, value)
+  }
+  put('ip', csvOrNull(query.ipIds))
+  put('series', csvOrNull(query.seriesIds))
+  put('sub', csvOrNull(query.subSeriesIds))
+  put('status', csvOrNull(query.cardStatusIds))
+  if (query.highValueOnly) sp.set('hv', '1')
+  if (query.noDeductionOnly) sp.set('nd', '1')
+  if (query.minPrice != null) sp.set('min', String(query.minPrice))
+  if (query.maxPrice != null) sp.set('max', String(query.maxPrice))
+  if (query.q) sp.set('q', query.q)
+  if (query.sort && query.sort !== DEFAULT_CARD_SORT) sp.set('sort', query.sort)
+  if (page > 1) sp.set('page', String(page))
+
+  const base = localizeHref('/', locale)
+  const qs = sp.toString()
+  return `${base}${qs ? `?${qs}` : ''}#${CARD_GRID_ID}`
+}
 
 type Props = {
   params: Promise<{ locale: string }>
@@ -49,13 +81,16 @@ const loadBanners = cache(() => getBanners())
 
 /**
  * 首页 meta：用 LOCALES 里那条完整的站点标题与描述（不是「站名 + 页名」的组合），
- * 因为首页就是站点入口本身。canonical 始终落在 `/`：筛选只改查询串，
- * 把十几种筛法算成十几种重复内容对索引只有害处。
+ * 因为首页就是站点入口本身。canonical 始终落在 `/`：筛选与翻页只改查询串，
+ * 把每种组合算成独立页面对索引只有害处；第 2 页起再显式 noindex。
  */
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { locale: raw } = await params
   if (!(raw in LOCALES)) notFound()
   const locale = raw as Locale
+  const sp = await searchParams
+  const page = Math.max(1, numOf(sp ?? {}, 'page') ?? 1)
+  const q = rawOf(sp ?? {}, 'q')
   const origin = await getOrigin()
   const url = await absUrl('/', locale)
   const settings = await getSiteSettings()
@@ -68,6 +103,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title,
     description,
+    // 翻页与搜索结果都不收录：内容与第 1 页高度重复，only index 干净首页。
+    robots: page > 1 || q ? { index: false, follow: true } : undefined,
     alternates: { canonical: url },
     openGraph: {
       siteName,
@@ -83,16 +120,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 /* ===== searchParams → CardQuery ===== */
 // 解析走 `src/lib/card-search.ts`：与 `/cards` 同一份参数表、同一份实现
 // （两页是同一个筛选栏的两处落点，参数换了名字就等于换了一门语言）。
-// 首页不分页：只露第一屏的 12 张，更多走 `/cards` 的「全部 →」，故不带 `withPage`。
+// 首页与 `/cards` 共用一份参数表与解析（见 `card-search.ts`）；分页也是同一套
+// `page` 参数，只是每页仍是 48 张（8 列 × 6 行）。
 function parseHomeQuery(sp: CardSearchParams) {
-  return parseCardSearch(sp, { limit: HOME_PAGE_SIZE })
+  return parseCardSearch(sp, { limit: HOME_PAGE_SIZE, withPage: true })
 }
 
 export default async function Page({ params, searchParams }: Props) {
   const { locale: raw } = await params
   if (!(raw in LOCALES)) notFound()
   const locale = raw as Locale
-  const t = getTranslator(locale)
   const query = parseHomeQuery((await searchParams) ?? {})
 
   const [banners, notices, highValue, facets, catalog] = await Promise.all([
@@ -104,6 +141,11 @@ export default async function Page({ params, searchParams }: Props) {
     getFacets(),
     getCards(query),
   ])
+
+  // 越界的 page（筛选后原页码不存在）夹到有效范围：UI 与 /cards 一致显示末页，
+  // 与 buildHomeHref 一起保证分页链接始终落在真实存在的页上。
+  const totalPages = Math.max(1, catalog.totalPages || 1)
+  const page = Math.min(Math.max(1, catalog.page || query.page || 1), totalPages)
 
   // 首屏主图（LCP）直接预取：banner 经私有 S3 302 过来，预加载让浏览器在解析
   // 到 <img> 之前就发起请求，与建连（preconnect）配合能再压一点 LCP。
@@ -136,21 +178,20 @@ export default async function Page({ params, searchParams }: Props) {
           total={catalog.total}
           empty={catalog.items.length === 0}
         >
-          <HomeCardGrid cards={catalog.items} locale={locale} />
+          {/* 锚点 id 放在网格外层：翻页后回到结果顶端（与 /cards 一致）。 */}
+          <div id={CARD_GRID_ID} className="scroll-mt-20 outline-none">
+            <HomeCardGrid cards={catalog.items} locale={locale} />
+          </div>
+          {catalog.items.length > 0 && (
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              locale={locale}
+              buildHref={(n) => buildHomeHref(locale, query, n)}
+            />
+          )}
         </CatalogFilters>
       </section>
-
-      {catalog.total > catalog.items.length && (
-        // 只露 12 张时给一个出口，否则用户会以为全站就这么点卡。
-        <div className="text-center">
-          <Link
-            href={localizeHref('/cards', locale)}
-            className="inline-flex h-10 items-center rounded-lg border border-border-strong px-4 text-sm text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted"
-          >
-            {t('browseCards')} →
-          </Link>
-        </div>
-      )}
     </div>
   )
 }
