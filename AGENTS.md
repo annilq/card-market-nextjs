@@ -31,3 +31,17 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - 判断页面真正就绪要看 `document.querySelector('[data-form-ready]')?.getAttribute('data-form-ready') === 'true'`，不能只看目标 DOM 出现（SSR 会先输出骨架屏）。
 - react-select 的选项是异步加载的：打开菜单后要等选项稳定再取快照，固定短等待容易只读到「当前选中项」。
 - `npm run dev` 已在 3100 端口运行时不要另起服务；改了 config / importMap 后若 HMR 没生效，提示用户重启 dev 而不是自己动服务。
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live in this repo's GitHub Issues, accessed with the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Triage uses the five canonical labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `GLOSSARY.md` at the repo root plus `docs/adr/`. See `docs/agents/domain.md`.
