@@ -45,8 +45,7 @@ function LineIcon() {
         aria-label="Line QR code placeholder"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/line.png" alt="" width={112} height={112} className="size-28 object-contain" />
-        <span>QR 码占位图</span>
+        <img src="/qrcode.jpg" alt="" width={112} height={112} className="size-28 object-contain" />
       </span>
     </span>
   );
