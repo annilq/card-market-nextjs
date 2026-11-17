@@ -1,7 +1,7 @@
 // 首页「高价买取」横条卡片（设计图：`-h-index` / 高价买取区）。
 //
 // 与网格卡片（`CatalogCard`）分开的一个组件，而不是给 `CardCard` 加参数：
-// 两者版式差得太远——这里是白底卡片、方形图位、状态徽章内联进标题；
+// 两者版式差得太远——这里是白底卡片、方形图位、状态徽章排在编号前面；
 // 网格那里是无底透明卡片、3:4 图位、徽章压在图角上。共用一套 props 只会
 // 让每个分支都在猜「这次是哪种」。旧组件 `CardCard` 原样保留，回滚只需换回引用。
 //
@@ -9,8 +9,8 @@
 //   卡位 228×450，5 列 gap 16；白卡四周内缩 15，里面是一块 198×278（5:7）的
 //   浅灰图框 #FAFAFA——图框自身再留 ~13px 内边距，商品图 contain 居中，
 //   所以图框的灰底会露在商品四周（评级壳两侧约 22px、裸卡约 13px）。
-//   图框下 13 文字；状态徽章高 24；标题 18/26 两行截断；编号 16 灰；
-//   价格 28 加粗右对齐、贴底。徽章底色由后台卡牌状态的 color 字段决定。
+//   图框下 13 文字；标题 18/26 两行截断；状态徽章高 24，排在编号前面；
+//   编号 16 灰；价格 28 加粗右对齐、贴底。徽章底色由后台卡牌状态的 color 字段决定。
 
 import Link from 'next/link'
 
@@ -69,20 +69,23 @@ export function HighValueCard({
       </div>
 
       <div className="flex flex-1 flex-col pt-3">
-        {/* 状态徽章内联在标题首行：标题两行截断，价格用 mt-auto 贴底，
-            因此一行的卡与两行的卡价格仍然对齐。 */}
+        {/* 卡名独占两行：状态徽章从名字前面挪到编号前面，长卡名不再被挤压截断。 */}
         <div className="line-clamp-2 text-lg font-bold leading-[26px] text-fg">
-          {status && (
-            <span
-              className={`mr-2 inline-flex h-6 translate-y-[-1px] items-center rounded-md px-2.5 align-middle text-sm font-semibold ${statusBadgeClass(card.cardStatusColor)}`}
-            >
-              {status}
-            </span>
-          )}
           {card.name}
         </div>
 
-        {card.code && <div className="mt-1 truncate text-base text-faint">{card.code}</div>}
+        {(status || card.code) && (
+          <div className="mt-1 flex min-w-0 items-center gap-2 text-base text-faint">
+            {status && (
+              <span
+                className={`inline-flex h-6 shrink-0 items-center rounded-md px-2.5 text-sm font-semibold ${statusBadgeClass(card.cardStatusColor)}`}
+              >
+                {status}
+              </span>
+            )}
+            {card.code && <span className="min-w-0 truncate tabular-nums">{card.code}</span>}
+          </div>
+        )}
 
         <div className="mt-auto pt-2 text-right text-xl font-bold leading-none tabular-nums text-price">
           {card.stopBuyback

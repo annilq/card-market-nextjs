@@ -3,12 +3,12 @@
 // 筛选结果网格卡片（设计图：`-h-index` / 分类筛选下方的卡牌网格）。
 //
 // 与首页横条卡（`HighValueCard`）分成两个组件：网格里没有卡片底板，图直接
-// 铺在页面底色上；徽章压在图角，标题/编号/价格构成三行文字。旧组件
+// 铺在页面底色上；买取标压在图角，标题/状态+编号/价格构成三行文字。旧组件
 // `CardCard` 保持不动，回滚只需把调用点换回去。
 //
 // 设计实测（1920 画板，内容列 1200）：
 //   8 列 gap 8；图位 143×200（5:7，object-cover）；图下 12 文字；
-//   标题两行、编号 14 灰、价格 24 加粗右对齐；行距 24。
+//   标题两行、状态徽章排在编号前面、价格 24 加粗右对齐；行距 24。
 //   标题设计是 16/20，这里按需求放大到 18/22 加粗。稀有度不展示
 //   （列表里没有这个字段的位置）。
 //   「高价买取」红标 80×30，压在图左上角（内缩 4），右下圆角。
@@ -20,6 +20,7 @@ import Link from 'next/link'
 
 import { CardImage } from '@/components/CardImage'
 import { buybackBadge } from '@/lib/card-badge'
+import { statusBadgeClass } from '@/lib/card-status'
 import { formatYen } from '@/lib/format'
 import { getTranslator } from '@/lib/i18n/t'
 import { localizeHref, type Locale } from '@/lib/i18n/locales'
@@ -44,6 +45,7 @@ export function CatalogCard({
   const src = img?.cardUrl || img?.thumbUrl || img?.url
   const badgeInfo = buybackBadge(card)
   const badge = badgeInfo ? t(badgeInfo.label) : null
+  const status = card.cardStatusName?.trim()
 
   return (
     <Link
@@ -88,8 +90,17 @@ export function CatalogCard({
         <div className="line-clamp-2 font-bold text-fg">
           {card.name}
         </div>
-        {/* 编号行固定占一行：缺编号的卡不会把价格往上顶，整行价格保持同一条线。 */}
-        <div className="mt-1 truncate text-sm text-faint leading-none">{card.code||"无"}</div>
+        {/* 状态徽章排在编号前面；整行固定占一行，缺编号的卡也不会把价格往上顶。 */}
+        <div className="mt-1 flex h-5 min-w-0 items-center gap-1.5 text-sm text-faint leading-none">
+          {status && (
+            <span
+              className={`inline-flex h-5 shrink-0 items-center rounded px-1.5 text-xs font-semibold ${statusBadgeClass(card.cardStatusColor)}`}
+            >
+              {status}
+            </span>
+          )}
+          <span className="min-w-0 truncate tabular-nums">{card.code || '无'}</span>
+        </div>
         <div className="mt-2 text-right text-xl font-bold leading-none tabular-nums text-price">
           {card.stopBuyback
             ? t('stopBuyback')
