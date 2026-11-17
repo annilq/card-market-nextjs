@@ -34,8 +34,8 @@ import { DEFAULT_LOCALE, LOCALES, localizeHref, type Locale } from '@/lib/i18n/l
 import { absUrl, getOrigin } from '@/lib/site-url'
 import { getTranslator } from '@/lib/i18n/t'
 
-/** 首页卡牌网格每页数量：上面要露出 banner 与公告，因此比列表页的 24 少。 */
-const HOME_PAGE_SIZE = 12
+/** 首页卡牌网格每页数量：8 列 × 6 行。 */
+const HOME_PAGE_SIZE = 48
 
 type Props = {
   params: Promise<{ locale: string }>

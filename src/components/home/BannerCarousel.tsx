@@ -48,7 +48,8 @@ function bannerSlideStyle(off: number): BannerVars {
   const bs = 1 // 每远一层缩小 6%
   // const bs = 1 - 0.06 * a // 每远一层缩小 6%
   const bo = Math.max(0, 1 - 0.55 * (0.55 * a)) // 半透明
-  const bb = 1 - 0.35 * a // 压暗
+  const bb = 1 // 压暗
+  // const bb = 1 - 0.35 * a // 压暗
   const bz = 30 - a * 10
   return {
     '--bx': `${bx}%`,
@@ -303,7 +304,7 @@ export function BannerCarousel({ banners }: { banners: BannerView[] }) {
               <span
                 className={`size-3 rounded-full transition-colors duration-200 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] ${
                   i === idx
-                    ? 'bg-[#222CFF]'
+                    ? 'bg-brand'
                     : 'bg-white/60 group-hover/dot:bg-white/90'
                 }`}
               />

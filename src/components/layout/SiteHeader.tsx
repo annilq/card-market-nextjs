@@ -26,6 +26,32 @@ function XIcon() {
   );
 }
 
+// Line 图标：悬停显示二维码占位卡片（二维码图尚未提供，暂用 line.png 占位）。
+function LineIcon() {
+  return (
+    <span className="group/line relative inline-flex">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/line.png"
+        alt="Line"
+        width={27}
+        height={27}
+        loading="lazy"
+        className="h-7 w-auto"
+      />
+      <span
+        className="pointer-events-none absolute right-0 top-full z-50 mt-2 hidden w-40 flex-col items-center gap-2 rounded-lg bg-white p-3 text-center text-xs text-neutral-800 shadow-lg group-hover/line:flex group-focus-within/line:flex"
+        role="img"
+        aria-label="Line QR code placeholder"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/line.png" alt="" width={112} height={112} className="size-28 object-contain" />
+        <span>QR 码占位图</span>
+      </span>
+    </span>
+  );
+}
+
 // 店铺图标：源站同一张 shop.png（public/ 已随静态资源迁入）。
 function ShopIcon() {
   // eslint-disable-next-line @next/next/no-img-element
@@ -89,6 +115,8 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
     </a>
   ) : null;
 
+  const lineLink = <LineIcon />;
+
   return (
     <header className="md:sticky top-0 z-99 bg-brand text-white">
       <div className="mx-auto max-w-[1232px] px-4">
@@ -127,6 +155,7 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
                 ≥2xl 才钉视口右缘）。 */}
             <div className="hidden items-center gap-2 lg:flex">
               {xLink}
+              {lineLink}
               <Link
                 href={localizeHref("/shops", locale)}
                 aria-label={t("shopLabel")}
@@ -159,6 +188,7 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
             <GlobalSearch />
           </div>
           {xLink}
+          {lineLink}
           <Link
             href={localizeHref("/shops", locale)}
             aria-label={t("shopLabel")}

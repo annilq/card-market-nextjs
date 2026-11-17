@@ -1,6 +1,6 @@
 'use client'
 
-// 首页高价买取横条（从 TanStack Start 版移植）。单行横向滚动，不换行、不自动轮播。
+// 首页不减额买取横条。单行横向滚动，溢出时自动轮播。
 //
 // 四处细节是「横条」这个形态特有的，网格里不需要：
 //
@@ -26,6 +26,8 @@ import { useReducedMotion } from '@/lib/use-reduced-motion'
 
 /** 卡片间距，与下方 `gap-4` 一致；翻页步长 = 卡宽 + 间距。 */
 const CARD_GAP = 16
+const AUTOPLAY_MS = 4500
+const RESUME_MS = 1200
 
 export function HighValueStrip({
   items,
@@ -77,8 +79,38 @@ export function HighValueStrip({
     track.scrollBy({ left: direction * step, behavior: reducedMotion ? 'auto' : 'smooth' })
   }
 
+  const pausedRef = useRef(false)
+  const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (reducedMotion || !overflowing) return
+    const timer = setInterval(() => {
+      if (pausedRef.current) return
+      const track = trackRef.current
+      if (!track) return
+      const atRight = track.scrollLeft + track.clientWidth >= track.scrollWidth - 4
+      scrollByCard(atRight ? -1 : 1)
+    }, AUTOPLAY_MS)
+    return () => clearInterval(timer)
+  }, [overflowing, reducedMotion])
+
+  useEffect(() => () => {
+    if (resumeTimer.current) clearTimeout(resumeTimer.current)
+  }, [])
+
+  const pause = () => {
+    pausedRef.current = true
+    if (resumeTimer.current) clearTimeout(resumeTimer.current)
+  }
+  const resume = () => {
+    if (resumeTimer.current) clearTimeout(resumeTimer.current)
+    resumeTimer.current = setTimeout(() => {
+      pausedRef.current = false
+    }, RESUME_MS)
+  }
+
   return (
-    <section>
+    <section onMouseEnter={pause} onMouseLeave={resume} onFocusCapture={pause} onBlurCapture={resume}>
       {/* 区块标题：参考图里这一块是居中的品牌红图形标题，因此标题居中、
            用品牌红而不是墨黑；「全部」压在右端（绝对定位）才能保住居中。
            图形标题 high_price.png 已随静态资源迁到 public/，与源站同一张图。 */}

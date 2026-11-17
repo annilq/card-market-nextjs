@@ -85,9 +85,11 @@ export function HighValueCard({
         {card.code && <div className="mt-1 truncate text-base text-faint">{card.code}</div>}
 
         <div className="mt-auto pt-2 text-right text-xl font-bold leading-none tabular-nums text-price">
-          {card.price != null
-            ? t('priceTag', { price: formatYen(card.price) })
-            : t('priceOnRequest')}
+          {card.stopBuyback
+            ? t('stopBuyback')
+            : card.price != null
+              ? t('priceTag', { price: formatYen(card.price) })
+              : t('priceOnRequest')}
         </div>
       </div>
     </Link>
