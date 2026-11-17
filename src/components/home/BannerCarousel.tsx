@@ -45,8 +45,8 @@ function bannerSlideStyle(off: number): BannerVars {
   // 距激活图 ±1 / ±2 的横向错位：42% / 76%。
   const sign = off > 0 ? 1 : -1
   const bx = (a === 1 ? 42 : 76) * sign
-  const bs = 1 // 每远一层缩小 6%
-  // const bs = 1 - 0.06 * a // 每远一层缩小 6%
+  // const bs = 1 // 每远一层缩小 6%
+  const bs = 1 - 0.06 * a // 每远一层缩小 6%
   const bo = Math.max(0, 1 - 0.55 * (0.55 * a)) // 半透明
   const bb = 1 // 压暗
   // const bb = 1 - 0.35 * a // 压暗

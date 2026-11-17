@@ -16,6 +16,7 @@
 // - 浮层行为（Esc / 锁滚动 / 焦点陷阱 / 焦点归还）改用公共的 `useDialog`（`src/lib/use-dialog.ts`）。
 
 import { useRef } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 
 import { CardInfo } from './CardInfo'
@@ -63,7 +64,10 @@ export function CardModal({
   const badgeInfo = buybackBadge(card)
   const buybackLabel = badgeInfo ? t(badgeInfo.label) : null
 
-  return (
+  // 挂到 body：弹窗的 fixed 遮罩必须相对视口定位。首页卡片列表在筛选变化后
+  // 会带 `grid-enter`（transform 动画），transform 会成为 fixed 的包含块，
+  // 把遮罩和弹窗困在列表容器里；portal 到 body 可以从根上避开任何祖先变换。
+  return createPortal(
     <div className="fixed inset-0 z-999 flex items-center justify-center p-4">
       {/* 遮罩：点它关闭。它是 div + aria-hidden 而不是按钮——
           键盘用户走 Esc 或右上角那颗关闭按钮。 */}
@@ -143,6 +147,7 @@ export function CardModal({
           />
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
