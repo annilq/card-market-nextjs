@@ -2,7 +2,7 @@ import { APIError, type CollectionConfig, type Where } from 'payload'
 
 import { publishedOnly } from '@/access'
 import { moduleRead, roleAction } from '@/access/roles'
-import { linkField, sortField, sortFieldLabel, statusField } from '@/fields/shared'
+import { linkField, sortField, statusField } from '@/fields/shared'
 import { revalidateHook } from '@/lib/revalidate'
 
 const relId = (value: unknown): string | number | null => {
@@ -68,6 +68,12 @@ export const Cards: CollectionConfig = {
         // 两个买取标记互斥。后台表单已经即时联动，这里守住 REST / GraphQL / Local API 写入。
         if (merged.isHighValue && merged.isNoDeduction) {
           throw new APIError('「高价买取」与「不减额买取」只能选一个', 400, { field: 'isNoDeduction' }, true)
+        }
+        if (!merged.stopBuyback) {
+          const price = merged.price
+          if (price == null || price === '' || (typeof price === 'number' && !Number.isFinite(price))) {
+            throw new APIError('卖价必填；如需停止买取请勾选「停止买取」', 400, { field: 'price' }, true)
+          }
         }
         const key = buildCardDedupeKey(merged as Record<string, unknown>)
         if (data) data.dedupeKey = key ?? undefined
@@ -187,6 +193,21 @@ export const Cards: CollectionConfig = {
           index: true,
           admin: { width: '33%', step: 1 },
         },
+        {
+          name: 'stopBuyback',
+          label: { zh: '停止买取', en: 'Buyback stopped', ja: '買取停止' },
+          type: 'checkbox',
+          defaultValue: false,
+          index: true,
+          admin: {
+            width: '33%',
+            description: {
+              zh: '勾选后可以不填卖价；前台卡牌显示「停止买取」',
+              en: 'Skip the price and show "Buyback stopped" on the site',
+              ja: '価格は省略可。サイト側は「買取停止」と表示',
+            },
+          },
+        },
       ],
     },
     {
@@ -241,22 +262,11 @@ export const Cards: CollectionConfig = {
         },
       ],
     },
-    // 买取排序只在两类买取卡上有意义；未设序号的卡按最新发布垫在后面。
     {
       ...sortField(),
-      defaultValue: undefined,
+      defaultValue: 0,
       index: true,
-      admin: {
-        position: 'sidebar',
-        condition: (data) => Boolean(data?.isHighValue || data?.isNoDeduction),
-        components: {
-          Label: sortFieldLabel({
-            zh: '仅高价买取 / 不减额买取卡牌生效。数字越小越靠前；留空的卡牌按发布时间倒序排在设了序号的之后。首页栏目最多取 10 张。',
-            en: 'Only applies to high-value / no-deduction buyback cards. Lower numbers come first; cards without a number follow by publish time. The homepage strip takes at most 10.',
-            ja: '高価買取 / 減額なし買取のみ有効。小さいほど上位。番号未設定のカードは公開日時の新しい順で後ろに並びます。トップは最大10件。',
-          }),
-        },
-      },
+      admin: { hidden: true },
     },
     statusField(),
     {

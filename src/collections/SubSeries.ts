@@ -5,6 +5,21 @@ import { moduleRead, roleAction } from '@/access/roles'
 import { enabledField, sortField } from '@/fields/shared'
 import { revalidateHook } from '@/lib/revalidate'
 
+const IP_LABEL = { en: 'IP', ja: 'IP', zh: 'IP / 大类' }
+
+const cascadingField = (clearPaths?: string[]) => ({
+  clientProps: { cascade: { clearPaths } },
+  path: '@/components/admin/TaxonomyCascadeField#CascadingRelationshipField',
+})
+
+const relId = (value: unknown): string | number | null => {
+  if (!value) return null
+  if (typeof value === 'object' && 'id' in (value as Record<string, unknown>)) {
+    return (value as { id: string | number }).id
+  }
+  return value as string | number
+}
+
 export const SubSeries: CollectionConfig = {
   slug: 'sub-series',
   labels: {
@@ -35,12 +50,25 @@ export const SubSeries: CollectionConfig = {
   fields: [
     { name: 'name', label: { zh: '名称', en: 'Name', ja: '名称' }, type: 'text', required: true, index: true },
     {
+      name: 'ip',
+      label: IP_LABEL,
+      type: 'relationship',
+      relationTo: 'ips',
+      required: true,
+      index: true,
+      admin: { components: { Field: cascadingField(['series']) } },
+    },
+    {
       name: 'series',
       label: { zh: '所属系列', en: 'Series', ja: 'シリーズ' },
       type: 'relationship',
       relationTo: 'series',
       required: true,
       index: true,
+      filterOptions: ({ siblingData }) => {
+        const ipId = relId((siblingData as { ip?: unknown } | undefined)?.ip)
+        return ipId ? { ip: { equals: ipId } } : false
+      },
     },
     sortField(),
     enabledField(),

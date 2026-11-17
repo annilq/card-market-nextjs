@@ -14,6 +14,8 @@ import * as migration_20261110_234500_no_deduction_buyback from './20261110_2345
 import * as migration_20261111_003500_buyback_sort from './20261111_003500_buyback_sort';
 import * as migration_20261112_000000_announcement_published_at from './20261112_000000_announcement_published_at';
 import * as migration_20261114_000000_card_status_color from './20261114_000000_card_status_color';
+import * as migration_20261116_000000_stop_buyback from './20261116_000000_stop_buyback';
+import * as migration_20261117_000000_sub_series_ip from './20261117_000000_sub_series_ip';
 
 export const migrations = [
   {
@@ -95,5 +97,15 @@ export const migrations = [
     up: migration_20261114_000000_card_status_color.up,
     down: migration_20261114_000000_card_status_color.down,
     name: '20261114_000000_card_status_color',
+  },
+  {
+    up: migration_20261116_000000_stop_buyback.up,
+    down: migration_20261116_000000_stop_buyback.down,
+    name: '20261116_000000_stop_buyback',
+  },
+  {
+    up: migration_20261117_000000_sub_series_ip.up,
+    down: migration_20261117_000000_sub_series_ip.down,
+    name: '20261117_000000_sub_series_ip',
   },
 ];

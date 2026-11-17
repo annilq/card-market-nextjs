@@ -186,7 +186,7 @@ async function main() {
   })
   const subSeries = await payload.create({
     collection: 'sub-series',
-    data: { name: '朱紫A', series: series.id, sort: 1, enabled: true },
+    data: { name: '朱紫A', ip: ip.id, series: series.id, sort: 1, enabled: true },
   })
   const rarity = await payload.create({
     collection: 'rarities',
