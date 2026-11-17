@@ -109,6 +109,12 @@ export default buildConfig({
           exact: true,
           meta: { title: '批量上架' },
         },
+        noDeductionBuyback: {
+          Component: '@/components/admin/no-deduction/NoDeductionView#NoDeductionView',
+          path: '/no-deduction-buyback',
+          exact: true,
+          meta: { title: '不减额买取' },
+        },
       },
     },
   },

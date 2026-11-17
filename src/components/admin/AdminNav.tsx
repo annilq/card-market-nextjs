@@ -74,14 +74,25 @@ export function AdminNav({ payload, permissions, visibleEntities }: Props) {
       slug,
     })
 
-    if (slug === 'cards' && canBulkCreate) {
-      items.push({
-        href: `${adminRoute}/bulk-cards`,
-        icon: 'bulk-cards',
-        label: '批量上架',
-        slug: 'bulk-cards',
-        exact: true,
-      })
+    if (slug === 'cards') {
+      if (permissions?.collections?.cards?.read) {
+        items.push({
+          href: `${adminRoute}/no-deduction-buyback`,
+          icon: 'no-deduction-buyback',
+          label: '不减额买取',
+          slug: 'no-deduction-buyback',
+          exact: true,
+        })
+      }
+      if (canBulkCreate) {
+        items.push({
+          href: `${adminRoute}/bulk-cards`,
+          icon: 'bulk-cards',
+          label: '批量上架',
+          slug: 'bulk-cards',
+          exact: true,
+        })
+      }
     }
   }
 

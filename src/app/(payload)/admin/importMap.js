@@ -24,10 +24,10 @@ import { UnderlineFeatureClient as UnderlineFeatureClient_e70f5e05f09f93e00b997e
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ExclusiveBuybackField as ExclusiveBuybackField_d7e48e3007ad67af7b5147955b29eb05 } from '@/components/admin/ExclusiveBuybackField'
-import { SortFieldLabel as SortFieldLabel_1ddc032d47ca76a3d46bc0b1c54365b6 } from '@/components/admin/SortFieldLabel'
 import { StatusCell as StatusCell_ff32efc137541c6552ed42594a323755 } from '@/components/admin/StatusCell'
 import { LinkCell as LinkCell_1421bd8e7e18ea3b1ddeddbf89a7fa1b } from '@/components/admin/LinkCell'
 import { AdminDateCell as AdminDateCell_b1bd7046154b34faf793f5e4e8e6ad3b } from '@/components/admin/AdminDateCell'
+import { SortFieldLabel as SortFieldLabel_1ddc032d47ca76a3d46bc0b1c54365b6 } from '@/components/admin/SortFieldLabel'
 import { MapPickerField as MapPickerField_d25e7d6048f8e84a9a4fd68f2fe40387 } from '@/collections/Shops/MapPickerField'
 import { AdminAccountAvatar as AdminAccountAvatar_cf75d5cf4dcb8e029646575cda15327f } from '@/components/admin/AdminAccountAvatar'
 import { AdminNav as AdminNav_2623bc737c612ce9420322f2210a7f19 } from '@/components/admin/AdminNav'
@@ -40,6 +40,7 @@ import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc056
 import { DashboardView as DashboardView_8d5ccf53266e3797f61e9453e2f2d431 } from '@/components/admin/DashboardView'
 import { HelpView as HelpView_b49611ccd828469519fd79e264a9eb51 } from '@/components/admin/HelpView'
 import { BulkCardsView as BulkCardsView_5cf67a04b30fda7277328471b9a4595b } from '@/components/admin/bulk-cards/BulkCardsView'
+import { NoDeductionView as NoDeductionView_c3ab5c9f6e34708506d407a61c7b25e5 } from '@/components/admin/no-deduction/NoDeductionView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
@@ -70,10 +71,10 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@/components/admin/ExclusiveBuybackField#ExclusiveBuybackField": ExclusiveBuybackField_d7e48e3007ad67af7b5147955b29eb05,
-  "@/components/admin/SortFieldLabel#SortFieldLabel": SortFieldLabel_1ddc032d47ca76a3d46bc0b1c54365b6,
   "@/components/admin/StatusCell#StatusCell": StatusCell_ff32efc137541c6552ed42594a323755,
   "@/components/admin/LinkCell#LinkCell": LinkCell_1421bd8e7e18ea3b1ddeddbf89a7fa1b,
   "@/components/admin/AdminDateCell#AdminDateCell": AdminDateCell_b1bd7046154b34faf793f5e4e8e6ad3b,
+  "@/components/admin/SortFieldLabel#SortFieldLabel": SortFieldLabel_1ddc032d47ca76a3d46bc0b1c54365b6,
   "@/collections/Shops/MapPickerField#MapPickerField": MapPickerField_d25e7d6048f8e84a9a4fd68f2fe40387,
   "@/components/admin/AdminAccountAvatar#AdminAccountAvatar": AdminAccountAvatar_cf75d5cf4dcb8e029646575cda15327f,
   "@/components/admin/AdminNav#AdminNav": AdminNav_2623bc737c612ce9420322f2210a7f19,
@@ -86,5 +87,6 @@ export const importMap = {
   "@/components/admin/DashboardView#DashboardView": DashboardView_8d5ccf53266e3797f61e9453e2f2d431,
   "@/components/admin/HelpView#HelpView": HelpView_b49611ccd828469519fd79e264a9eb51,
   "@/components/admin/bulk-cards/BulkCardsView#BulkCardsView": BulkCardsView_5cf67a04b30fda7277328471b9a4595b,
+  "@/components/admin/no-deduction/NoDeductionView#NoDeductionView": NoDeductionView_c3ab5c9f6e34708506d407a61c7b25e5,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }
