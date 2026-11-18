@@ -87,7 +87,7 @@ export function CatalogCard({
       </div>
 
       <div className="pt-2">
-        <div className="line-clamp-2 font-bold text-fg">
+        <div className="line-clamp-2 font-bold text-fg h-12">
           {card.name}
         </div>
         {/* 状态徽章排在编号前面；整行固定占一行，缺编号的卡也不会把价格往上顶。 */}
