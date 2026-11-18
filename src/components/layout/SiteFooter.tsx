@@ -1,10 +1,10 @@
-import Link from 'next/link'
+import Link from "next/link";
 
-import { localizeHref } from '@/lib/i18n/locales'
-import { getTranslator } from '@/lib/i18n/t'
-import type { MessageKey } from '@/lib/i18n/messages'
-import { getLocaleFromHeaders } from '@/lib/i18n/server'
-import type { SiteSettingsView } from '@/lib/data'
+import { localizeHref } from "@/lib/i18n/locales";
+import { getTranslator } from "@/lib/i18n/t";
+import type { MessageKey } from "@/lib/i18n/messages";
+import { getLocaleFromHeaders } from "@/lib/i18n/server";
+import type { SiteSettingsView } from "@/lib/data";
 
 /**
  * 帮助中心的链接与顺序（照参考项目固定，与后台数据解耦）：
@@ -16,21 +16,21 @@ import type { SiteSettingsView } from '@/lib/data'
  * 与参考项目「一块 logo + 一块帮助中心」的结构不一致。
  */
 const FOOTER_LINKS: readonly { path: string; key: MessageKey }[] = [
-  { path: '/info/operation', key: 'infoOperation' },
-  { path: '/info/personal-info', key: 'infoPersonalInfo' },
-  { path: '/info/data-usage', key: 'infoDataUsage' },
-  { path: '/message', key: 'navContact' },
-  { path: '/info/terms', key: 'infoTerms' },
-]
+  { path: "/info/operation", key: "infoOperation" },
+  { path: "/info/personal-info", key: "infoPersonalInfo" },
+  { path: "/info/data-usage", key: "infoDataUsage" },
+  { path: "/message", key: "navContact" },
+  { path: "/info/terms", key: "infoTerms" },
+];
 
 const footerLinkClass =
-  'inline-flex items-center py-1.5 text-sm text-footer-muted transition hover:text-footer-fg hover:underline'
+  "inline-flex items-center py-1.5 text-sm text-footer-muted transition hover:text-footer-fg hover:underline";
 
 /** 站点页脚（服务端组件）。结构照参考项目：左 logo + 右「帮助中心」一组链接 + 底部版权。 */
 export async function SiteFooter({ settings }: { settings: SiteSettingsView }) {
-  const locale = await getLocaleFromHeaders()
-  const t = getTranslator(locale)
-  const siteName = settings.siteName?.trim() || t('defaultSiteName')
+  const locale = await getLocaleFromHeaders();
+  const t = getTranslator(locale);
+  const siteName = settings.siteName?.trim() || t("defaultSiteName");
 
   return (
     <footer className="mt-16 bg-footer text-footer-fg">
@@ -44,11 +44,9 @@ export async function SiteFooter({ settings }: { settings: SiteSettingsView }) {
           {settings.logo?.url ? (
             <div className="flex items-center justify-center">
               <img
-                src={settings.logo.url}
-                alt={settings.logo.alt ?? siteName}
-                width={settings.logo.width ?? undefined}
-                height={settings.logo.height ?? undefined}
-                className="h-16 w-auto max-w-[240px] object-contain"
+                src={"/logo_footer.png"}
+                alt={siteName}
+                className="w-[392px] object-contain"
                 loading="lazy"
               />
             </div>
@@ -60,10 +58,12 @@ export async function SiteFooter({ settings }: { settings: SiteSettingsView }) {
         {/* 右侧块固定 665px 并靠右：参考图里「帮助中心」那一块就是从容器右端
             往左量 665px。用 flex-1 会随视口变宽而左移，标题就对不上参考图的位置。 */}
         <div className="min-w-0 md:w-[665px] md:max-w-full">
-          <h2 className="text-xl font-bold md:text-2xl">{t('footerHelpCenter')}</h2>
+          <h2 className="text-xl font-bold md:text-2xl">
+            {t("footerHelpCenter")}
+          </h2>
 
           <nav
-            aria-label={t('footerNavTitle')}
+            aria-label={t("footerNavTitle")}
             className="mt-4 grid grid-cols-2 gap-x-10 gap-y-1 sm:grid-cols-3 sm:gap-x-12"
           >
             {FOOTER_LINKS.map((link) => (
@@ -80,8 +80,8 @@ export async function SiteFooter({ settings }: { settings: SiteSettingsView }) {
       </div>
 
       <p className="mt-12 pb-12 text-center text-sm text-footer-fg">
-        {t('copyright', { year: new Date().getFullYear() })}
+        {t("copyright", { year: new Date().getFullYear() })}
       </p>
     </footer>
-  )
+  );
 }

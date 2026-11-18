@@ -131,8 +131,8 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
             className="flex min-w-0 shrink-0 items-center truncate"
           >
             <img
-              src={settings?.logo?.url||`/logo_header.png`}
-              alt={settings?.logo?.alt ?? siteName}
+              src={`/logo_header.png`}
+              alt={ siteName}
               width={settings?.logo?.width ?? 300}
               height={settings?.logo?.height ?? 57}
               className=" w-auto object-contain"
