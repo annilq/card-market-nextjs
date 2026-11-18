@@ -59,7 +59,7 @@ export function CatalogCard({
         e.preventDefault()
         onOpen(card)
       }}
-      className="group block focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted"
+      className="group focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted flex flex-col"
     >
       <div className="bg-surface p-1">
         {/* 图位锁定设计稿的 5:7：固定 200px 高在窄屏会把竖版卡面上下裁掉 15%–25%。 */}
@@ -86,8 +86,8 @@ export function CatalogCard({
         </div>
       </div>
 
-      <div className="pt-2">
-        <div className="line-clamp-2 font-bold text-fg h-12">
+      <div className="pt-2 flex-1 flex flex-col">
+        <div className="line-clamp-2 font-bold text-fg flex-1">
           {card.name}
         </div>
         {/* 状态徽章排在编号前面；整行固定占一行，缺编号的卡也不会把价格往上顶。 */}
