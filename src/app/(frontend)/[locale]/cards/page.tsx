@@ -23,7 +23,7 @@ import { getOrigin } from '@/lib/site-url'
 
 export const dynamic = 'force-dynamic'
 
-const PAGE_SIZE = 48
+const PAGE_SIZE = 60
 
 /**
  * 结果网格的锚点 id。
@@ -91,10 +91,10 @@ export default async function CardsPage({ params, searchParams }: Props) {
   const isEmpty = result.items.length === 0
 
   const grid = isEmpty ? null : (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
       {result.items.map((card, i) => (
-        // 首行 5 张设 priority（列表页第一屏能看到的卡片），优化 LCP。
-        <CatalogCard key={card.id} card={card} locale={locale} priority={i < 5} />
+        // 首行 6 张设 priority（列表页第一屏能看到的卡片），优化 LCP。
+        <CatalogCard key={card.id} card={card} locale={locale} priority={i < 6} />
       ))}
     </div>
   )

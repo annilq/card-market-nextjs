@@ -83,12 +83,19 @@ export function HomeFilterSheet({
 
   // 二级面板里当前看的是哪个主系列。它只是面板内的浏览位置，不写回 URL——
   // 真正生效是在右侧选中子系列（或「全部」）的那一刻。
-  const [tabId, setTabId] = useState<number | undefined>(value.seriesId ?? series[0]?.id)
+  // 初始跟随已生效的主系列；没选系列时不留浏览位置，左列只亮「全部」这一行。
+  const [tabId, setTabId] = useState<number | undefined>(value.seriesId)
 
   const subs = tabId ? subSeries.filter((s) => s.parentId === tabId) : []
 
   const pickSeries = (subSeriesId: number | undefined) => {
     onPick({ seriesId: tabId, subSeriesId })
+    onClose()
+  }
+
+  // 回到「不限主系列」：左右两列的选择一起清掉，不能只清主系列留下子系列。
+  const pickAll = () => {
+    onPick({ seriesId: undefined, subSeriesId: undefined })
     onClose()
   }
 
@@ -136,6 +143,17 @@ export function HomeFilterSheet({
               {/* 主系列给 50%：日语系列名常常一屏两行，窄列会挤成竖排；
                   子系列多是短名，让出宽度反而更好扫。 */}
               <div className="w-[50%] shrink-0 overflow-y-auto bg-black/15">
+                {/* 左列第一项：不限主系列。右列的「全部」只清子系列，清不掉主系列。 */}
+                <button
+                  type="button"
+                  onClick={pickAll}
+                  aria-current={value.seriesId == null}
+                  className={`${row} px-3 text-xl ${
+                    value.seriesId == null ? 'bg-black/15 font-bold' : 'font-medium text-white'
+                  }`}
+                >
+                  <span className="line-clamp-2">{t('facetAll')}</span>
+                </button>
                 {series.map((s) => (
                   <button
                     key={s.id}

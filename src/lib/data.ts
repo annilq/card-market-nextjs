@@ -311,6 +311,36 @@ export const getAnnouncement = unstable_cache(
   { revalidate: 86400, tags: ['announcements'] },
 )
 
+/** `getCards` 与 `getHomeCards` 共用的筛选条件：两处各写一遍迟早会走样。 */
+function cardFilter(query: CardQuery): Where[] {
+  const and: Where[] = []
+  if (query.ipIds?.length) and.push({ ip: { in: query.ipIds } })
+  if (query.seriesIds?.length) and.push({ series: { in: query.seriesIds } })
+  if (query.subSeriesIds?.length) and.push({ subSeries: { in: query.subSeriesIds } })
+  if (query.rarityIds?.length) and.push({ rarity: { in: query.rarityIds } })
+  if (query.cardStatusIds?.length) and.push({ cardStatus: { in: query.cardStatusIds } })
+  // 两个开关都是「买取等级」的子集，同时打开时用户要的是并集；
+  // 两个 clause 相 AND 会剩下几乎为空的交集。
+  if (query.highValueOnly && query.noDeductionOnly) {
+    and.push({ or: [{ isHighValue: { equals: true } }, { isNoDeduction: { equals: true } }] })
+  } else if (query.highValueOnly) {
+    and.push({ isHighValue: { equals: true } })
+  } else if (query.noDeductionOnly) {
+    and.push({ isNoDeduction: { equals: true } })
+  }
+  if (query.minPrice != null || query.maxPrice != null) {
+    const price: Where = {}
+    if (query.minPrice != null) price.greater_than_equal = query.minPrice
+    if (query.maxPrice != null) price.less_than_equal = query.maxPrice
+    and.push({ price })
+  }
+  const q = query.q?.trim()
+  // 与后台列表搜索同一组字段：卡名 / 编号 / 稀有度名称。
+  // 'rarity.name' 是关系字段的嵌套路径，Payload 会 JOIN rarities 表后按名字做 like。
+  if (q) and.push({ or: [{ name: { like: q } }, { code: { like: q } }, { 'rarity.name': { like: q } }] })
+  return and
+}
+
 /** 卡牌列表：级联筛选 + 价格区间 + 关键词（卡名 / 编号）+ 排序 + 分页。
  * depth 1 已足够（列表只需要 IP/系列/子系列/稀有度的 name，嵌套一层即可），
  * 并用 unstable_cache 缓存 60 秒——不同筛选/分页/关键词组合各自独立缓存，
@@ -318,24 +348,7 @@ export const getAnnouncement = unstable_cache(
 export const getCards = unstable_cache(
   async (query: CardQuery = {}): Promise<CardListResult> => {
     const payload = await getPayloadClient()
-    const and: Where[] = []
-    if (query.ipIds?.length) and.push({ ip: { in: query.ipIds } })
-    if (query.seriesIds?.length) and.push({ series: { in: query.seriesIds } })
-    if (query.subSeriesIds?.length) and.push({ subSeries: { in: query.subSeriesIds } })
-    if (query.rarityIds?.length) and.push({ rarity: { in: query.rarityIds } })
-    if (query.cardStatusIds?.length) and.push({ cardStatus: { in: query.cardStatusIds } })
-    if (query.highValueOnly) and.push({ isHighValue: { equals: true } })
-    if (query.noDeductionOnly) and.push({ isNoDeduction: { equals: true } })
-    if (query.minPrice != null || query.maxPrice != null) {
-      const price: Where = {}
-      if (query.minPrice != null) price.greater_than_equal = query.minPrice
-      if (query.maxPrice != null) price.less_than_equal = query.maxPrice
-      and.push({ price })
-    }
-    const q = query.q?.trim()
-    // 与后台列表搜索同一组字段：卡名 / 编号 / 稀有度名称。
-    // 'rarity.name' 是关系字段的嵌套路径，Payload 会 JOIN rarities 表后按名字做 like。
-    if (q) and.push({ or: [{ name: { like: q } }, { code: { like: q } }, { 'rarity.name': { like: q } }] })
+    const and = cardFilter(query)
 
     const result = await payload.find({
       collection: 'cards',
@@ -357,6 +370,58 @@ export const getCards = unstable_cache(
   // unstable_cache 默认已把函数参数（query）纳入缓存键，不同筛选/分页/关键词组合各自独立缓存。
   // 列表筛选组合多、写频率低，后台改完由 afterChange 钩子主动失效；缓存放 1 小时。
   undefined,
+  { revalidate: 3600, tags: ['cards'] },
+)
+
+/**
+ * 首页卡牌：默认排序不是单一字段，而是「高价组 → 普通组 → 停收组」三段。
+ * 因此按同一组筛选并发取三次，各自价格倒序，再按组拼接；停止买取永远排在最后。
+ * 用户显式选了其它排序时仍交给 getCards，显式选择优先。
+ */
+export const getHomeCards = unstable_cache(
+  async (query: CardQuery = {}): Promise<CardListResult> => {
+    if ((query.sort ?? DEFAULT_CARD_SORT) !== DEFAULT_CARD_SORT) return getCards(query)
+
+    const payload = await getPayloadClient()
+    const limit = query.limit ?? 48
+    const base = cardFilter(query)
+    // stopBuyback 是非空布尔列（默认 false），not_equals: true 等价于「未停收」。
+    const find = (clauses: Where[]) =>
+      payload.find({
+        collection: 'cards',
+        depth: 1,
+        overrideAccess: false,
+        where: { and: [...base, ...clauses] },
+        sort: '-price',
+        limit,
+      })
+
+    const [featured, normal, stopped] = await Promise.all([
+      find([
+        { stopBuyback: { not_equals: true } },
+        { or: [{ isNoDeduction: { equals: true } }, { isHighValue: { equals: true } }] },
+      ]),
+      find([
+        { stopBuyback: { not_equals: true } },
+        { isNoDeduction: { equals: false } },
+        { isHighValue: { equals: false } },
+      ]),
+      find([{ stopBuyback: { equals: true } }]),
+    ])
+
+    const items = [...featured.docs, ...normal.docs, ...stopped.docs]
+      .slice(0, limit)
+      .map((doc) => toCardView(doc, false))
+
+    return {
+      items,
+      total: featured.totalDocs + normal.totalDocs + stopped.totalDocs,
+      page: 1,
+      totalPages: 1,
+    }
+  },
+  // 与 getCards 区分开：两者的默认排序规则不同，不能共用缓存条目。
+  ['home-cards-v1'],
   { revalidate: 3600, tags: ['cards'] },
 )
 

@@ -589,11 +589,11 @@ export function CatalogFilters({
             // tab 之间不留缝：设计图里这一排是连续的一条底带，缝隙会把它切成
             // 几颗孤立按钮，与 IpTab 注释里「整排读作一条带子」的意图相反。
             <div className="flex min-w-0 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:pb-0">
-              {/*<IpTab
+              <IpTab
                 active={ipSel.size === 0}
                 onClick={resetHome}
                 label={t('facetAllIps')}
-              />*/}
+              />
               {facets.ips.map((ip) => (
                 <IpTab
                   key={ip.id}
