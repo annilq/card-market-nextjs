@@ -70,7 +70,7 @@ export function HighValueCard({
 
       <div className="flex flex-1 flex-col pt-3">
         {/* 卡名独占两行：状态徽章从名字前面挪到编号前面，长卡名不再被挤压截断。 */}
-        <div className="line-clamp-2 text-lg font-bold leading-[26px] text-fg">
+        <div className="line-clamp-2 text-lg font-bold leading-[26px] text-fg flex-1">
           {card.name}
         </div>
 
