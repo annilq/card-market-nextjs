@@ -444,7 +444,7 @@ export function CatalogFilters({
       {/* 卡牌状态来自后台 card-statuses 集合（facets.cardStatuses），与稀有度一样走 Facet 的 id 数组。 */}
       <Facet title={t('cardStatus')} items={facets.cardStatuses} sel={statusSel} onToggle={(id) => toggleStatus(id)} />
 
-      <label className="flex min-h-9 items-center gap-2 text-sm text-muted">
+      <label className="flex items-center gap-2 text-sm text-muted">
         <input
           type="checkbox"
           checked={value.highValueOnly}
@@ -453,7 +453,7 @@ export function CatalogFilters({
         {t('highValueOnly')}
       </label>
 
-      <label className="flex min-h-9 items-center gap-2 text-sm text-muted">
+      <label className="flex items-center gap-2 text-sm text-muted">
         <input
           type="checkbox"
           checked={value.noDeductionOnly}

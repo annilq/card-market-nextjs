@@ -79,7 +79,7 @@ export function CatalogCard({
           )}
           {badge && (
             // 压在图左上角：图位的圆角会裁掉徽章左上角，因此只给右下圆角。
-            <span className={`absolute top-0 left-0 rounded-full ${badgeInfo!.className} px-2 h-7.5 font-semibold flex items-center justify-center text-white`}>
+            <span className={`absolute top-0 left-0 rounded-full ${badgeInfo!.className} px-2 h-7.5 font-semibold flex items-center justify-center text-white text-sm md:text-base`}>
               {badge}
             </span>
           )}

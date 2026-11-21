@@ -111,7 +111,7 @@ export function CardInfo({
 function InfoRow({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex gap-1">
-      <span className="shrink-0 text-faint">{label}：</span>
+      <span className="shrink-0">{label}：</span>
       <span className="min-w-0 flex-1">{children}</span>
     </div>
   )
