@@ -1,19 +1,27 @@
 'use client'
 
-// 首页不减额买取横条。单行横向滚动，溢出时自动轮播。
+// 首页不减额买取横条。单行横向滚动，不自动轮播。
 //
-// 四处细节是「横条」这个形态特有的，网格里不需要：
+// 五处细节是「横条」这个形态特有的，网格里不需要：
 //
 // 1. **右缘渐隐。** 横条默认裁在最后一张卡的中间，看起来像布局出错。
 //    右缘一层 `mask-image` 渐隐告诉人「还能往右」；滚到末尾后渐隐撤掉，
 //    否则最后一张卡会一直被裁掉一角。
-// 2. **左右箭头。** 内容宽度超过容器时才出现，桌面用户不用去够滚动条；
-//    到两端时对应一侧淡出。手机上仍可直接甩动。
+// 2. **左右箭头只在桌面出现。** 内容宽度超过容器时才渲染，到两端时对应一侧淡出。
+//    手机不显示箭头，横向甩动就是唯一的切换方式。
 // 3. **吸附滚动。** 手机上用手指甩时，卡片停在卡位边界而不是任意偏移。
 // 4. **卡位略宽。** 原来 144px（`w-36`）在 3:4 图位里只有 108px 高的图，
 //    卡名与价格挤成两行小字；改成 160px 后价格不再截断。
+// 5. **桌面鼠标拖动。** 原生横向滚动只认滚轮和触控板，按住拖动由指针事件补上；
+//    松手吸附到最近卡位，拖动末尾补发的 click 会被吞掉，不会误开卡片。
 
-import { useEffect, useRef, useState } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react'
 import Link from 'next/link'
 
 import { CardModal } from '@/components/catalog/CardModal'
@@ -26,8 +34,6 @@ import { useReducedMotion } from '@/lib/use-reduced-motion'
 
 /** 卡片间距，与下方 `gap-4` 一致；翻页步长 = 卡宽 + 间距。 */
 const CARD_GAP = 16
-const AUTOPLAY_MS = 4500
-const RESUME_MS = 1200
 
 export function HighValueStrip({
   items,
@@ -79,38 +85,74 @@ export function HighValueStrip({
     track.scrollBy({ left: direction * step, behavior: reducedMotion ? 'auto' : 'smooth' })
   }
 
-  const pausedRef = useRef(false)
-  const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // 桌面鼠标拖动。原生横向滚动只认滚轮和触控板，按住拖动要自己接；
+  // 触摸与手写笔继续走浏览器原生的甩动，因此这里只认 mouse。
+  const dragRef = useRef<{
+    startX: number
+    startLeft: number
+    moved: boolean
+    captured: boolean
+  } | null>(null)
+  const draggedAtRef = useRef(0)
+  const [dragging, setDragging] = useState(false)
 
-  useEffect(() => {
-    if (reducedMotion || !overflowing) return
-    const timer = setInterval(() => {
-      if (pausedRef.current) return
-      const track = trackRef.current
-      if (!track) return
-      const atRight = track.scrollLeft + track.clientWidth >= track.scrollWidth - 4
-      scrollByCard(atRight ? -1 : 1)
-    }, AUTOPLAY_MS)
-    return () => clearInterval(timer)
-  }, [overflowing, reducedMotion])
-
-  useEffect(() => () => {
-    if (resumeTimer.current) clearTimeout(resumeTimer.current)
-  }, [])
-
-  const pause = () => {
-    pausedRef.current = true
-    if (resumeTimer.current) clearTimeout(resumeTimer.current)
+  const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== 'mouse' || e.button !== 0) return
+    const track = trackRef.current
+    if (!track || track.scrollWidth <= track.clientWidth + 8) return
+    dragRef.current = { startX: e.clientX, startLeft: track.scrollLeft, moved: false, captured: false }
+    setDragging(true)
   }
-  const resume = () => {
-    if (resumeTimer.current) clearTimeout(resumeTimer.current)
-    resumeTimer.current = setTimeout(() => {
-      pausedRef.current = false
-    }, RESUME_MS)
+
+  const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current
+    const track = trackRef.current
+    if (!drag || !track) return
+    const dx = e.clientX - drag.startX
+    // 4px 死区：手抖不算拖动，否则一次普通点击会被吞掉。
+    if (!drag.moved && Math.abs(dx) > 4) {
+      drag.moved = true
+      // 确认是拖动之后才捕获指针。在 pointerdown 就捕获会让 pointerup 落在
+      // 滚动区上，随之补发的 click 也落在滚动区，普通点击卡片就再也开不了弹窗。
+      track.setPointerCapture(e.pointerId)
+      drag.captured = true
+    }
+    if (!drag.moved) return
+    e.preventDefault()
+    track.scrollLeft = drag.startLeft - dx
+  }
+
+  const endDrag = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current
+    const track = trackRef.current
+    if (!drag || !track) return
+    dragRef.current = null
+    setDragging(false)
+    if (drag.captured && track.hasPointerCapture(e.pointerId)) {
+      track.releasePointerCapture(e.pointerId)
+    }
+    if (!drag.moved) return
+    draggedAtRef.current = Date.now()
+    // 松手后落到最近的卡位，和箭头翻页、触摸甩动的停点一致。
+    const step = (track.firstElementChild?.getBoundingClientRect().width ?? 0) + CARD_GAP
+    if (step > 0) {
+      track.scrollTo({
+        left: Math.round(track.scrollLeft / step) * step,
+        behavior: reducedMotion ? 'auto' : 'smooth',
+      })
+    }
+  }
+
+  const onClickCapture = (e: ReactMouseEvent<HTMLDivElement>) => {
+    // 拖动松手时浏览器仍会在落点补一次 click，它不该被读成「点了这张卡」。
+    if (Date.now() - draggedAtRef.current < 250) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
   }
 
   return (
-    <section onMouseEnter={pause} onMouseLeave={resume} onFocusCapture={pause} onBlurCapture={resume}>
+    <section>
       {/* 区块标题：参考图里这一块是居中的品牌红图形标题，因此标题居中、
            用品牌红而不是墨黑；「全部」压在右端（绝对定位）才能保住居中。
            图形标题 high_price.png 已随静态资源迁到 public/，与源站同一张图。 */}
@@ -123,7 +165,7 @@ export function HighValueStrip({
           className="h-10 w-auto md:h-20"
         />
         <Link
-          href={localizeHref('/cards?hv=1', locale)}
+          href={localizeHref('/cards?nd=1', locale)}
           className="absolute right-0 inline-flex items-center py-1 text-xs text-muted transition-colors duration-150 hover:text-fg hover:underline"
         >
           {t('viewAll')}
@@ -137,9 +179,18 @@ export function HighValueStrip({
           role="region"
           aria-label={t('highValueBuys')}
           tabIndex={0}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+          onLostPointerCapture={endDrag}
+          onClickCapture={onClickCapture}
+          onDragStart={(e) => e.preventDefault()}
+          // 拖动时关掉吸附，否则每次改 scrollLeft 都会被拉回卡位；松手时再吸附。
+          style={dragging ? { scrollSnapType: 'none' } : undefined}
           // 滚动条隐藏但滚动保留：右缘渐隐与箭头已经承担「还能往右」的提示，
           // 露出系统滚动条会在卡片下方多出一条横线。
-          className={`flex snap-x snap-mandatory gap-4 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-strong ${atEnd ? '' : 'strip-fade'}`}
+          className={`flex snap-x snap-mandatory gap-4 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-strong ${atEnd ? '' : 'strip-fade'} ${dragging ? 'cursor-grabbing select-none' : 'sm:cursor-grab'}`}
         >
           {items.map((c) => (
             // 卡位 227px：内容列 1200 − 4 × gap 16 = 1136，5 张正好铺满首屏
@@ -150,7 +201,7 @@ export function HighValueStrip({
           ))}
         </div>
 
-        {/* 只有内容真正溢出时才出现箭头；到两端时对应的一侧淡出。 */}
+        {/* 只有内容真正溢出时才出现箭头，且只在桌面显示；手机用横向甩动切换。 */}
         {overflowing && (
           <>
             <button
@@ -158,7 +209,7 @@ export function HighValueStrip({
               aria-label={t('stripPrev')}
               disabled={atStart}
               onClick={() => scrollByCard(-1)}
-              className="absolute left-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-fg shadow-md transition-[opacity,background-color] duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-strong disabled:pointer-events-none disabled:opacity-0"
+              className="absolute left-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-fg shadow-md transition-[opacity,background-color] duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-strong disabled:pointer-events-none disabled:opacity-0 sm:flex"
             >
               <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-5 w-5">
                 <path
@@ -175,7 +226,7 @@ export function HighValueStrip({
               aria-label={t('stripNext')}
               disabled={atEnd}
               onClick={() => scrollByCard(1)}
-              className="absolute right-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-fg shadow-md transition-[opacity,background-color] duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-strong disabled:pointer-events-none disabled:opacity-0"
+              className="absolute right-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-fg shadow-md transition-[opacity,background-color] duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-strong disabled:pointer-events-none disabled:opacity-0 sm:flex"
             >
               <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-5 w-5">
                 <path
