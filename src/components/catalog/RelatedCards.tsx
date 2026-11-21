@@ -58,7 +58,7 @@ export async function RelatedCards({
       : localizeHref('/cards', locale)
 
   return (
-    <section className="mt-12 border-t border-border pt-5">
+    <section className="mt-6 border-t border-border pt-5">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="min-w-0 truncate text-sm font-semibold text-muted">{heading}</h2>
         <Link
@@ -68,7 +68,7 @@ export async function RelatedCards({
           {t('viewAll')}
         </Link>
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="mt-3 grid grid-cols-3 gap-4 lg:grid-cols-4">
         {items.map((item) => (
           <CardCard key={item.id} card={item} locale={locale} />
         ))}
