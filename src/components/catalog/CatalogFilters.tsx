@@ -633,7 +633,7 @@ export function CatalogFilters({
             控件之间留大间距，并在整排下方画一条分隔线（结果从线下方开始）。
             「重置」始终在行尾、不随滚动被推走。 */}
         <div className="flex items-center gap-x-2 gap-y-1 sm:items-end sm:border-b sm:border-border-strong sm:pb-8">
-          <div className="flex min-w-0 flex-1 gap-x-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:gap-x-32 sm:overflow-visible sm:pb-0">
+          <div className="flex min-w-0 flex-1 gap-x-4 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:gap-x-32 sm:overflow-visible sm:pb-0">
           <FilterButton
             label={t('filterSeries')}
             current={seriesText}
@@ -844,10 +844,10 @@ function IpTab({
  * 触发控件：整颗是按钮，点击右滑出选择面板。
  *
  * 两种排布：
- * - 手机：标签与当前值同一行（40px 高、可横滑），维持原来的紧凑工具条；
- * - `sm` 及以上：按设计图改成上下布局——标签 18px 加粗，下一行是当前值 + 右侧
- *   chevron，没有底色/边框，三个控件之间留出大间距，整排读起来像表头而不是按钮。
- *   底部分隔线由外层容器画（见 home 分支），这里只负责文字。
+ * - 手机：与桌面一致，标签在上、当前值 + chevron 在下，只是字号更小；
+ * - `sm` 及以上：按设计图放大字号、拉开间距，去掉底色/圆角，三个控件之间留出
+ *   大间距，整排读起来像表头而不是按钮。底部分隔线由外层容器画（见 home 分支），
+ *   这里只负责文字。
  *
  * 上下布局用纯 CSS 断点切换，不依赖 JS 的 matchMedia：服务端首帧就是对的，
  * 不会出现先渲染手机版、水合后再跳成桌面版的抖动。
@@ -866,7 +866,7 @@ function FilterButton({
       type="button"
       onClick={onClick}
       aria-haspopup="dialog"
-      className="inline-flex h-8 cursor-pointer shrink-0 min-w-0 max-w-full items-center gap-1.5 rounded px-2 text-xs transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted sm:h-auto sm:flex-col sm:items-start sm:gap-1.5 sm:rounded-none sm:px-0 sm:py-0 sm:text-left sm:hover:bg-transparent"
+      className="inline-flex cursor-pointer shrink-0 min-w-0 max-w-full flex-col items-start gap-1.5 rounded px-2 py-1 text-xs transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted sm:gap-1.5 sm:rounded-none sm:px-0 sm:py-0 sm:text-left sm:hover:bg-transparent"
     >
       <span className="shrink-0 font-bold text-fg sm:text-xl">{label}</span>
       <span className="flex min-w-0 max-w-full items-center gap-2 sm:gap-12">
