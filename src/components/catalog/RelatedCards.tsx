@@ -68,7 +68,7 @@ export async function RelatedCards({
           {t('viewAll')}
         </Link>
       </div>
-      <div className="mt-3 grid grid-cols-3 gap-4 lg:grid-cols-4">
+      <div className="mt-3 grid grid-cols-4 gap-4 lg:grid-cols-6">
         {items.map((item) => (
           <CardCard key={item.id} card={item} locale={locale} />
         ))}
