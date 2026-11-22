@@ -65,7 +65,7 @@ const zh = {
   filterType: '类型',
   filterSort: '排序',
   noCategories: '暂无分类',
-  homeNotices: '通知公告',
+  homeNotices: '重要通知',
   highValueBuys: '高价买取',
   stripPrev: '查看前面的卡牌',
   stripNext: '查看后面的卡牌',

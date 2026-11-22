@@ -1,4 +1,4 @@
-// 首页通知公告（从 TanStack Start 版移植：版式与注释原样保留，
+// 首页重要通知（从 TanStack Start 版移植：版式与注释原样保留，
 // 只把 `useT()/useLocale()` 换成服务端 `getTranslator(locale)` + `locale` 道具）。
 //
 // 与公告列表页刻意不同——那边每条是独立卡片，因为那是可浏览的归档，
