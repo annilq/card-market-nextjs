@@ -21,7 +21,7 @@ function XIcon() {
       height={27}
       loading="lazy"
       aria-hidden="true"
-      className="h-5 w-auto md:h-[27px]"
+      className="h-auto w-4 md:h-[27px] md:w-auto"
     />
   );
 }
@@ -37,7 +37,7 @@ function LineIcon() {
         width={27}
         height={27}
         loading="lazy"
-        className="h-5 w-auto md:h-7"
+        className="h-auto w-4 md:h-7 md:w-auto"
       />
       <span
         className="pointer-events-none absolute right-0 top-full z-50 mt-2 hidden w-40 flex-col items-center gap-2 rounded-lg bg-white p-3 text-center text-xs text-neutral-800 shadow-lg group-hover/line:flex group-focus-within/line:flex"
@@ -62,15 +62,17 @@ function ShopIcon() {
       height={27}
       loading="lazy"
       aria-hidden="true"
-      className="h-5 w-auto md:h-7"
+      className="h-auto w-4 md:h-7 md:w-auto"
     />
   );
 }
 
 // 顶栏图标按钮共用同一套外壳尺寸，保证右侧一组在所有宽度下等高。
+// 375 设计稿（2x 出图）折算后字形 16px、外壳 24px；24px 也正好是 WCAG 2.5.8
+// 的最小点击区，md 起恢复桌面尺寸。
 const iconBtn =
-  "inline-flex h-8 shrink-0 items-center justify-center rounded text-white transition hover:bg-white/15 hover:text-white md:h-9";
-const iconBtnSquare = `${iconBtn} w-8 md:w-9`;
+  "inline-flex h-6 shrink-0 items-center justify-center rounded text-white transition hover:bg-white/15 hover:text-white md:h-9";
+const iconBtnSquare = `${iconBtn} w-6 md:w-9`;
 
 /**
  * 站点顶栏（服务端组件）。
@@ -181,8 +183,9 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
           </div>
         </div>
 
-        {/* <1024：搜索 + X + 店铺图标作为一组放在第二行（源站同构），整行宽度让给搜索。 */}
-        <div className="flex items-center gap-1.5 py-1 lg:hidden">
+        {/* <1024：搜索 + X + 店铺图标作为一组放在第二行（源站同构），整行宽度让给搜索。
+            手机端内容高 24px（设计稿 2x 折算），py-2 让整条顶栏保持 80px。 */}
+        <div className="flex items-center gap-1.5 py-2 lg:hidden">
           <div className="flex min-w-0 flex-1">
             <GlobalSearch />
           </div>

@@ -52,7 +52,7 @@ const zh = {
   contentLanguageSwitch: '查看中文原文',
 
   // 首页
-  searchPlaceholder: '请输入卡牌名称 / 编号 / 罕见度进行搜索',
+  searchPlaceholder: '请输入卡牌名称/编号/罕见度进行搜索',
   searchPlaceholderShort: '搜卡名 / 编号 / 罕见度',
   search: '搜索',
   catalogFilters: '卡牌筛选',

@@ -23,6 +23,9 @@ export function GlobalSearch() {
   return (
     <form
       // 参考图顶栏：560×40 白输入框 + 80×40 浅灰「检索」按钮，两者分开，各带 4px 圆角。
+      // 手机端设计稿是 375 逻辑宽的 2x 出图（750px）：折半后输入框约 210×24、
+      // 按钮约 45×24、图标字形 16px，所以 <md 用 h-6 + 11px 字 + 4px 圆角，
+      // md 起恢复桌面尺寸。图标按钮外壳保持 24px（WCAG 2.5.8 最小点击区）。
       onSubmit={(e) => {
         e.preventDefault()
         const value = String(new FormData(e.currentTarget).get('q') ?? '')
@@ -30,7 +33,7 @@ export function GlobalSearch() {
         // 空关键词不写进 URL：`?q=` 与不带参数的结果一样，留着只会让分享链接更难读。
         router.push(localizeHref(q ? `/cards?q=${encodeURIComponent(q)}` : '/cards', locale))
       }}
-      className="flex w-full items-center gap-2.5"
+      className="flex w-full items-center gap-1.5 md:gap-2.5"
     >
       <div className="relative min-w-0 flex-1">
         <input
@@ -38,29 +41,30 @@ export function GlobalSearch() {
           type="text"
           aria-label={t('searchPlaceholder')}
           placeholder=" "
-          className="peer h-8 w-full rounded-xl border-0 bg-white px-3 text-xs text-slate-900 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:h-10 md:px-3.5 md:text-sm"
+          className="peer block h-6 w-full rounded border-0 bg-white px-2 text-[11px] text-slate-900 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:h-10 md:rounded-xl md:px-3.5 md:text-sm"
         />
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 left-3 right-3 hidden items-center truncate text-xs text-slate-600 peer-placeholder-shown:flex md:left-3.5 md:right-3.5 md:text-sm"
+          className="pointer-events-none absolute inset-y-0 left-2 right-2 hidden items-center truncate text-[11px] text-slate-600 peer-placeholder-shown:flex md:left-3.5 md:right-3.5 md:text-sm"
         >
-          <span className="xl:hidden">{t('searchPlaceholderShort')}</span>
-          <span className="hidden xl:inline">{t('searchPlaceholder')}</span>
+          {/* 375 设计稿在手机上显示完整提示文案；只有比 370 更窄才退到短文案
+              （11px 下完整文案约 182px，留出两侧 px-2 后 370 是刚好不截断的下限）。 */}
+          <span className="min-[370px]:hidden">{t('searchPlaceholderShort')}</span>
+          <span className="hidden min-[370px]:inline">{t('searchPlaceholder')}</span>
         </span>
       </div>
       <button
         type="submit"
-        className="inline-flex cursor-pointer h-8 shrink-0 items-center gap-1.5 rounded-[10px] bg-[radial-gradient(circle_at_0%_0%,#BCBCBC_0%,#FFFFFF_100%)] px-3 text-xs text-slate-700 transition hover:brightness-95 md:h-10 md:px-4 md:text-sm"
+        className="inline-flex cursor-pointer h-6 shrink-0 items-center gap-1 rounded bg-[radial-gradient(circle_at_0%_0%,#BCBCBC_0%,#FFFFFF_100%)] px-1.5 text-[11px] text-slate-700 transition hover:brightness-95 md:h-10 md:gap-1.5 md:rounded-[10px] md:px-4 md:text-sm"
       >
         <svg
-          width="16"
-          height="16"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
           strokeLinecap="round"
           aria-hidden="true"
+          className="h-2.5 w-2.5 md:h-4 md:w-4"
         >
           <circle cx="11" cy="11" r="7" />
           <path d="m20 20-3.5-3.5" />
