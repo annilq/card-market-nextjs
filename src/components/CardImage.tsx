@@ -7,7 +7,7 @@
 // - 加载淡入：图片 onLoad 后从 0→1 透明度淡入，叠在占位之上；占位与淡入都由本组件内部
 //   状态驱动，调用方无需关心。
 // - S3 约束：媒体走签名 302 下载，next/image 优化器会 400，所以一律原生 <img>
-//   （与 CardCard / CardModal / CardGallery 既有的实现一致）。
+//   （与 CatalogCard / CardModal / CardGallery 既有的实现一致）。
 //
 // 组件只渲染「占位层 + <img>」这一对兄弟节点，外层那个带 aspect / rounded / overflow 的
 // 盒由调用方提供（每个页面的盒还带各自的圆角、边框、视图转场名）。shimmer 用

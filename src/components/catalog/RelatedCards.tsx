@@ -8,13 +8,16 @@
 // 这样「同 IP 只有这张卡」时不会退化成一条空行。
 import Link from 'next/link'
 
-import { CardCard } from '@/components/CardCard'
+// 与目录页共用同一张卡：详情页底部的「同类」与列表里的卡牌是同一种对象，
+// 用 CatalogCard 后图位比例、状态徽章、编号与价格排版都跟列表页一致，
+// 不再维护第二套网格卡样式。
+import { CatalogCard } from '@/components/catalog/CatalogCard'
 import { getCards, getLatestCards } from '@/lib/data'
 import { localizeHref, type Locale } from '@/lib/i18n/locales'
 import { getTranslator } from '@/lib/i18n/t'
 import type { CardView } from '@/lib/types'
 
-/** lg 起是 4 列，8 张正好两行。 */
+/** 移动端 4 列时 8 张正好两行；lg 6 列时是一行半。 */
 const ROW_SIZE = 8
 
 /**
@@ -70,7 +73,7 @@ export async function RelatedCards({
       </div>
       <div className="mt-3 grid grid-cols-4 gap-4 lg:grid-cols-6">
         {items.map((item) => (
-          <CardCard key={item.id} card={item} locale={locale} />
+          <CatalogCard key={item.id} card={item} locale={locale} />
         ))}
       </div>
     </section>

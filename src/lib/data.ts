@@ -99,7 +99,7 @@ const toImages = (value: unknown): ImageView[] => {
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Where = Record<string, any>
 
-// 列表卡片（CardCard 组件）从不渲染描述，因此列表视图不调用 renderRichText，
+// 列表卡片（CatalogCard 组件）从不渲染描述，因此列表视图不调用 renderRichText，
 // 省去对每张卡做富文本序列化的无谓 CPU 开销；只有详情页才需要描述 HTML。
 function toCardView(doc: any, withDescription = false): CardView {
   return {
