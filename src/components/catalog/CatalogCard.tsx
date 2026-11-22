@@ -61,7 +61,7 @@ export function CatalogCard({
       }}
       className="group focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted flex flex-col"
     >
-      <div className="bg-surface p-1">
+      <div className="bg-surface p-0.5 md:p-1">
         {/* 图位锁定设计稿的 5:7：固定 200px 高在窄屏会把竖版卡面上下裁掉 15%–25%。 */}
         <div className="relative aspect-[5/7] w-full overflow-hidden">
           {src ? (
@@ -73,35 +73,35 @@ export function CatalogCard({
               imgClassName="object-cover transition-transform duration-200 ease-out group-hover:scale-[1.03] motion-reduce:transform-none"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-sm text-hint">
+            <div className="flex h-full w-full items-center justify-center text-[10px] text-hint md:text-sm">
               {t('noImage')}
             </div>
           )}
           {badge && (
             // 压在图左上角：图位的圆角会裁掉徽章左上角，因此只给右下圆角。
-            <span className={`absolute top-0 left-0 rounded-full ${badgeInfo!.className} px-2 h-7.5 font-semibold flex items-center justify-center text-white text-sm md:text-base`}>
+            <span className={`absolute top-0 left-0 rounded-full ${badgeInfo!.className} px-1.5 h-5 font-semibold flex items-center justify-center text-white text-[10px] md:px-2 md:h-7.5 md:text-base`}>
               {badge}
             </span>
           )}
         </div>
       </div>
 
-      <div className="pt-2 flex-1 flex flex-col">
-        <div className="line-clamp-2 font-bold text-fg flex-1">
+      <div className="pt-1 flex-1 flex flex-col md:pt-2">
+        <div className="line-clamp-2 text-xs font-bold leading-tight text-fg flex-1 md:text-base">
           {card.name}
         </div>
         {/* 状态徽章排在编号前面；整行固定占一行，缺编号的卡也不会把价格往上顶。 */}
-        <div className="mt-1 flex h-5 min-w-0 items-center gap-1.5 text-sm text-faint leading-none">
+        <div className="mt-0.5 flex h-4 min-w-0 items-center gap-1 text-[10px] text-faint leading-none md:mt-1 md:h-5 md:gap-1.5 md:text-sm">
           {status && (
             <span
-              className={`inline-flex h-5 shrink-0 items-center rounded px-1.5 text-xs font-semibold ${statusBadgeClass(card.cardStatusColor)}`}
+              className={`inline-flex h-4 shrink-0 items-center rounded px-1 text-[9px] font-semibold ${statusBadgeClass(card.cardStatusColor)} md:h-5 md:px-1.5 md:text-xs`}
             >
               {status}
             </span>
           )}
           <span className="min-w-0 truncate tabular-nums">{card.code || '无'}</span>
         </div>
-        <div className="mt-2 text-right text-xl font-bold leading-none tabular-nums text-price">
+        <div className="mt-1 text-right text-sm font-bold leading-none tabular-nums text-price md:mt-2 md:text-xl">
           {card.stopBuyback
             ? t('stopBuyback')
             : card.price != null

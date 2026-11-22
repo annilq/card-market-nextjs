@@ -20,11 +20,14 @@ import type { Media } from '@/payload-types'
 export type { SiteSettingsView }
 
 const SORT_MAP: Record<CardSort, string | string[]> = {
-  default: ['-isNoDeduction', '-isHighValue', '-price'],
-  price_desc: '-price',
-  price_asc: 'price',
-  newest: '-createdAt',
-  oldest: 'createdAt',
+  // stopBuyback 必须是首个键：同时勾了「高价买取 / 不减额买取」的停收卡也归入末组。
+  // 组内先按买取等级、再按价格倒序。末位 id 让价格 / 时间并列时仍有唯一次序，
+  // 否则 LIMIT / OFFSET 分页可能重复或漏掉某些行（停收卡通常价格为空，最容易并列）。
+  default: ['stopBuyback', '-isNoDeduction', '-isHighValue', '-price', 'id'],
+  price_desc: ['-price', 'id'],
+  price_asc: ['price', 'id'],
+  newest: ['-createdAt', 'id'],
+  oldest: ['createdAt', 'id'],
 }
 
 const relId = (value: unknown): number | null => {
@@ -369,7 +372,8 @@ export const getCards = unstable_cache(
   },
   // unstable_cache 默认已把函数参数（query）纳入缓存键，不同筛选/分页/关键词组合各自独立缓存。
   // 列表筛选组合多、写频率低，后台改完由 afterChange 钩子主动失效；缓存放 1 小时。
-  undefined,
+  // 版本号在排序规则变更时递增：Data Cache 会跨部署保留，不换键的话旧排序最多再服务 1 小时。
+  ['cards-sort-v2'],
   { revalidate: 3600, tags: ['cards'] },
 )
 

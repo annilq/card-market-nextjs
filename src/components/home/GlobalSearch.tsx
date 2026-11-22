@@ -38,11 +38,11 @@ export function GlobalSearch() {
           type="text"
           aria-label={t('searchPlaceholder')}
           placeholder=" "
-          className="peer h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-slate-900 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          className="peer h-8 w-full rounded-xl border-0 bg-white px-3 text-xs text-slate-900 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:h-10 md:px-3.5 md:text-sm"
         />
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 left-3.5 right-3.5 hidden items-center truncate text-sm text-slate-600 peer-placeholder-shown:flex"
+          className="pointer-events-none absolute inset-y-0 left-3 right-3 hidden items-center truncate text-xs text-slate-600 peer-placeholder-shown:flex md:left-3.5 md:right-3.5 md:text-sm"
         >
           <span className="xl:hidden">{t('searchPlaceholderShort')}</span>
           <span className="hidden xl:inline">{t('searchPlaceholder')}</span>
@@ -50,7 +50,7 @@ export function GlobalSearch() {
       </div>
       <button
         type="submit"
-        className="inline-flex cursor-pointer h-10 shrink-0 items-center gap-1.5 rounded-[10px] bg-[radial-gradient(circle_at_0%_0%,#BCBCBC_0%,#FFFFFF_100%)] px-4 text-sm text-slate-700 transition hover:brightness-95"
+        className="inline-flex cursor-pointer h-8 shrink-0 items-center gap-1.5 rounded-[10px] bg-[radial-gradient(circle_at_0%_0%,#BCBCBC_0%,#FFFFFF_100%)] px-3 text-xs text-slate-700 transition hover:brightness-95 md:h-10 md:px-4 md:text-sm"
       >
         <svg
           width="16"

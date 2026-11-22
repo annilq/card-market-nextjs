@@ -24,7 +24,7 @@ const FOOTER_LINKS: readonly { path: string; key: MessageKey }[] = [
 ];
 
 const footerLinkClass =
-  "inline-flex items-center py-1.5 text-sm text-footer-muted transition hover:text-footer-fg hover:underline";
+  "inline-flex items-center py-1 text-xs text-footer-muted transition hover:text-footer-fg hover:underline md:py-1.5 md:text-sm";
 
 /** 站点页脚（服务端组件）。结构照参考项目：左 logo + 右「帮助中心」一组链接 + 底部版权。 */
 export async function SiteFooter({ settings }: { settings: SiteSettingsView }) {
@@ -33,11 +33,11 @@ export async function SiteFooter({ settings }: { settings: SiteSettingsView }) {
   const siteName = settings.siteName?.trim() || t("defaultSiteName");
 
   return (
-    <footer className="mt-16 bg-footer text-footer-fg">
+    <footer className="mt-10 bg-footer text-footer-fg md:mt-16">
       {/* 参考图的页脚：近黑底、左侧 logo、右侧「帮助中心」标题 + 链接栅格，
           底部一行居中的版权。链接栅格 2 列起、sm 起 3 列：手机上三列会把
           「个人信息收集」挤成两行。每格 py-1.5 把点击高度抬到 28px（WCAG 2.5.8 要 24px）。 */}
-      <div className="mx-auto flex max-w-[1232px] flex-col gap-12 px-4 pt-20 md:flex-row md:items-start md:justify-between md:gap-16">
+      <div className="mx-auto flex max-w-[1232px] flex-col gap-8 px-4 pt-10 md:flex-row md:items-start md:justify-between md:gap-16 md:pt-20">
         <div className="shrink-0">
           {/* 后台没传 logo 就退回站点名文字，不留空白图位：一张占位图对访客
               来说和「图片挂了」没有区别。 */}
@@ -46,25 +46,25 @@ export async function SiteFooter({ settings }: { settings: SiteSettingsView }) {
               <img
                 src={"/logo_footer.png"}
                 alt={siteName}
-                className="w-[392px] object-contain"
+                className="w-40 object-contain md:w-[392px]"
                 loading="lazy"
               />
             </div>
           ) : (
-            <span className="text-2xl font-bold">{siteName}</span>
+            <span className="text-lg font-bold md:text-2xl">{siteName}</span>
           )}
         </div>
 
         {/* 右侧块固定 665px 并靠右：参考图里「帮助中心」那一块就是从容器右端
             往左量 665px。用 flex-1 会随视口变宽而左移，标题就对不上参考图的位置。 */}
         <div className="min-w-0 md:w-[665px] md:max-w-full">
-          <h2 className="text-xl font-bold md:text-2xl">
+          <h2 className="text-sm font-bold md:text-2xl">
             {t("footerHelpCenter")}
           </h2>
 
           <nav
             aria-label={t("footerNavTitle")}
-            className="mt-4 grid grid-cols-2 gap-x-10 gap-y-1 sm:grid-cols-3 sm:gap-x-12"
+            className="mt-2 grid grid-cols-2 gap-x-8 gap-y-1 sm:grid-cols-3 sm:gap-x-12 md:mt-4"
           >
             {FOOTER_LINKS.map((link) => (
               <Link
@@ -79,7 +79,7 @@ export async function SiteFooter({ settings }: { settings: SiteSettingsView }) {
         </div>
       </div>
 
-      <p className="mt-12 pb-12 text-center text-sm text-footer-fg">
+      <p className="mt-8 pb-8 text-center text-xs text-footer-fg md:mt-12 md:pb-12 md:text-sm">
         {t("copyright", { year: new Date().getFullYear() })}
       </p>
     </footer>

@@ -25,11 +25,14 @@ export function HighValueCard({
   card,
   locale,
   onOpen,
+  ariaHidden = false,
 }: {
   card: CardView
   locale: Locale
   /** 给了这个回调，普通左键点击就改成弹出卡牌弹窗而不是跳详情页。 */
   onOpen?: (card: CardView) => void
+  /** 横条续接用的重复卡：视觉上照常可点，但不再进读屏与 Tab 顺序。 */
+  ariaHidden?: boolean
 }) {
   const t = getTranslator(locale)
   const img = card.images[0]
@@ -41,6 +44,8 @@ export function HighValueCard({
     <Link
       href={localizeHref(`/cards/${card.id}`, locale)}
       prefetch
+      aria-hidden={ariaHidden || undefined}
+      tabIndex={ariaHidden ? -1 : undefined}
       onClick={(e) => {
         if (!onOpen) return
         // 修饰键与中键留给浏览器：那是在要求「开新标签 / 新窗口」，
@@ -49,12 +54,12 @@ export function HighValueCard({
         e.preventDefault()
         onOpen(card)
       }}
-      className="group flex h-full flex-col overflow-hidden rounded border border-transparent bg-surface p-4 shadow-[0_1px_2px_rgb(15_23_42_/_0.06)] transition-[box-shadow,border-color] duration-150 hover:border-border hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted"
+      className="group flex h-full flex-col overflow-hidden rounded border border-transparent bg-surface p-2 md:p-4 shadow-[0_1px_2px_rgb(15_23_42_/_0.06)] transition-[box-shadow,border-color] duration-150 hover:border-border hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted"
     >
       {/* 图框：白卡内缩 15px 的浅灰块，尺寸本身就是 5:7；图框自己的 padding
           让商品四周留出灰边。透明背景的商品图直接透出灰底，不透明的商品图
           也会被 padding 隔开——两种素材都读成「商品摆在灰台面上」。 */}
-      <div className="relative aspect-[5/7] w-full overflow-hidden bg-[#fafafa] p-3 dark:bg-surface-2">
+      <div className="relative aspect-[5/7] w-full overflow-hidden bg-[#fafafa] p-1.5 dark:bg-surface-2 md:p-3">
         {src ? (
           <CardImage
             src={src}
@@ -62,23 +67,23 @@ export function HighValueCard({
             imgClassName="object-contain transition-transform duration-200 ease-out group-hover:scale-[1.03] motion-reduce:transform-none"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-sm text-hint">
+          <div className="flex h-full w-full items-center justify-center text-[10px] text-hint md:text-sm">
             {t('noImage')}
           </div>
         )}
       </div>
 
-      <div className="flex flex-1 flex-col pt-3">
+      <div className="flex flex-1 flex-col pt-1.5 md:pt-3">
         {/* 卡名独占两行：状态徽章从名字前面挪到编号前面，长卡名不再被挤压截断。 */}
-        <div className="line-clamp-2 text-lg font-bold leading-[26px] text-fg flex-1">
+        <div className="line-clamp-2 text-xs font-bold leading-tight text-fg flex-1 md:text-lg md:leading-[26px]">
           {card.name}
         </div>
 
         {(status || card.code) && (
-          <div className="mt-1 flex min-w-0 items-center gap-2 text-base text-faint">
+          <div className="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-faint md:mt-1 md:gap-2 md:text-base">
             {status && (
               <span
-                className={`inline-flex h-6 shrink-0 items-center rounded-md px-2.5 text-sm font-semibold ${statusBadgeClass(card.cardStatusColor)}`}
+                className={`inline-flex h-5 shrink-0 items-center rounded-md px-1 text-[10px] font-semibold ${statusBadgeClass(card.cardStatusColor)} md:h-6 md:px-2.5 md:text-sm`}
               >
                 {status}
               </span>
@@ -87,7 +92,7 @@ export function HighValueCard({
           </div>
         )}
 
-        <div className="mt-auto pt-2 text-right text-xl font-bold leading-none tabular-nums text-price">
+        <div className="mt-auto pt-1 text-right text-sm font-bold leading-none tabular-nums text-price md:pt-2 md:text-xl">
           {card.stopBuyback
             ? t('stopBuyback')
             : card.price != null

@@ -81,13 +81,20 @@ export default async function CardsPage({ params, searchParams }: Props) {
   const locale = raw as Locale
 
   const query = parseCardQuery(await searchParams)
-  const result = await getCards(query)
+  let result = await getCards(query)
   const facets = await getFacets()
+
+  // 页码越界（旧链接、筛选后数据变少）时 Payload 返回空 docs，但 totalPages 仍然正确。
+  // 回落到末页，分页因此总能取到全部卡牌；否则页面会显示空网格，看起来像卡牌没有返回。
+  const totalPages = Math.max(1, result.totalPages || 1)
+  const requestedPage = query.page ?? 1
+  if (requestedPage > totalPages) {
+    result = await getCards({ ...query, page: totalPages })
+  }
 
   // 结果网格与分页都在 CatalogFilters 里（它是客户端组件，需要 children 由服务端渲染传入），
   // 因此这一层没有可见文案，也就不需要翻译函数。
-  const totalPages = Math.max(1, result.totalPages || 1)
-  const page = Math.min(Math.max(1, result.page || query.page || 1), totalPages)
+  const page = Math.min(Math.max(1, result.page || totalPages), totalPages)
   const isEmpty = result.items.length === 0
 
   const grid = isEmpty ? null : (

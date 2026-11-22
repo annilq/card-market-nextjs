@@ -21,7 +21,7 @@ function XIcon() {
       height={27}
       loading="lazy"
       aria-hidden="true"
-      className="w-auto"
+      className="h-5 w-auto md:h-[27px]"
     />
   );
 }
@@ -37,7 +37,7 @@ function LineIcon() {
         width={27}
         height={27}
         loading="lazy"
-        className="h-7 w-auto"
+        className="h-5 w-auto md:h-7"
       />
       <span
         className="pointer-events-none absolute right-0 top-full z-50 mt-2 hidden w-40 flex-col items-center gap-2 rounded-lg bg-white p-3 text-center text-xs text-neutral-800 shadow-lg group-hover/line:flex group-focus-within/line:flex"
@@ -62,15 +62,15 @@ function ShopIcon() {
       height={27}
       loading="lazy"
       aria-hidden="true"
-      className="h-7 w-auto"
+      className="h-5 w-auto md:h-7"
     />
   );
 }
 
 // 顶栏图标按钮共用同一套外壳尺寸，保证右侧一组在所有宽度下等高。
 const iconBtn =
-  "inline-flex h-9 shrink-0 items-center justify-center rounded text-white transition hover:bg-white/15 hover:text-white";
-const iconBtnSquare = `${iconBtn} w-9`;
+  "inline-flex h-8 shrink-0 items-center justify-center rounded text-white transition hover:bg-white/15 hover:text-white md:h-9";
+const iconBtnSquare = `${iconBtn} w-8 md:w-9`;
 
 /**
  * 站点顶栏（服务端组件）。
@@ -122,7 +122,7 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
         {/* 顶行：语言 + 主题切换不再绝对定位贴视口边缘（那样在 1233–1535px 区间会
             压到同处右上角的 X·店铺图标），改为行内右端、≥2xl 才绝对定位。这里无需
             再为它预留 padding。 */}
-        <div className="flex h-16 items-center gap-3 max-md:gap-2 md:h-25 md:gap-6 text-lg">
+        <div className="flex h-10 items-center gap-2 text-sm md:h-25 md:gap-6 md:text-lg">
           <Link
             href={localizeHref("/", locale)}
             aria-label={siteName}
@@ -135,7 +135,7 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
               alt={ siteName}
               width={settings?.logo?.width ?? 300}
               height={settings?.logo?.height ?? 57}
-              className=" w-auto object-contain"
+              className="h-7 w-auto object-contain md:h-auto"
             />
           </Link>
 
@@ -182,7 +182,7 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
         </div>
 
         {/* <1024：搜索 + X + 店铺图标作为一组放在第二行（源站同构），整行宽度让给搜索。 */}
-        <div className="flex items-center gap-1.5 py-2 lg:hidden">
+        <div className="flex items-center gap-1.5 py-1 lg:hidden">
           <div className="flex min-w-0 flex-1">
             <GlobalSearch />
           </div>

@@ -584,7 +584,7 @@ export function CatalogFilters({
       <div role="group" aria-label={t('catalogFilters')}>
         {/* IP 切换 tab：桌面(sm 及以上)左排 tab、右贴计数与「全部 →」；
             移动端改为「tab 横向滚动单行 + 右端一组落到下方靠右」，不再折行错位。 */}
-        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-2 flex flex-col gap-2 sm:mb-4 sm:flex-row sm:items-center sm:justify-between">
           {facets.ips.length > 0 && (
             // tab 之间不留缝：设计图里这一排是连续的一条底带，缝隙会把它切成
             // 几颗孤立按钮，与 IpTab 注释里「整排读作一条带子」的意图相反。
@@ -665,7 +665,7 @@ export function CatalogFilters({
         </div>
 
         {/* 分隔线到网格 30px（设计图实测）。计数与 chips 已收进上方 tab 行右端。 */}
-        <div className="mt-[30px]">{results}</div>
+        <div className="mt-4 sm:mt-[30px]">{results}</div>
 
         {homeField && (
           <HomeFilterSheet
@@ -829,7 +829,7 @@ function IpTab({
       onClick={onClick}
       aria-pressed={active}
       className={
-        `inline-flex h-10 cursor-pointer shrink-0 items-center px-5 text-xl transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted ` +
+        `inline-flex h-7 cursor-pointer shrink-0 items-center px-3 text-xs transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted sm:h-10 sm:px-5 sm:text-xl ` +
         (active
           ? 'bg-brand text-white'
           : 'bg-[#F2E2E3] text-muted hover:bg-[#f6dadc] hover:text-fg dark:bg-surface-2 dark:text-muted dark:hover:bg-border')
@@ -866,7 +866,7 @@ function FilterButton({
       type="button"
       onClick={onClick}
       aria-haspopup="dialog"
-      className="inline-flex h-10 cursor-pointer shrink-0 min-w-0 max-w-full items-center gap-1.5 rounded px-3 text-sm transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted sm:h-auto sm:flex-col sm:items-start sm:gap-1.5 sm:rounded-none sm:px-0 sm:py-0 sm:text-left sm:hover:bg-transparent"
+      className="inline-flex h-8 cursor-pointer shrink-0 min-w-0 max-w-full items-center gap-1.5 rounded px-2 text-xs transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-muted sm:h-auto sm:flex-col sm:items-start sm:gap-1.5 sm:rounded-none sm:px-0 sm:py-0 sm:text-left sm:hover:bg-transparent"
     >
       <span className="shrink-0 font-bold text-fg sm:text-xl">{label}</span>
       <span className="flex min-w-0 max-w-full items-center gap-2 sm:gap-12">
