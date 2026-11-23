@@ -148,7 +148,7 @@ export function HomeFilterSheet({
                   type="button"
                   onClick={pickAll}
                   aria-current={value.seriesId == null}
-                  className={`${row} px-3 text-xl ${
+                  className={`${row} px-3 ${
                     value.seriesId == null ? 'bg-black/15 font-bold' : 'font-medium text-white'
                   }`}
                 >
@@ -160,7 +160,7 @@ export function HomeFilterSheet({
                     type="button"
                     onClick={() => setTabId(s.id)}
                     aria-current={s.id === tabId}
-                    className={`${row} px-3 text-xl ${
+                    className={`${row} px-3 ${
                       s.id === tabId ? 'bg-black/15 font-bold' : 'font-medium text-white'
                     }`}
                   >
