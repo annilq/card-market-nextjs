@@ -214,7 +214,7 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
               id="bulk-high-value"
               onChange={(event) =>
                 onChange(event.target.checked
-                  ? { isHighValue: true, isNoDeduction: false }
+                  ? { isHighValue: true, isNoDeduction: false, stopBuyback: false }
                   : { isHighValue: false })
               }
               type="checkbox"
@@ -229,7 +229,7 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
               id="bulk-no-deduction"
               onChange={(event) =>
                 onChange(event.target.checked
-                  ? { isNoDeduction: true, isHighValue: false }
+                  ? { isNoDeduction: true, isHighValue: false, stopBuyback: false }
                   : { isNoDeduction: false })
               }
               type="checkbox"
@@ -242,7 +242,11 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
               className="size-4 accent-[var(--primary)]"
               disabled={busy}
               id="bulk-stop-buyback"
-              onChange={(event) => onChange({ stopBuyback: event.target.checked })}
+              onChange={(event) =>
+                onChange(event.target.checked
+                  ? { stopBuyback: true, isHighValue: false, isNoDeduction: false }
+                  : { stopBuyback: false })
+              }
               type="checkbox"
             />
             <span className="text-sm">停止买取</span>

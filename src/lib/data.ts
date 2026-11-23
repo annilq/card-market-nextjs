@@ -20,7 +20,7 @@ import type { Media } from '@/payload-types'
 export type { SiteSettingsView }
 
 const SORT_MAP: Record<CardSort, string | string[]> = {
-  // stopBuyback 必须是首个键：同时勾了「高价买取 / 不减额买取」的停收卡也归入末组。
+  // stopBuyback 必须是首个键：停收卡永远归入末组（三个买取标记互斥，停收卡不会同时挂高价 / 不减额标）。
   // 组内先按买取等级、再按价格倒序。末位 id 让价格 / 时间并列时仍有唯一次序，
   // 否则 LIMIT / OFFSET 分页可能重复或漏掉某些行（停收卡通常价格为空，最容易并列）。
   default: ['stopBuyback', '-isNoDeduction', '-isHighValue', '-price', 'id'],

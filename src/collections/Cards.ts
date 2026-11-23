@@ -40,6 +40,9 @@ export const buildCardDedupeKey = (data: Record<string, unknown>): string | null
   return [relId(data.ip), relId(data.series), relId(data.subSeries), code].join('::')
 }
 
+/** 三个买取标记互斥：最多选一个，也可以都不选。 */
+const BUYBACK_FLAGS = ['isHighValue', 'isNoDeduction', 'stopBuyback'] as const
+
 export const Cards: CollectionConfig = {
   slug: 'cards',
   labels: {
@@ -65,9 +68,15 @@ export const Cards: CollectionConfig = {
     beforeValidate: [
       async ({ data, originalDoc, req, operation }) => {
         const merged = { ...(originalDoc ?? {}), ...(data ?? {}) }
-        // 两个买取标记互斥。后台表单已经即时联动，这里守住 REST / GraphQL / Local API 写入。
-        if (merged.isHighValue && merged.isNoDeduction) {
-          throw new APIError('「高价买取」与「不减额买取」只能选一个', 400, { field: 'isNoDeduction' }, true)
+        // 三个买取标记互斥。后台表单已经即时联动，这里守住 REST / GraphQL / Local API 写入。
+        const selected = BUYBACK_FLAGS.filter((name) => Boolean(merged[name]))
+        if (selected.length > 1) {
+          throw new APIError(
+            '「高价买取」「不减额买取」「停止买取」只能选一个，或都不选',
+            400,
+            { field: selected[selected.length - 1] },
+            true,
+          )
         }
         if (!merged.stopBuyback) {
           const price = merged.price
@@ -202,10 +211,11 @@ export const Cards: CollectionConfig = {
           admin: {
             width: '33%',
             description: {
-              zh: '勾选后可以不填卖价；前台卡牌显示「停止买取」',
-              en: 'Skip the price and show "Buyback stopped" on the site',
-              ja: '価格は省略可。サイト側は「買取停止」と表示',
+              zh: '与「高价买取」「不减额买取」互斥；勾选后可以不填卖价，前台显示「停止买取」',
+              en: 'Mutually exclusive with "High-value buyback" and "No-deduction buyback"; skips the price and shows "Buyback stopped" on the site',
+              ja: '「高価買取」「減額なし買取」と排他。価格は省略可、サイト側は「買取停止」と表示',
             },
+            components: { Field: '@/components/admin/ExclusiveBuybackField#ExclusiveBuybackField' },
           },
         },
       ],
@@ -235,7 +245,7 @@ export const Cards: CollectionConfig = {
           index: true,
           admin: {
             width: '33%',
-            description: { zh: '与「不减额买取」互斥；进入首页高价买取栏目', en: 'Mutually exclusive with "No-deduction buyback"; appears in the homepage strip', ja: '「減額なし買取」と排他。トップの高価買取欄に表示' },
+            description: { zh: '与「不减额买取」「停止买取」互斥；进入首页高价买取栏目', en: 'Mutually exclusive with "No-deduction buyback" and "Buyback stopped"; appears in the homepage strip', ja: '「減額なし買取」「買取停止」と排他。トップの高価買取欄に表示' },
             components: { Field: '@/components/admin/ExclusiveBuybackField#ExclusiveBuybackField' },
           },
         },
@@ -247,7 +257,7 @@ export const Cards: CollectionConfig = {
           index: true,
           admin: {
             width: '33%',
-            description: { zh: '与「高价买取」互斥；进入首页高价买取栏目', en: 'Mutually exclusive with "High-value buyback"; appears in the homepage strip', ja: '「高価買取」と排他。トップの高価買取欄に表示' },
+            description: { zh: '与「高价买取」「停止买取」互斥；进入首页高价买取栏目', en: 'Mutually exclusive with "High-value buyback" and "Buyback stopped"; appears in the homepage strip', ja: '「高価買取」「買取停止」と排他。トップの高価買取欄に表示' },
             components: { Field: '@/components/admin/ExclusiveBuybackField#ExclusiveBuybackField' },
           },
         },
