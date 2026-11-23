@@ -16,6 +16,7 @@ import * as migration_20261112_000000_announcement_published_at from './20261112
 import * as migration_20261114_000000_card_status_color from './20261114_000000_card_status_color';
 import * as migration_20261116_000000_stop_buyback from './20261116_000000_stop_buyback';
 import * as migration_20261117_000000_sub_series_ip from './20261117_000000_sub_series_ip';
+import * as migration_20261123_000000_drop_card_dedupe_key from './20261123_000000_drop_card_dedupe_key';
 
 export const migrations = [
   {
@@ -107,5 +108,10 @@ export const migrations = [
     up: migration_20261117_000000_sub_series_ip.up,
     down: migration_20261117_000000_sub_series_ip.down,
     name: '20261117_000000_sub_series_ip',
+  },
+  {
+    up: migration_20261123_000000_drop_card_dedupe_key.up,
+    down: migration_20261123_000000_drop_card_dedupe_key.down,
+    name: '20261123_000000_drop_card_dedupe_key',
   },
 ];

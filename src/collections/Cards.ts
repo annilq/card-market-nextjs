@@ -1,4 +1,4 @@
-import { APIError, type CollectionConfig, type Where } from 'payload'
+import { APIError, type CollectionConfig } from 'payload'
 
 import { publishedOnly } from '@/access'
 import { moduleRead, roleAction } from '@/access/roles'
@@ -29,17 +29,6 @@ const cascadingField = (cascade: {
   path: '@/components/admin/TaxonomyCascadeField#CascadingRelationshipField',
 })
 
-/**
- * 组合唯一键：(ip, series, subSeries, code)。
- * Payload 没有复合唯一索引，这里用「计算列 + unique」+ 钩子显式报错实现同等效果
- * （Directus 版本是在 Postgres 上建 (ip_id, series_id, sub_series_id, code) 唯一索引）。
- */
-export const buildCardDedupeKey = (data: Record<string, unknown>): string | null => {
-  const code = (data?.code ?? '').toString().trim()
-  if (!code) return null
-  return [relId(data.ip), relId(data.series), relId(data.subSeries), code].join('::')
-}
-
 /** 三个买取标记互斥：最多选一个，也可以都不选。 */
 const BUYBACK_FLAGS = ['isHighValue', 'isNoDeduction', 'stopBuyback'] as const
 
@@ -66,7 +55,7 @@ export const Cards: CollectionConfig = {
   },
   hooks: {
     beforeValidate: [
-      async ({ data, originalDoc, req, operation }) => {
+      async ({ data, originalDoc }) => {
         const merged = { ...(originalDoc ?? {}), ...(data ?? {}) }
         // 三个买取标记互斥。后台表单已经即时联动，这里守住 REST / GraphQL / Local API 写入。
         const selected = BUYBACK_FLAGS.filter((name) => Boolean(merged[name]))
@@ -82,23 +71,6 @@ export const Cards: CollectionConfig = {
           const price = merged.price
           if (price == null || price === '' || (typeof price === 'number' && !Number.isFinite(price))) {
             throw new APIError('卖价必填；如需停止买取请勾选「停止买取」', 400, { field: 'price' }, true)
-          }
-        }
-        const key = buildCardDedupeKey(merged as Record<string, unknown>)
-        if (data) data.dedupeKey = key ?? undefined
-        if (key) {
-          const where: Where[] = [{ dedupeKey: { equals: key } }]
-          if (operation === 'update' && originalDoc?.id) {
-            where.push({ id: { not_equals: originalDoc.id } })
-          }
-          const dup = await req.payload.find({
-            collection: 'cards',
-            overrideAccess: true,
-            limit: 1,
-            where: { and: where },
-          })
-          if (dup.docs.length > 0) {
-            throw new APIError('同一 IP / 系列 / 子系列 下的编号已存在', 400, { field: 'dedupeKey' }, true)
           }
         }
         return data
@@ -279,13 +251,6 @@ export const Cards: CollectionConfig = {
       admin: { hidden: true },
     },
     statusField(),
-    {
-      name: 'dedupeKey',
-      type: 'text',
-      unique: true,
-      index: true,
-      admin: { hidden: true, readOnly: true, disableBulkEdit: true },
-    },
     linkField(),
   ],
 }

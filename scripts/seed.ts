@@ -172,7 +172,7 @@ async function main() {
   )
 
   // ── 以下每种业务类型只建一条「字段最全」的记录，作为可直接修改的模板 ──
-  // 说明：派生 / 计算字段（cards.dedupeKey、shops.lat / lng、各集合的 publicLink）
+  // 说明：派生 / 计算字段（shops.lat / lng、各集合的 publicLink）
   // 由钩子或 UI 生成，不需要也不应手填，故下面不列出。
 
   // 维度：IP → 系列 → 子系列（外加稀有度、卡牌状态）
