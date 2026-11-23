@@ -148,6 +148,21 @@ html.dark {
   }
 }
 
+/* ===== 触屏设备上的输入框字号 =====
+   iOS / iPadOS Safari 在聚焦「计算字号 < 16px」的输入框时，会把整个页面放大到
+   该字段字号为 16px 为止（失焦后往往还停在放大状态）。这是 Safari 的默认行为。
+   从 iOS 10 起 viewport 的 maximum-scale=1 / user-scalable=no 已压不住它，
+   而且禁用捏合缩放违反 WCAG 1.4.4；`transform: scale()` 也不改变计算字号。
+   唯一可靠的解法是让可聚焦字段自身达到 16px：
+   顶栏搜索框设计稿是 11px（md 起 14px），在触屏设备上抬到 16px，
+   桌面指针设备仍按设计稿显示（iPad 即使走 lg 布局也命中，同样需要）。
+   规则放在 @layer 之外，才能盖过 text-[11px] / md:text-sm 这些工具类。 */
+@media (pointer: coarse) {
+  .site-search-input {
+    font-size: 16px;
+  }
+}
+
 /* 富文本（公告正文）：限制最大宽度并让链接/图片在深色下协调 */
 .prose {
   line-height: 1.75;

@@ -36,12 +36,14 @@ export function GlobalSearch() {
       className="flex w-full items-center gap-1.5 md:gap-2.5"
     >
       <div className="relative min-w-0 flex-1">
+        {/* site-search-input：触屏设备上由 globals.css 抬到 16px，避免 iOS Safari
+            聚焦时整页放大（见那儿的原因说明）。提示文案是另一层 span，仍是设计稿字号。 */}
         <input
           name="q"
           type="text"
           aria-label={t('searchPlaceholder')}
           placeholder=" "
-          className="peer block h-6 w-full rounded border-0 bg-white px-2 text-[11px] text-slate-900 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:h-10 md:rounded-xl md:px-3.5 md:text-sm"
+          className="site-search-input peer block h-6 w-full rounded border-0 bg-white px-2 text-[11px] text-slate-900 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:h-10 md:rounded-xl md:px-3.5 md:text-sm"
         />
         <span
           aria-hidden="true"
