@@ -129,6 +129,14 @@ html.dark {
     padding: 0;
   }
 
+  /* 关闭移动端浏览器的「文字自动放大 / font boosting」。
+     Chrome Android 在部分设置下会按文本自动膨胀，输入框的实际字号随之变化，
+     16px 的防聚焦缩放规则可能被它抵消。固定为 100% 后以 CSS 声明为准。 */
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
   body {
     font-family:
       system-ui,
@@ -150,17 +158,43 @@ html.dark {
 
 /* ===== 触屏设备上的输入框字号 =====
    iOS / iPadOS Safari 在聚焦「计算字号 < 16px」的输入框时，会把整个页面放大到
-   该字段字号为 16px 为止（失焦后往往还停在放大状态）。这是 Safari 的默认行为。
-   从 iOS 10 起 viewport 的 maximum-scale=1 / user-scalable=no 已压不住它，
-   而且禁用捏合缩放违反 WCAG 1.4.4；`transform: scale()` 也不改变计算字号。
-   唯一可靠的解法是让可聚焦字段自身达到 16px：
-   顶栏搜索框设计稿是 11px（md 起 14px），在触屏设备上抬到 16px，
-   桌面指针设备仍按设计稿显示（iPad 即使走 lg 布局也命中，同样需要）。
+   该字段字号为 16px 为止（失焦后往往还停在放大状态）。这是 Safari 的默认行为，
+   与 `<meta name="viewport">` 的 initial-scale / maximum-scale 无关：
+   从 iOS 10 起 maximum-scale=1 / user-scalable=no 已压不住它，而且禁用捏合缩放
+   违反 WCAG 1.4.4；`transform: scale()` 也不改变计算字号。
+   唯一可靠的解法是让可聚焦字段自身达到 16px。
+
+   顶栏搜索框设计稿是 11px（md 起 14px），触屏设备上抬到 16px。
+   这里同时用两个条件，不单靠 `pointer`：
+   - `any-pointer: coarse`：只要有触屏就命中。iPad 接了触控板/鼠标后主指针会变成
+     fine（`pointer: coarse` 失效），但仍有一块 coarse 的触摸屏。
+   - `max-width: 1023.98px`：手机布局（<lg）无论如何都按 16px，不依赖浏览器正确
+     上报 pointer，也能覆盖 iOS 桌面模式 / 部分内嵌浏览器。
+   桌面鼠标 + ≥lg 时仍按设计稿显示 14px。
    规则放在 @layer 之外，才能盖过 text-[11px] / md:text-sm 这些工具类。 */
-@media (pointer: coarse) {
+@media (any-pointer: coarse), (max-width: 1023.98px) {
   .site-search-input {
     font-size: 16px;
   }
+}
+
+/* iOS WebKit 兜底：Chrome / Firefox / 微信内嵌页在 iOS 上同样是 WKWebView，
+   Safari 能命中的媒体查询在它们那里不保证一致。`-webkit-touch-callout` 只在
+   iOS WebKit 中存在，用它把 iOS 上的搜索框无条件锁到 16px，不再依赖媒体查询。 */
+@supports (-webkit-touch-callout: none) {
+  .site-search-input {
+    font-size: 16px;
+  }
+}
+
+/* 两件事放在元素自身上：
+   1. `text-size-adjust: 100%` —— 关闭 Chrome 的 text autosizing。放在 html/body
+      上在 Chrome iOS 里可能不生效，必须与 font-size 同一个元素；
+   2. `touch-action: manipulation` —— 禁止双击缩放（捏合缩放仍保留，不违反 WCAG）。 */
+.site-search-input {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  touch-action: manipulation;
 }
 
 /* 富文本（公告正文）：限制最大宽度并让链接/图片在深色下协调 */
