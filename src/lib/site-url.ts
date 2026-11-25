@@ -1,5 +1,7 @@
 import { headers } from 'next/headers'
 
+import { LOCALES, type Locale } from '@/lib/i18n/locales'
+
 /**
  * 站点绝对域名 —— 全站唯一真源（single source of truth）。
  *
@@ -50,13 +52,19 @@ export async function getOrigin(): Promise<string> {
 
 /**
  * 拼绝对 URL（带前导斜杠的路径 → 完整地址），host 取请求 host。
- * 例：`absUrl('/cards', 'zh')` → `https://<用户访问域名>/zh/cards`
+ * 语言段按 LOCALES 的 prefix 补：默认语言（ja）不带段，其余带。
+ * 例：`absUrl('/cards', 'zh')` → `https://<用户访问域名>/zh/cards`；
+ *     `absUrl('/cards', 'ja')` → `https://<用户访问域名>/cards`
  */
-export async function absUrl(path = '', locale = ''): Promise<string> {
+export async function absUrl(path = '', locale?: Locale): Promise<string> {
   const origin = await getOrigin()
-  const withLocale = locale
-    ? `/${locale}${path.startsWith('/') ? path : `/${path}`}`
-    : path
-  const cleanPath = stripTrailingSlash(withLocale) || '/'
-  return `${origin}${cleanPath}`
+  const prefix = locale ? LOCALES[locale].prefix : ''
+  const cleanPath = path.startsWith('/') ? path : path ? `/${path}` : ''
+  const withLocale = prefix
+    ? cleanPath && cleanPath !== '/'
+      ? `/${prefix}${cleanPath}`
+      : `/${prefix}`
+    : cleanPath
+  const finalPath = stripTrailingSlash(withLocale) || '/'
+  return `${origin}${finalPath}`
 }

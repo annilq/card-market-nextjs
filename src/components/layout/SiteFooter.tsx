@@ -1,9 +1,8 @@
 import Link from "next/link";
 
-import { localizeHref } from "@/lib/i18n/locales";
+import { localizeHref, type Locale } from "@/lib/i18n/locales";
 import { getTranslator } from "@/lib/i18n/t";
 import type { MessageKey } from "@/lib/i18n/messages";
-import { getLocaleFromHeaders } from "@/lib/i18n/server";
 import type { SiteSettingsView } from "@/lib/data";
 
 /**
@@ -26,9 +25,11 @@ const FOOTER_LINKS: readonly { path: string; key: MessageKey }[] = [
 const footerLinkClass =
   "inline-flex items-center py-1 text-xs text-footer-muted transition hover:text-footer-fg hover:underline md:py-1.5 md:text-sm";
 
-/** 站点页脚（服务端组件）。结构照参考项目：左 logo + 右「帮助中心」一组链接 + 底部版权。 */
-export async function SiteFooter({ settings }: { settings: SiteSettingsView }) {
-  const locale = await getLocaleFromHeaders();
+/**
+ * 站点页脚（服务端组件）。结构照参考项目：左 logo + 右「帮助中心」一组链接 + 底部版权。
+ * 语言由 `[locale]/layout` 以属性传入，保证客户端切换语言时页脚跟着重渲染。
+ */
+export function SiteFooter({ settings, locale }: { settings: SiteSettingsView; locale: Locale }) {
   const t = getTranslator(locale);
   const siteName = settings.siteName?.trim() || t("defaultSiteName");
 

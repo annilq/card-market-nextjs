@@ -18,7 +18,6 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { CatalogFilters } from '@/components/catalog/CatalogFilters'
-import { ContentLanguageNotice } from '@/components/ContentLanguageNotice'
 import { BannerCarousel } from '@/components/home/BannerCarousel'
 import { HighValueStrip } from '@/components/home/HighValueStrip'
 import { HomeCardGrid } from '@/components/home/HomeCardGrid'
@@ -32,7 +31,7 @@ import {
   getSiteSettings,
 } from '@/lib/data'
 import { parseCardSearch, rawOf, type CardSearchParams } from '@/lib/card-search'
-import { DEFAULT_LOCALE, LOCALES, localizeHref, type Locale } from '@/lib/i18n/locales'
+import { LOCALES, localizeHref, type Locale } from '@/lib/i18n/locales'
 import { absUrl, getOrigin } from '@/lib/site-url'
 import { getTranslator } from '@/lib/i18n/t'
 
@@ -120,9 +119,6 @@ export default async function Page({ params, searchParams }: Props) {
     <div className="space-y-3 md:space-y-6">
       {/* 首屏主图预加载（见上方 lcpBanner 计算）。 */}
       {lcpBanner && <link rel="preload" as="image" href={lcpBanner} fetchPriority="high" />}
-      {/* 非默认语言：后台内容（卡名 / 公告 / 门店）只有中文一份，切换语言只换界面文字，
-          先说清楚再给内容，免得用户以为是翻译漏了。 */}
-      {locale !== DEFAULT_LOCALE && <ContentLanguageNotice locale={locale} />}
 
       {/* banner 与通知条紧邻：实测 banner 底边 649、通知红条顶边 650，两者读作同一块。 */}
       {banners.length > 0 && <BannerCarousel banners={banners} />}

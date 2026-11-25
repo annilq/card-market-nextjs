@@ -85,7 +85,7 @@ export default async function InfoPage({ params }: Props) {
       {/* 28px：参考图里信息页标题实测约 30px，与公告标题同一档。 */}
       <h1 className="mt-1 break-words text-[28px] font-bold leading-snug">{title}</h1>
 
-      <ContentLanguageNotice locale={locale} pathname={`/info/${infoKey}`} />
+      {/*<ContentLanguageNotice locale={locale} pathname={`/info/${infoKey}`} />*/}
 
       {page?.bodyHtml ? (
         // 富文本由管理员在后台维护（受信任来源），已在数据层经 renderRichText 转为 HTML，

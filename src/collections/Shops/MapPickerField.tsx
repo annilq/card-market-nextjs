@@ -12,6 +12,8 @@ import { useField } from '@payloadcms/ui'
 import type * as LeafletNS from 'leaflet'
 import { useEffect, useRef, useState } from 'react'
 
+import { useAdminT } from '@/lib/admin/i18n/use-admin-t'
+
 import 'leaflet/dist/leaflet.css'
 
 type Geo = { lat: number; lng: number }
@@ -19,6 +21,7 @@ type Geo = { lat: number; lng: number }
 const DEFAULT_CENTER: Geo = { lat: 35.6762, lng: 139.6503 } // 东京
 
 export function MapPickerField() {
+  const t = useAdminT()
   const { value, setValue } = useField<Geo | null>({ path: 'geo' })
   const mapRef = useRef<HTMLDivElement>(null)
   const leafletMap = useRef<LeafletNS.Map | null>(null)
@@ -105,7 +108,7 @@ export function MapPickerField() {
     <div style={{ display: 'grid', gap: 8 }}>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
         <input
-          placeholder="搜索地址后回车定位"
+          placeholder={t('map.searchPlaceholder')}
           style={{ flex: 1, padding: '6px 8px', border: '1px solid var(--theme-elevation-150)', borderRadius: 4 }}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -122,12 +125,15 @@ export function MapPickerField() {
           onClick={() => void search()}
           style={{ padding: '6px 12px', border: '1px solid var(--theme-elevation-150)', borderRadius: 4 }}
         >
-          {searching ? '搜索中…' : '搜索'}
+          {searching ? t('map.searching') : t('map.search')}
         </button>
       </div>
       <div ref={mapRef} style={{ height: 320, borderRadius: 6, overflow: 'hidden' }} />
       <p style={{ margin: 0, fontSize: 12, opacity: 0.7 }}>
-        点击地图或拖动标记选点；当前坐标 {current.lat.toFixed(5)}, {current.lng.toFixed(5)}
+        {t('map.hint', {
+          lat: current.lat.toFixed(5),
+          lng: current.lng.toFixed(5),
+        })}
       </p>
     </div>
   )

@@ -3,6 +3,7 @@ import { APIError, type CollectionConfig } from 'payload'
 import { publishedOnly } from '@/access'
 import { moduleRead, roleAction } from '@/access/roles'
 import { linkField, sortField, statusField } from '@/fields/shared'
+import { createAdminT } from '@/lib/admin/i18n'
 import { revalidateHook } from '@/lib/revalidate'
 
 const relId = (value: unknown): string | number | null => {
@@ -55,13 +56,14 @@ export const Cards: CollectionConfig = {
   },
   hooks: {
     beforeValidate: [
-      async ({ data, originalDoc }) => {
+      async ({ data, originalDoc, req }) => {
+        const t = createAdminT(req.i18n?.language)
         const merged = { ...(originalDoc ?? {}), ...(data ?? {}) }
         // 三个买取标记互斥。后台表单已经即时联动，这里守住 REST / GraphQL / Local API 写入。
         const selected = BUYBACK_FLAGS.filter((name) => Boolean(merged[name]))
         if (selected.length > 1) {
           throw new APIError(
-            '「高价买取」「不减额买取」「停止买取」只能选一个，或都不选',
+            t('validation.buybackFlags'),
             400,
             { field: selected[selected.length - 1] },
             true,
@@ -70,7 +72,7 @@ export const Cards: CollectionConfig = {
         if (!merged.stopBuyback) {
           const price = merged.price
           if (price == null || price === '' || (typeof price === 'number' && !Number.isFinite(price))) {
-            throw new APIError('卖价必填；如需停止买取请勾选「停止买取」', 400, { field: 'price' }, true)
+            throw new APIError(t('validation.priceRequired'), 400, { field: 'price' }, true)
           }
         }
         return data

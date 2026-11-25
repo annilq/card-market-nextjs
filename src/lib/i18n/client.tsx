@@ -15,7 +15,7 @@ const LocaleContext = createContext<Locale>(DEFAULT_LOCALE)
  * 被保留），若把语言作为道具从服务端下发，它会一直停在首次进站的语言，导致顶栏语言
  * select 与所有 useT() 文案都不跟着切。因此以 usePathname()（随路由变化触发重渲染）为准。
  *
- * bare `/` 与 rewrite 后的 `/zh` 都解析成 zh，SSR 与客户端结果一致，不会水合不一致；
+ * bare `/` 与 rewrite 后的 `/ja` 都解析成 ja，SSR 与客户端结果一致，不会水合不一致；
  * 无语言段的路径（含非法段 `/de/...` 的 404）回退到默认语言，与 middleware 的 x-locale 一致。
  */
 export function I18nProvider({ children }: { children: ReactNode }) {

@@ -9,14 +9,20 @@
 // 就会把「到最近 loading 边界为止的局部路由」预取下来（见优化项 ②），两者互补。
 //
 // 纯服务端组件即可，不需要客户端水合；用已有的设计令牌（surface / border / pulse）
-// 与正式页面观感一致。
-export default function LocaleLoading() {
+// 与正式页面观感一致。读屏播报的文案跟当前界面语言走，不再写死中文。
+import { getLocaleFromHeaders } from '@/lib/i18n/server'
+import { getTranslator } from '@/lib/i18n/t'
+
+export default async function LocaleLoading() {
+  const locale = await getLocaleFromHeaders()
+  const t = getTranslator(locale)
+
   return (
     <div
       role="status"
       aria-busy="true"
       aria-live="polite"
-      aria-label="加载中"
+      aria-label={t('loading')}
       className="animate-pulse"
     >
       {/* 列表/网格占位：模拟若干卡片方块 + 文字行 */}

@@ -21,6 +21,7 @@ import type {
   PayloadRequest,
 } from 'payload'
 import type { Role, User } from '@/payload-types'
+import { createAdminT } from '@/lib/admin/i18n'
 
 /**
  * 可授权的模块清单（角色权限矩阵的「行」）。
@@ -219,7 +220,7 @@ export const enforceSingleAdmin: CollectionBeforeValidateHook = async ({ data, o
     limit: 0,
   })
   if (totalDocs === 0) return data
-  throw new APIError('应用只能有一个管理员，管理员角色不能分配或变更', 400, undefined, true)
+  throw new APIError(createAdminT(req.i18n?.language)('validation.singleAdmin'), 400, undefined, true)
 }
 
 /**
@@ -236,6 +237,6 @@ export const preventAdminDeletion: CollectionBeforeDeleteHook = async ({ id, req
   })
   if (!user) return
   if (await isAdminRoleId(req, toRoleId(user.role))) {
-    throw new APIError('不能删除唯一的管理员账号', 400, undefined, true)
+    throw new APIError(createAdminT(req.i18n?.language)('validation.deleteAdmin'), 400, undefined, true)
   }
 }

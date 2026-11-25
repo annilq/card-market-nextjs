@@ -138,7 +138,9 @@ export const getSiteSettings = unstable_cache(
       overrideAccess: false,
     })
     return {
-      siteName: settings.siteName || '卡牌回购站',
+      // 不在数据层兜一个中文站名：它会被所有语言的页面共享，导致日语/英语页
+      // 显示中文。留空由各组件回退到 t('defaultSiteName')（按界面语言取词）。
+      siteName: settings.siteName?.trim() || '',
       intro: settings.intro ?? null,
       logo: toImageView(settings.logo),
       xAccount: settings.xAccount ?? null,

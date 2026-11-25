@@ -4,6 +4,7 @@ import { DefaultTemplate } from '@payloadcms/next/templates'
 import React from 'react'
 import type { AdminViewServerProps } from 'payload'
 
+import { createAdminT, type AdminMessageKey, type AdminT } from '@/lib/admin/i18n'
 import { getOrigin } from '@/lib/site-url'
 import { explainLinkPatterns } from '@/lib/admin/public-links'
 
@@ -21,152 +22,157 @@ import './admin-ui.css'
 type Step = { body: string; title: string }
 type Section = { body?: string; id: string; intro?: string; steps?: Step[]; title: string }
 
-function buildSections(origin: string): { examples: { example: string; label: string }[]; sections: Section[] } {
+function buildSections(
+  origin: string,
+  t: AdminT,
+): { examples: { example: string; labelKey: AdminMessageKey }[]; sections: Section[] } {
   const examples = explainLinkPatterns(origin)
   const cardExample = `${origin}/cards/123`
 
   const sections: Section[] = [
     {
       id: 'links',
-      title: '怎样添加跳转链接',
-      intro:
-        'banner 的「跳转链接」是手填的文本框，后台不会校验。填的时候请用站内路径（以 / 开头），不要带域名。前台会自动给日语站补 /ja、给英语站补 /en，所以同一条链接三种语言都能用，不需要建三条。',
+      title: t('help.links.title'),
+      intro: t('help.links.intro'),
       steps: [
+        { title: t('help.links.step1.title'), body: t('help.links.step1.body') },
         {
-          title: '方法一：去列表页复制',
-          body: '打开卡牌、公告、门店或信息页的列表。找到目标那一行，点「链接」列的小胶囊，会展开这台条目的前台路径和一顆复制按钮。点复制，回到 banner 表单粘进「跳转链接」。',
+          title: t('help.links.step2.title'),
+          body: t('help.links.step2.body', { cardExample }),
         },
-        {
-          title: '方法二：打开详情页复制',
-          body: `点进任意一条记录，浏览器地址栏里 .../admin/collections/cards/123 的最后一段数字就是它的 id。前台详情页就是 ${cardExample} 这样的形式。`,
-        },
-        {
-          title: '外部链接',
-          body: '要跳到别的网站，直接填完整地址，例如 https://example.com。以 http 开头的地址不会被补语言段。',
-        },
+        { title: t('help.links.step3.title'), body: t('help.links.step3.body') },
       ],
     },
     {
       id: 'patterns',
-      title: '有哪些链接可填',
-      intro: '下面是这个站前台存在的全部页面。带数字 id 的，把 id 换成你的记录 id 即可。',
+      title: t('help.patterns.title'),
+      intro: t('help.patterns.intro'),
     },
     {
       id: 'filters',
-      title: '指向「筛好的列表」',
-      intro:
-        '卡牌列表 /cards 的筛选结果也能直接作为链接。筛选条件写在问号后面，多个用 & 连接。常用的几个：',
+      title: t('help.filters.title'),
+      intro: t('help.filters.intro'),
       steps: [
-        { title: '按 IP', body: `${origin}/cards?ip=3` },
-        { title: '按系列 + 排序', body: `${origin}/cards?series=5&sort=price_asc` },
-        { title: '只看高价买取', body: `${origin}/cards?hv=1` },
-        { title: '价格区间', body: `${origin}/cards?min=1000&max=50000` },
-        { title: '关键词 + 最新在前', body: `${origin}/cards?q=皮卡丘&sort=newest` },
+        { title: t('help.filters.ip.title'), body: t('help.filters.ip.body', { origin }) },
+        {
+          title: t('help.filters.series.title'),
+          body: t('help.filters.series.body', { origin }),
+        },
+        {
+          title: t('help.filters.highValue.title'),
+          body: t('help.filters.highValue.body', { origin }),
+        },
+        {
+          title: t('help.filters.price.title'),
+          body: t('help.filters.price.body', { origin }),
+        },
+        {
+          title: t('help.filters.keyword.title'),
+          body: t('help.filters.keyword.body', { origin }),
+        },
       ],
     },
     {
       id: 'images',
-      title: '图片尺寸建议',
+      title: t('help.images.title'),
       steps: [
         {
-          title: '首页 banner 图',
-          body: '建议 1920 × 900（约 2.13:1）。系统会自动裁出 banner 尺寸的缩略图，横图不要小于这个比例太多，否则主体容易被裁掉。',
+          title: t('help.images.banner.title'),
+          body: t('help.images.banner.body'),
         },
         {
-          title: '卡牌图片',
-          body: '卡片在列表和详情页按 3:4 竖图展示，建议 800 × 800 起步（正方形也能用，会按中心裁成 3:4），单张不建议超过 2MB。',
+          title: t('help.images.card.title'),
+          body: t('help.images.card.body'),
         },
         {
-          title: '门店照片',
-          body: '门店首图用于大图展示，建议横向 16:9，宽度 1200 以上。',
+          title: t('help.images.shop.title'),
+          body: t('help.images.shop.body'),
         },
         {
-          title: '替代文本（alt）必填',
-          body: '每张图都要填 alt。它会被搜索引擎读取，也供读屏软件朗读。写一句看得懂的话，例如「皮卡丘 25 周年纪念卡正面」。',
+          title: t('help.images.alt.title'),
+          body: t('help.images.alt.body'),
         },
       ],
     },
     {
       id: 'bulk',
-      title: '批量上架',
-      intro:
-        '一次上传多张卡图、逐张填卡牌信息的快捷页面。入口在左侧「商品 → 批量上架」，账号需要同时拥有「卡牌」和「图片」的新增权限。',
+      title: t('help.bulk.title'),
+      intro: t('help.bulk.intro'),
       steps: [
         {
-          title: '上传图片',
-          body: '点「添加文件」或把图片拖进左侧区域，系统会自动直传并显示进度。替代文本默认取文件名，可在右侧修改。',
+          title: t('help.bulk.upload.title'),
+          body: t('help.bulk.upload.body'),
         },
         {
-          title: '批量填分类',
-          body: '展开「批量填充分类」，一次选好 IP、系列、子系列、稀有度和发布状态，再点「应用到未保存的图片」。它只影响还没保存的图片，不会改动已保存的卡牌。',
+          title: t('help.bulk.fill.title'),
+          body: t('help.bulk.fill.body'),
         },
         {
-          title: '逐张保存',
-          body: '点左侧图片填写卡牌名称等必填项。保存成功会弹出提示，并自动跳到下一张待填图片；已保存的卡牌再改字段，按钮会变成「更新卡牌」。左侧列表用「已保存」和「未填写」标记每张图的进度。',
+          title: t('help.bulk.save.title'),
+          body: t('help.bulk.save.body'),
         },
         {
-          title: '快捷操作',
-          body: '⌘/Ctrl + Enter 保存当前卡牌，Alt + ←/→ 切换图片。有未保存内容时关闭或刷新页面会先提示。',
+          title: t('help.bulk.keys.title'),
+          body: t('help.bulk.keys.body'),
         },
         {
-          title: '编号重复',
-          body: '同一 IP / 系列 / 子系列下编号不能重复。报错会显示在「编号」下方，改号后再存即可。',
+          title: t('help.bulk.dup.title'),
+          body: t('help.bulk.dup.body'),
         },
       ],
     },
     {
       id: 'status',
-      title: '状态与发布',
+      title: t('help.status.title'),
       steps: [
         {
-          title: '草稿不会出现在前台',
-          body: '新内容默认是「草稿」，前台看不到。确认无误后把状态改成「已发布」，几秒后前台就会更新。归档用于下架但保留记录。',
+          title: t('help.status.draft.title'),
+          body: t('help.status.draft.body'),
         },
         {
-          title: '公告可以定时',
-          body: '公告的「发布时间」填未来时间就是定时发布。到点自动上线，不用守着。留空则立即展示。',
+          title: t('help.status.schedule.title'),
+          body: t('help.status.schedule.body'),
         },
       ],
     },
     {
       id: 'code',
-      title: '卡牌编号必须唯一',
-      body: '同一个 IP、系列、子系列下，卡牌编号不能重复。重复保存会报错，提示「同一 IP / 系列 / 子系列 下的编号已存在」。改一下编号再存即可。',
+      title: t('help.code.title'),
+      body: t('help.code.body'),
     },
     {
       id: 'taxonomy',
-      title: '卡牌分类的三级选择',
-      intro:
-        '编辑卡牌时，「IP / 大类 → 系列 → 子系列」是逐级收窄的：下一级的下拉只列出上一级下面的内容。顺序按从大到小选，不用一次把三级都翻一遍。',
+      title: t('help.taxonomy.title'),
+      intro: t('help.taxonomy.intro'),
       steps: [
         {
-          title: '先选大类，再选小类',
-          body: '还没选「IP / 大类」时，「系列」和「子系列」是可点的，但点下去会弹提示告诉你要先补哪一级，字段下方也常驻同一句说明。',
+          title: t('help.taxonomy.order.title'),
+          body: t('help.taxonomy.order.body'),
         },
         {
-          title: '切换大类会清掉已选的小类',
-          body: '改了「IP / 大类」，已选的「系列」和「子系列」会被自动清空并弹一次提示；改了「系列」则清空「子系列」。这是为了避免存下跨 IP 的错配组合，清空后重新选一遍即可。',
+          title: t('help.taxonomy.clear.title'),
+          body: t('help.taxonomy.clear.body'),
         },
         {
-          title: '下拉是空的？',
-          body: '下拉只列当前上级下面的条目。若确认上级选对了却还是没有选项，去「分类」里检查对应系列 / 子系列是否已建好并处于启用状态。',
+          title: t('help.taxonomy.empty.title'),
+          body: t('help.taxonomy.empty.body'),
         },
       ],
     },
     {
       id: 'sort',
-      title: '排序（sort）',
-      body: 'banner、门店、IP、系列等都有排序字段。数字越小越靠前。留空或填 0 时按默认顺序（通常是最新在前）。',
+      title: t('help.sort.title'),
+      body: t('help.sort.body'),
     },
     {
       id: 'delete',
-      title: '删除不可恢复',
-      body: '删除是硬删除。卡牌、公告删掉后前台立即 404，后台也无法找回。确定不要再删，拿不准就先改成「归档」。',
+      title: t('help.delete.title'),
+      body: t('help.delete.body'),
     },
     {
       id: 'locale',
-      title: '语言只有一份内容',
-      body: '后台里的标题、正文、描述都只有一份。前台按用户所在语言（/ja、/en）自动切换界面文案，内容本身不需要翻译三份。',
+      title: t('help.locale.title'),
+      body: t('help.locale.body'),
     },
   ]
 
@@ -178,9 +184,11 @@ export async function HelpView({
   params,
   searchParams,
   user,
+  viewActions,
 }: AdminViewServerProps) {
   const origin = await getOrigin()
-  const { examples, sections } = buildSections(origin)
+  const t = createAdminT(initPageResult.req.i18n.language)
+  const { examples, sections } = buildSections(origin, t)
 
   // 根视图（Root View）默认是「裸」渲染：Payload 的 Root 路由只在
   // templateType === 'default' 时才套 DefaultTemplate（含侧栏 Nav + 顶栏 Header），
@@ -198,17 +206,16 @@ export async function HelpView({
       req={initPageResult.req}
       searchParams={searchParams}
       user={user}
+      viewActions={viewActions}
       visibleEntities={initPageResult.visibleEntities}
     >
       <Gutter className="admin-help">
       <header className="admin-help__header">
-        <h1 className="admin-help__title">后台操作帮助</h1>
-        <p className="admin-help__lead">
-          这份说明覆盖日常最容易出错的几处。有拿不准的地方，先看「怎样添加跳转链接」和「图片尺寸建议」两节。
-        </p>
+        <h1 className="admin-help__title">{t('help.pageTitle')}</h1>
+        <p className="admin-help__lead">{t('help.lead')}</p>
       </header>
 
-      <nav className="admin-help__toc" aria-label="目录">
+      <nav className="admin-help__toc" aria-label={t('help.toc')}>
         {sections.map((s, i) => (
           <a className="admin-help__toc-link" href={`#help-${s.id}`} key={s.id}>
             {i + 1}. {s.title}
@@ -229,7 +236,7 @@ export async function HelpView({
           {section.id === 'links' ? (
             <p className="admin-help__cta">
               <MousePointerClick className="admin-help__inline-icon" />
-              去列表页点「链接」列的小胶囊即可复制。
+              {t('help.copyHint')}
             </p>
           ) : null}
 
@@ -238,14 +245,14 @@ export async function HelpView({
               <table className="admin-help__table">
                 <thead>
                   <tr>
-                    <th>页面</th>
-                    <th>示例链接</th>
+                    <th>{t('help.table.page')}</th>
+                    <th>{t('help.table.example')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {examples.map((e) => (
                     <tr key={e.example}>
-                      <td>{e.label}</td>
+                      <td>{t(e.labelKey)}</td>
                       <td>
                         <code className="admin-help__code">{e.example}</code>
                       </td>
@@ -267,17 +274,17 @@ export async function HelpView({
             </ol>
           ) : null}
 
-          {section.title === '图片尺寸建议' ? (
+          {section.id === 'images' ? (
             <p className="admin-help__hint">
               <ImageIcon className="admin-help__inline-icon" />
-              图片在「素材」集合里上传，再回到内容里选图。
+              {t('help.imagesHint')}
             </p>
           ) : null}
 
           {section.id === 'links' ? (
             <p className="admin-help__hint">
               <Link2 className="admin-help__inline-icon" />
-              想确认链接对不对，先把拼好的路径在浏览器里打开试一遍，再填进 banner。
+              {t('help.linksHint')}
             </p>
           ) : null}
         </section>
@@ -285,7 +292,7 @@ export async function HelpView({
 
       <footer className="admin-help__footer">
         <Link href="/admin" className="admin-help__back">
-          返回工作台
+          {t('help.back')}
         </Link>
       </footer>
       </Gutter>

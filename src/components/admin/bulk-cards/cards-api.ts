@@ -1,3 +1,5 @@
+import type { AdminT } from '@/lib/admin/i18n'
+
 import type { CardDraft, MediaRef, SaveField } from './batch-state'
 
 export class CardSaveError extends Error {
@@ -116,27 +118,34 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
-function messageFromBody(body: unknown, fallback: string): string {
+function messageFromBody(body: unknown, fallback: string, separator: string): string {
   if (!isRecord(body)) return fallback
   const errors = body.errors
   if (Array.isArray(errors)) {
     const messages = errors
       .map((error) => (isRecord(error) && typeof error.message === 'string' ? error.message : null))
       .filter((message): message is string => Boolean(message))
-    if (messages.length > 0) return messages.join('；')
+    if (messages.length > 0) return messages.join(separator)
   }
   return fallback
 }
 
+const DUPLICATE_CODE_MARKERS = ['编号已存在', '品番が既に存在します', 'code already exists']
+
 function guessField(message: string, fallback: SaveField): SaveField {
   // 卡片的唯一键在服务端报错，前端只能按文案把错误落回「编号」字段。
-  if (message.includes('编号已存在')) return 'code'
+  if (DUPLICATE_CODE_MARKERS.some((marker) => message.includes(marker))) return 'code'
   return fallback
 }
 
-async function failure(response: Response, fallback: string, field: SaveField): Promise<CardSaveError> {
+async function failure(
+  response: Response,
+  fallback: string,
+  field: SaveField,
+  t: AdminT,
+): Promise<CardSaveError> {
   if (response.status === 401 || response.status === 403) {
-    return new CardSaveError('登录状态已失效或权限不足，请重新登录后再试', field)
+    return new CardSaveError(t('bulk.err.auth'), field)
   }
 
   let body: unknown
@@ -145,11 +154,20 @@ async function failure(response: Response, fallback: string, field: SaveField): 
   } catch {
     body = null
   }
-  const message = messageFromBody(body, `${fallback}（HTTP ${response.status}）`)
+  const message = messageFromBody(
+    body,
+    t('bulk.err.http', { fallback, status: response.status }),
+    t('bulk.err.listSeparator'),
+  )
   return new CardSaveError(message, guessField(message, field))
 }
 
-async function updateMediaAlt(media: MediaRef, alt: string, apiRoute: string): Promise<void> {
+async function updateMediaAlt(
+  media: MediaRef,
+  alt: string,
+  apiRoute: string,
+  t: AdminT,
+): Promise<void> {
   if (alt === media.alt) return
 
   let response: Response
@@ -161,10 +179,12 @@ async function updateMediaAlt(media: MediaRef, alt: string, apiRoute: string): P
       body: JSON.stringify({ alt }),
     })
   } catch {
-    throw new CardSaveError('更新替代文本失败，请检查网络', 'media')
+    throw new CardSaveError(t('bulk.err.altNetwork'), 'media')
   }
 
-  if (!response.ok) throw await failure(response, '更新替代文本失败', 'media')
+  if (!response.ok) {
+    throw await failure(response, t('bulk.err.altFailed'), 'media', t)
+  }
 }
 
 export async function saveCard(args: {
@@ -172,12 +192,14 @@ export async function saveCard(args: {
   draft: CardDraft
   media: MediaRef
   existingCardId?: number
+  t: AdminT
 }): Promise<number> {
-  const { apiRoute, draft, media, existingCardId } = args
+  const { apiRoute, draft, media, existingCardId, t } = args
   const alt = draft.alt.trim()
-  const action = existingCardId != null ? '更新卡牌失败' : '保存卡牌失败'
+  const action =
+    existingCardId != null ? t('bulk.err.updateFailed') : t('bulk.err.saveFailed')
 
-  await updateMediaAlt(media, alt, apiRoute)
+  await updateMediaAlt(media, alt, apiRoute, t)
 
   let response: Response
   try {
@@ -191,21 +213,21 @@ export async function saveCard(args: {
       },
     )
   } catch {
-    throw new CardSaveError(`${action}，请检查网络`, 'card')
+    throw new CardSaveError(t('bulk.err.checkNetwork', { action }), 'card')
   }
 
-  if (!response.ok) throw await failure(response, action, 'card')
+  if (!response.ok) throw await failure(response, action, 'card', t)
 
   let body: unknown
   try {
     body = await response.json()
   } catch {
-    throw new CardSaveError('保存成功但响应格式不正确', 'card')
+    throw new CardSaveError(t('bulk.err.saveBadResponse'), 'card')
   }
 
   const doc = isRecord(body) && isRecord(body.doc) ? body.doc : body
   if (!isRecord(doc) || (typeof doc.id !== 'number' && typeof doc.id !== 'string')) {
-    throw new CardSaveError('保存成功但响应格式不正确', 'card')
+    throw new CardSaveError(t('bulk.err.saveBadResponse'), 'card')
   }
 
   return Number(doc.id)

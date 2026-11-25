@@ -34,6 +34,7 @@ import { AdminNav as AdminNav_2623bc737c612ce9420322f2210a7f19 } from '@/compone
 import { AdminIcon as AdminIcon_066c562e10ad4e70ff0de1a39f9b91f6 } from '@/components/admin/Brand'
 import { AdminLogo as AdminLogo_066c562e10ad4e70ff0de1a39f9b91f6 } from '@/components/admin/Brand'
 import { AdminThemeToggle as AdminThemeToggle_e9d2c96263c126e37765894bd4e8a4bd } from '@/components/admin/AdminThemeToggle'
+import { AdminLanguageSwitcher as AdminLanguageSwitcher_181d8900bb53327f6fdf57868e4d868e } from '@/components/admin/AdminLanguageSwitcher'
 import { LoginIntro as LoginIntro_a23c667f36096b0f05e649a6391dbaaf } from '@/components/admin/LoginIntro'
 import { AdminProviders as AdminProviders_f1687a21d4a9f2d81c356a10e59ecdc1 } from '@/components/admin/AdminProviders'
 import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
@@ -81,6 +82,7 @@ export const importMap = {
   "@/components/admin/Brand#AdminIcon": AdminIcon_066c562e10ad4e70ff0de1a39f9b91f6,
   "@/components/admin/Brand#AdminLogo": AdminLogo_066c562e10ad4e70ff0de1a39f9b91f6,
   "@/components/admin/AdminThemeToggle#AdminThemeToggle": AdminThemeToggle_e9d2c96263c126e37765894bd4e8a4bd,
+  "@/components/admin/AdminLanguageSwitcher#AdminLanguageSwitcher": AdminLanguageSwitcher_181d8900bb53327f6fdf57868e4d868e,
   "@/components/admin/LoginIntro#LoginIntro": LoginIntro_a23c667f36096b0f05e649a6391dbaaf,
   "@/components/admin/AdminProviders#AdminProviders": AdminProviders_f1687a21d4a9f2d81c356a10e59ecdc1,
   "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,

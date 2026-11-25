@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 
+import { AdminTitleLocalizer } from './AdminTitleLocalizer'
 import { RichTextToolbarLabels } from './RichTextToolbarLabels'
 import { ForcePasswordChangeGuard } from './ForcePasswordChangeGuard'
 import { LoginPasswordVisibility } from './LoginPasswordVisibility'
@@ -22,6 +23,8 @@ import './admin-ui.css'
 export function AdminProviders({ children }: { children: ReactNode }) {
   return (
     <TooltipProvider delayDuration={250}>
+      {/* 四个自定义视图的标签页标题按语言改写（config 里的 meta.title 是静态串）。 */}
+      <AdminTitleLocalizer />
       {/* 富文本工具条是「聚焦编辑器才挂载」的，这个组件跟着给它补名字
           （Payload 的按钮只有图标，没有 aria-label 也没有 title） */}
       <RichTextToolbarLabels />

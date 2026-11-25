@@ -161,7 +161,7 @@ export default async function CardDetailPage({ params }: Props) {
     <div className="pb-20 md:pb-0">
       {/* 内容语言说明：卡牌名/描述是后台单一语言录入的，非默认语言页面上要说明这条边界。
           pathname 指回当前卡，让「查看中文原文」精确落在同一张卡上。 */}
-      <ContentLanguageNotice locale={locale} pathname={`/cards/${card.id}`} />
+      {/*<ContentLanguageNotice locale={locale} pathname={`/cards/${card.id}`} />*/}
 
       {/* min-w-0：grid 子项默认 min-width:auto，一张超长无空格的卡名会把整列顶宽，
           进而撑破视口（break-words 只影响换行，不降低 min-content）。 */}

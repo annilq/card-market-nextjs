@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react'
 
+import { useAdminT } from '@/lib/admin/i18n/use-admin-t'
+
 import type { BulkCardsTaxonomy, CardDraft } from './batch-state'
 import { TaxonomySelect } from './TaxonomySelect'
 
@@ -9,18 +11,18 @@ export type BulkApplyChanges = Partial<
   Pick<CardDraft, 'ipId' | 'seriesId' | 'subSeriesId' | 'rarityId' | 'cardStatusId' | 'status'>
 >
 
-const STATUS_OPTIONS: { value: CardDraft['status']; label: string }[] = [
-  { value: 'draft', label: '草稿' },
-  { value: 'published', label: '已发布' },
-  { value: 'archived', label: '已归档' },
-]
-
 export type BulkApplyPanelProps = {
   taxonomy: BulkCardsTaxonomy
   onApply: (changes: BulkApplyChanges) => number
 }
 
 export function BulkApplyPanel({ taxonomy, onApply }: BulkApplyPanelProps) {
+  const t = useAdminT()
+  const statusOptions: { value: CardDraft['status']; label: string }[] = [
+    { value: 'draft', label: t('status.draft') },
+    { value: 'published', label: t('status.published') },
+    { value: 'archived', label: t('status.archived') },
+  ]
   const [ipId, setIpId] = useState<number | null>(null)
   const [seriesId, setSeriesId] = useState<number | null>(null)
   const [subSeriesId, setSubSeriesId] = useState<number | null>(null)
@@ -57,65 +59,67 @@ export function BulkApplyPanel({ taxonomy, onApply }: BulkApplyPanelProps) {
     }
 
     const count = onApply(changes)
-    setMessage(count > 0 ? `已填充 ${count} 张未保存的图片` : '没有可填充的未保存图片')
+    setMessage(
+      count > 0 ? t('bulk.apply.filled', { count }) : t('bulk.apply.none'),
+    )
   }
 
   return (
     <details className="rounded-lg border border-border bg-card">
       <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium">
-        批量填充分类
+        {t('bulk.apply.title')}
         <span className="ml-2 text-xs font-normal text-muted-foreground">
-          只影响尚未保存的图片
+          {t('bulk.apply.hint')}
         </span>
       </summary>
       <div className="grid gap-3 border-t border-border p-4 sm:grid-cols-3">
         <TaxonomySelect
-          label="IP / 大类"
+          label={t('bulk.ip')}
           onChange={(value) => {
             setIpId(value)
             setSeriesId(null)
             setSubSeriesId(null)
           }}
           options={taxonomy.ips}
-          placeholder="不修改"
+          placeholder={t('bulk.apply.noChange')}
           value={ipId}
         />
         <TaxonomySelect
           disabled={ipId == null}
-          label="系列"
+          label={t('bulk.series')}
           onChange={(value) => {
             setSeriesId(value)
             setSubSeriesId(null)
           }}
           options={seriesOptions}
-          placeholder={ipId == null ? '先选 IP' : '不修改'}
+          placeholder={ipId == null ? t('common.selectIpFirst') : t('bulk.apply.noChange')}
           value={seriesId}
         />
         <TaxonomySelect
           disabled={seriesId == null}
-          label="子系列"
+          label={t('bulk.subSeries')}
           onChange={setSubSeriesId}
           options={subSeriesOptions}
-          placeholder={seriesId == null ? '先选系列' : '不修改'}
+          placeholder={seriesId == null ? t('common.selectSeriesFirst') : t('bulk.apply.noChange')}
           value={subSeriesId}
         />
         <TaxonomySelect
-          label="稀有程度"
+          label={t('bulk.rarity')}
           onChange={setRarityId}
           options={taxonomy.rarities}
-          placeholder="不修改"
+          placeholder={t('bulk.apply.noChange')}
           value={rarityId}
         />
         <TaxonomySelect
-          label="卡牌状态"
+          label={t('bulk.cardStatus')}
           onChange={setCardStatusId}
           options={taxonomy.cardStatuses}
-          placeholder="不修改"
+          placeholder={t('bulk.apply.noChange')}
           value={cardStatusId}
         />
         <div className="flex min-w-0 flex-col gap-1.5">
           <label className="text-xs font-medium text-muted-foreground" htmlFor="bulk-apply-status">
-            发布状态
+            {t('bulk.publishStatus')}
           </label>
           <select
             className="h-9 w-full rounded-md border border-input bg-background px-2.5 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -123,8 +127,8 @@ export function BulkApplyPanel({ taxonomy, onApply }: BulkApplyPanelProps) {
             onChange={(event) => setStatus(event.target.value as CardDraft['status'] | '')}
             value={status}
           >
-            <option value="">不修改</option>
-            {STATUS_OPTIONS.map((option) => (
+            <option value="">{t('bulk.apply.noChange')}</option>
+            {statusOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
@@ -139,7 +143,7 @@ export function BulkApplyPanel({ taxonomy, onApply }: BulkApplyPanelProps) {
             onClick={apply}
             type="button"
           >
-            应用到未保存的图片
+            {t('bulk.apply.action')}
           </button>
           {message ? <p className="text-xs text-muted-foreground">{message}</p> : null}
         </div>

@@ -1,5 +1,5 @@
 // 语言无关的翻译工厂：服务端组件与客户端组件共用同一份实现。
-// 语言在运行时的唯一来源是 URL 路径段（middleware 负责把默认语言映射到 /zh），
+// 语言在运行时的唯一来源是 URL 路径段（middleware 负责把默认语言映射到 /ja），
 // 因此不存在「服务端渲染一种语言、水合后变成另一种」的闪变。
 import { LOCALES } from './locales'
 import type { Locale } from './locales'

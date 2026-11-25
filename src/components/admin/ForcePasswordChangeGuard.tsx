@@ -3,6 +3,8 @@
 import { useAuth } from '@payloadcms/ui'
 import { useState, type CSSProperties, type FormEvent } from 'react'
 
+import { useAdminT } from '@/lib/admin/i18n/use-admin-t'
+
 /**
  * 首次登录强制改密守卫（遮罩式）。
  *
@@ -16,6 +18,7 @@ import { useState, type CSSProperties, type FormEvent } from 'react'
  * 重载回来守卫会再次出现。详见 docs/specs/2026-11-04-back-office-account-auth.md。
  */
 export function ForcePasswordChangeGuard() {
+  const t = useAdminT()
   const { user, refreshCookieAsync } = useAuth()
 
   const [password, setPassword] = useState('')
@@ -31,11 +34,11 @@ export function ForcePasswordChangeGuard() {
     setError(null)
 
     if (password.length < 6) {
-      setError('密码至少 6 位')
+      setError(t('force.tooShort'))
       return
     }
     if (password !== confirm) {
-      setError('两次输入的密码不一致')
+      setError(t('force.mismatch'))
       return
     }
 
@@ -50,7 +53,7 @@ export function ForcePasswordChangeGuard() {
 
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { errors?: { message?: string }[] }
-        const msg = data.errors?.[0]?.message || '修改失败，请重试'
+        const msg = data.errors?.[0]?.message || t('force.failed')
         throw new Error(msg)
       }
 
@@ -59,7 +62,7 @@ export function ForcePasswordChangeGuard() {
       await refreshCookieAsync()
       setSubmitting(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : '修改失败，请重试')
+      setError(err instanceof Error ? err.message : t('force.failed'))
       setSubmitting(false)
     }
   }
@@ -73,14 +76,14 @@ export function ForcePasswordChangeGuard() {
     >
       <form onSubmit={handleSubmit} style={cardStyle}>
         <h2 id="fp-guard-title" style={titleStyle}>
-          请设置您自己的密码
+          {t('force.title')}
         </h2>
         <p style={descStyle}>
-          管理员为您分配了初始密码。出于安全，首次登录必须先修改为本人密码，之后才能进入后台。
+          {t('force.desc')}
         </p>
 
         <label style={labelStyle}>
-          新密码
+          {t('force.newPassword')}
           <input
             type="password"
             value={password}
@@ -92,7 +95,7 @@ export function ForcePasswordChangeGuard() {
         </label>
 
         <label style={labelStyle}>
-          确认新密码
+          {t('force.confirmPassword')}
           <input
             type="password"
             value={confirm}
@@ -105,7 +108,7 @@ export function ForcePasswordChangeGuard() {
         {error ? <p style={errorStyle}>{error}</p> : null}
 
         <button type="submit" disabled={submitting} style={buttonStyle(submitting)}>
-          {submitting ? '提交中…' : '确认修改并进入'}
+          {submitting ? t('force.submitting') : t('force.submit')}
         </button>
       </form>
     </div>

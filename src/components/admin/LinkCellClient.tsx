@@ -4,6 +4,8 @@ import { toast } from '@payloadcms/ui'
 import { Check, Copy, ExternalLink } from 'lucide-react'
 import React, { useCallback, useState } from 'react'
 
+import { useAdminT } from '@/lib/admin/i18n/use-admin-t'
+
 /**
  * 列表里的「链接」单元格（客户端部分）。
  *
@@ -25,6 +27,7 @@ export function LinkCellClient({
   visible: boolean
   onlyCopyable?: boolean
 }) {
+  const t = useAdminT()
   const [copied, setCopied] = useState(false)
 
   const copy = useCallback(async () => {
@@ -34,21 +37,21 @@ export function LinkCellClient({
       // 前台会自己补语言段；外链则原样是完整地址。
       await navigator.clipboard.writeText(href)
       setCopied(true)
-      toast.success(`已复制 ${href}`)
+      toast.success(t('link.copied', { href }))
       window.setTimeout(() => setCopied(false), 1500)
     } catch {
-      toast.error('复制失败，请手动选中路径复制')
+      toast.error(t('link.copyFailed'))
     }
-  }, [href])
+  }, [href, t])
 
   const open = useCallback(() => {
     if (href == null) return
     if (!visible) {
-      const ok = window.confirm('这条记录当前未发布，前台看不到（打开会 404）。仍要打开吗？')
+      const ok = window.confirm(t('link.unpublishedConfirm'))
       if (!ok) return
     }
     window.open(href, '_blank', 'noopener,noreferrer')
-  }, [href, visible])
+  }, [href, t, visible])
 
   if (onlyCopyable || href == null) {
     return <span className="admin-linkcell__empty">{label}</span>
@@ -59,25 +62,25 @@ export function LinkCellClient({
       <button
         className="admin-linkcell__path"
         onClick={() => void copy()}
-        title={`复制 ${href}`}
+        title={t('link.copyHref', { href })}
         type="button"
       >
         {label}
       </button>
       <button
-        aria-label={copied ? '已复制' : '复制链接'}
+        aria-label={copied ? t('link.copiedShort') : t('link.copyLink')}
         className="admin-linkcell__copy"
         onClick={() => void copy()}
-        title={copied ? '已复制' : '复制链接'}
+        title={copied ? t('link.copiedShort') : t('link.copyLink')}
         type="button"
       >
         {copied ? <Check className="admin-linkcell__icon" /> : <Copy className="admin-linkcell__icon" />}
       </button>
       <button
-        aria-label={visible ? '打开链接' : '打开链接（当前未发布）'}
+        aria-label={visible ? t('link.open') : t('link.openUnpublished')}
         className={`admin-linkcell__copy${visible ? '' : ' admin-linkcell__copy--warn'}`}
         onClick={open}
-        title={visible ? '打开链接' : '当前未发布，前台看不到'}
+        title={visible ? t('link.open') : t('link.unpublishedHint')}
         type="button"
       >
         <ExternalLink className="admin-linkcell__icon" />

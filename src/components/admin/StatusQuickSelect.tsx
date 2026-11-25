@@ -21,6 +21,8 @@ import { useRouter } from 'next/navigation'
 import React, { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
+import { useAdminT } from '@/lib/admin/i18n/use-admin-t'
+
 export type StatusOption = { label: string; value: string }
 
 export function StatusQuickSelect({
@@ -38,6 +40,7 @@ export function StatusQuickSelect({
   value: string
 }) {
   const router = useRouter()
+  const t = useAdminT()
   const [open, setOpen] = useState(false)
   const [pending, setPending] = useState(false)
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
@@ -94,10 +97,10 @@ export function StatusQuickSelect({
         throw new Error(body?.message ?? `HTTP ${res.status}`)
       }
       const label = options.find((o) => o.value === next)?.label ?? next
-      toast.success(`已改为「${label}」`)
+      toast.success(t('status.updated', { label }))
       router.refresh()
     } catch {
-      toast.error('状态更新失败，请重试')
+      toast.error(t('status.updateFailed'))
     } finally {
       setPending(false)
     }
@@ -110,7 +113,7 @@ export function StatusQuickSelect({
       <button
         aria-expanded={open}
         aria-haspopup="menu"
-        aria-label={`修改状态（当前：${current?.label ?? value}）`}
+        aria-label={t('status.changeLabel', { label: current?.label ?? value })}
         className={`admin-status admin-status--${tone} admin-status--actionable`}
         disabled={pending}
         onClick={() => setOpen((v) => !v)}
@@ -124,7 +127,7 @@ export function StatusQuickSelect({
       {open && pos
         ? createPortal(
             <div
-              aria-label="选择状态"
+              aria-label={t('status.choose')}
               className="admin-status-menu"
               ref={menuRef}
               role="menu"

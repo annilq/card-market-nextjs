@@ -13,8 +13,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date()
   const entries: MetadataRoute.Sitemap = []
   for (const locale of Object.keys(LOCALES) as (keyof typeof LOCALES)[]) {
+    // 默认语言（ja）不带前缀；其余语言用 LOCALES 里登记的 prefix，别再从语言键名推。
+    const prefix = LOCALES[locale].prefix
     for (const path of STATIC_PATHS) {
-      const url = locale === 'zh' ? `${origin}${path}` : `${origin}/${locale}${path}`
+      const url = prefix ? `${origin}/${prefix}${path}` : `${origin}${path}`
       entries.push({ url, lastModified: now, changeFrequency: 'weekly', priority: path === '' ? 1 : 0.8 })
     }
   }

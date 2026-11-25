@@ -1,13 +1,22 @@
 import Link from "next/link";
 
 import { GlobalSearch } from "@/components/home/GlobalSearch";
-import { localizeHref } from "@/lib/i18n/locales";
-import { getLocaleFromHeaders } from "@/lib/i18n/server";
+import { localizeHref, type Locale } from "@/lib/i18n/locales";
 import { getTranslator } from "@/lib/i18n/t";
 import type { SiteSettingsView } from "@/lib/data";
 
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import { ThemeToggle } from "./ThemeToggle";
+
+// 顶栏图标按钮共用同一套外壳尺寸，保证右侧一组在所有宽度下等高。
+// 375 设计稿（2x 出图）折算后字形 16px、外壳 24px；24px 也正好是 WCAG 2.5.8
+// 的最小点击区，md 起恢复桌面尺寸。
+const iconBtn =
+  "inline-flex h-6 shrink-0 items-center justify-center rounded text-white transition hover:bg-white/15 hover:text-white md:h-9";
+const iconBtnSquare = `${iconBtn} w-6 md:w-9`;
+
+// LINE 官方好友链接：触屏设备点击图标直接跳转（见 LineIcon）。
+const LINE_URL = "https://lin.ee/gMj7pEC";
 
 // X（原 Twitter）图标：改用源站同一张 x.png（public/ 已随静态资源迁入），
 // 与 shop.png 同为 27px 高的白色图标，在品牌色顶栏上视觉重量一致。
@@ -26,28 +35,38 @@ function XIcon() {
   );
 }
 
-// Line 图标：悬停显示二维码占位卡片（二维码图尚未提供，暂用 line.png 占位）。
-function LineIcon() {
+// Line 图标：桌面（可 hover）悬停显示二维码；触屏设备上二维码永不出现，
+// 点图标直接跳 LINE 官方好友链接（LINE_URL）。Tailwind 的 hover 变体自带
+// `@media (hover: hover)`，触屏本来就不会触发；再叠加 pointer-coarse:hidden
+// 兜住「接了鼠标的触屏设备」这类 hover 可用的混合指针场景。
+function LineIcon({ qrLabel, linkLabel }: { qrLabel: string; linkLabel: string }) {
   return (
-    <span className="group/line relative inline-flex">
+    <a
+      href={LINE_URL}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={linkLabel}
+      className={`${iconBtnSquare} group/line relative`}
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/line.png"
-        alt="Line"
+        alt=""
         width={27}
         height={27}
         loading="lazy"
+        aria-hidden="true"
         className="h-auto w-4 md:h-7 md:w-auto"
       />
       <span
-        className="pointer-events-none absolute right-0 top-full z-50 mt-2 hidden w-40 flex-col items-center gap-2 rounded-lg bg-white p-3 text-center text-xs text-neutral-800 shadow-lg group-hover/line:flex group-focus-within/line:flex"
+        className="pointer-events-none absolute right-0 top-full z-50 mt-2 hidden w-40 flex-col items-center gap-2 rounded-lg bg-white p-3 text-center text-xs text-neutral-800 shadow-lg group-hover/line:flex group-focus-within/line:flex pointer-coarse:hidden"
         role="img"
-        aria-label="Line QR code placeholder"
+        aria-label={qrLabel}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/qrcode.jpg" alt="" width={112} height={112} className="size-28 object-contain" />
       </span>
-    </span>
+    </a>
   );
 }
 
@@ -86,12 +105,12 @@ const iconBtnSquare = `${iconBtn} w-6 md:w-9`;
  * 「卡牌 / 公告」不放文字导航——参考项目刻意把主视线让给搜索，device 模式下
  * 也去掉了移动菜单；它们走首页内容区，页脚「站内链接」兜底全站可达。
  *
- * 语言从请求头取（`x-locale`，由 middleware 写入）：根布局已经保证整棵树
- * 在「同一种语言」下渲染。所有站内链接先按「无语言前缀」的形态书写，
- * 再用 localizeHref 补前缀——默认语言（zh）拿到的就是原路径，ja / en 才带段。
+ * 语言由 `[locale]/layout` 以属性传入：那是随 [locale] 段一起重渲染的布局，
+ * 客户端切换语言时顶栏文案才会跟着变（根布局是共享的，不会重渲染）。
+ * 所有站内链接先按「无语言前缀」的形态书写，再用 localizeHref 补前缀——
+ * 默认语言（ja）拿到的就是原路径，zh / en 才带段。
  */
-export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
-  const locale = await getLocaleFromHeaders();
+export function SiteHeader({ settings, locale }: { settings: SiteSettingsView; locale: Locale }) {
   const t = getTranslator(locale);
   const siteName = settings.siteName?.trim() || t("defaultSiteName");
 
@@ -116,7 +135,7 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
     </a>
   ) : null;
 
-  const lineLink = <LineIcon />;
+  const lineLink = <LineIcon qrLabel={t("lineQrLabel")} />;
 
   return (
     <header className="md:sticky top-0 z-99 bg-brand text-white">
@@ -177,7 +196,7 @@ export async function SiteHeader({ settings }: { settings: SiteSettingsView }) {
                  之前恒为绝对定位贴视口右上角 + ≤1200 预留 pr-[168px]，
                  致 1201–1535px 区间工具条压到同处右上角的 X·店铺。 */}
             <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 md:gap-4 2xl:absolute 2xl:right-4 2xl:top-0 2xl:h-24">
-              <LocaleSwitcher />
+              {/*<LocaleSwitcher />*/}
               <ThemeToggle />
             </div>
           </div>

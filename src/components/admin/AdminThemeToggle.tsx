@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { Moon, Sun } from 'lucide-react'
 
+import { useAdminT } from '@/lib/admin/i18n/use-admin-t'
+
 /**
  * 后台深色模式切换按钮，挂在 `admin.components.actions`（顶栏右侧 actions 区）。
  *
@@ -14,6 +16,7 @@ import { Moon, Sun } from 'lucide-react'
  * 否则两边会互相串味。
  */
 export function AdminThemeToggle() {
+  const t = useAdminT()
   const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
@@ -36,8 +39,8 @@ export function AdminThemeToggle() {
       type="button"
       className="admin-theme-toggle"
       onClick={toggle}
-      aria-label={isDark ? '切换到浅色模式' : '切换到深色模式'}
-      title={isDark ? '切换到浅色模式' : '切换到深色模式'}
+      aria-label={t(isDark ? 'theme.toLight' : 'theme.toDark')}
+      title={t(isDark ? 'theme.toLight' : 'theme.toDark')}
     >
       {isDark ? <Sun size={18} strokeWidth={2} /> : <Moon size={18} strokeWidth={2} />}
     </button>

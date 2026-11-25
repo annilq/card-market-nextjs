@@ -1,6 +1,7 @@
 import type { DefaultServerCellComponentProps } from 'payload'
 import React from 'react'
 
+import { createAdminT } from '@/lib/admin/i18n'
 import { linkCellModel } from '@/lib/admin/public-links'
 
 import { LinkCellClient } from './LinkCellClient'
@@ -30,7 +31,11 @@ function isPubliclyVisible(rowData: Record<string, unknown>): boolean {
  *
  * 拼不出来（集合没有前台页面，或缺 id，或 banner 没填 link）时不渲染可复制地址。
  */
-export function LinkCell({ rowData, collectionSlug }: DefaultServerCellComponentProps) {
+export function LinkCell({
+  collectionSlug,
+  i18n,
+  rowData,
+}: DefaultServerCellComponentProps) {
   const row = (rowData ?? {}) as Record<string, unknown>
   const slug = collectionSlug ?? ''
   const { href, label, isBannerLink } = linkCellModel(slug, row)
@@ -39,6 +44,10 @@ export function LinkCell({ rowData, collectionSlug }: DefaultServerCellComponent
   // 其它集合展示的是记录自己的前台地址，按可见性决定打开前要不要拦一下。
   const visible = isBannerLink ? true : isPubliclyVisible(row)
 
-  if (!label) return null
-  return <LinkCellClient href={href} label={label} visible={visible} onlyCopyable={href == null} />
+  // banner 没填跳转时要显示一句「未设置」，别留空单元格让人以为漏看。
+  const text = label ?? (isBannerLink ? createAdminT(i18n.language)('link.notSet') : null)
+  if (!text) return null
+  return (
+    <LinkCellClient href={href} label={text} visible={visible} onlyCopyable={href == null} />
+  )
 }

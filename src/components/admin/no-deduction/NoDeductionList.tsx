@@ -4,6 +4,8 @@ import { ArrowDown, ArrowUp, GripVertical } from 'lucide-react'
 import Link from 'next/link'
 import React, { useState } from 'react'
 
+import { useAdminT } from '@/lib/admin/i18n/use-admin-t'
+
 type CardRow = { id: number; name: string; code: string | null; sort: number | null }
 
 type Props = {
@@ -17,6 +19,7 @@ type Props = {
 }
 
 export function NoDeductionList({ adminRoute, apiRoute, canUpdate, cards, page, totalPages, total }: Props) {
+  const t = useAdminT()
   const [rows, setRows] = useState(cards)
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
@@ -35,12 +38,12 @@ export function NoDeductionList({ adminRoute, apiRoute, canUpdate, cards, page, 
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sort: index + 1 }),
         })
-        if (!response.ok) throw new Error(`保存第 ${index + 1} 条失败`)
+        if (!response.ok) throw new Error(t('noDeduction.saveRowFailed', { index: index + 1 }))
       }
       setRows(next)
-      setMessage('排序已保存')
+      setMessage(t('noDeduction.saved'))
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : '排序保存失败')
+      setMessage(error instanceof Error ? error.message : t('noDeduction.saveFailed'))
     } finally {
       setSaving(false)
     }
@@ -75,10 +78,10 @@ export function NoDeductionList({ adminRoute, apiRoute, canUpdate, cards, page, 
     <div className="admin-no-deduction">
       <div className="admin-no-deduction__header">
         <div className="admin-no-deduction__heading">
-          <h1 className="admin-no-deduction__title">不减额买取</h1>
-          <p className="admin-no-deduction__hint">拖动排序手柄，或点击 ↑ / ↓ 调整首页展示顺序</p>
+          <h1 className="admin-no-deduction__title">{t('noDeduction.title')}</h1>
+          <p className="admin-no-deduction__hint">{t('noDeduction.hint')}</p>
         </div>
-        <span className="admin-no-deduction__count">共 {total} 张</span>
+        <span className="admin-no-deduction__count">{t('noDeduction.count', { total })}</span>
       </div>
 
       {message ? (
@@ -91,11 +94,11 @@ export function NoDeductionList({ adminRoute, apiRoute, canUpdate, cards, page, 
         <table className="admin-no-deduction__table">
           <thead>
             <tr>
-              {canUpdate ? <th className="admin-no-deduction__actions-head" scope="col">排序</th> : null}
+              {canUpdate ? <th className="admin-no-deduction__actions-head" scope="col">{t('noDeduction.order')}</th> : null}
               <th className="admin-no-deduction__index-head" scope="col">#</th>
-              <th scope="col">卡牌名称</th>
-              <th scope="col">编号</th>
-              <th className="admin-no-deduction__sort-head" scope="col">Sort</th>
+              <th scope="col">{t('noDeduction.cardName')}</th>
+              <th scope="col">{t('noDeduction.code')}</th>
+              <th className="admin-no-deduction__sort-head" scope="col">{t('noDeduction.sort')}</th>
             </tr>
           </thead>
           <tbody>
@@ -114,26 +117,26 @@ export function NoDeductionList({ adminRoute, apiRoute, canUpdate, cards, page, 
                 {canUpdate ? (
                   <td className="admin-no-deduction__actions">
                     <div className="admin-no-deduction__action-group">
-                      <span className="admin-no-deduction__drag-handle" aria-hidden="true" title="拖动排序">
+                      <span className="admin-no-deduction__drag-handle" aria-hidden="true" title={t('noDeduction.dragTitle')}>
                         <GripVertical size={16} />
                       </span>
                       <div className="admin-no-deduction__arrows">
                         <button
-                          aria-label={`上移 ${row.name}`}
+                          aria-label={t('noDeduction.moveUpNamed', { name: row.name })}
                           className="admin-no-deduction__arrow"
                           disabled={!sortable || index === 0}
                           onClick={() => move(index, -1)}
-                          title="上移"
+                          title={t('noDeduction.moveUp')}
                           type="button"
                         >
                           <ArrowUp size={14} aria-hidden="true" />
                         </button>
                         <button
-                          aria-label={`下移 ${row.name}`}
+                          aria-label={t('noDeduction.moveDownNamed', { name: row.name })}
                           className="admin-no-deduction__arrow"
                           disabled={!sortable || index === rows.length - 1}
                           onClick={() => move(index, 1)}
-                          title="下移"
+                          title={t('noDeduction.moveDown')}
                           type="button"
                         >
                           <ArrowDown size={14} aria-hidden="true" />
@@ -154,13 +157,13 @@ export function NoDeductionList({ adminRoute, apiRoute, canUpdate, cards, page, 
         </table>
       </div>
 
-      <nav className="admin-no-deduction__pagination" aria-label="分页">
+      <nav className="admin-no-deduction__pagination" aria-label={t('noDeduction.pagination')}>
         <Link
           aria-disabled={page <= 1}
           className={page <= 1 ? 'admin-no-deduction__page-link--disabled' : undefined}
           href={`${adminRoute}/no-deduction-buyback?page=${Math.max(1, page - 1)}`}
         >
-          上一页
+          {t('noDeduction.prev')}
         </Link>
         <span>
           {page} / {totalPages}
@@ -170,7 +173,7 @@ export function NoDeductionList({ adminRoute, apiRoute, canUpdate, cards, page, 
           className={page >= totalPages ? 'admin-no-deduction__page-link--disabled' : undefined}
           href={`${adminRoute}/no-deduction-buyback?page=${Math.min(totalPages, page + 1)}`}
         >
-          下一页
+          {t('noDeduction.next')}
         </Link>
       </nav>
     </div>

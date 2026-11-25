@@ -19,6 +19,8 @@ import {
   Users,
 } from 'lucide-react'
 
+import type { AdminMessageKey } from '@/lib/admin/i18n'
+
 /**
  * 集合 / 全局对应的图标与一句话说明。
  *
@@ -48,24 +50,24 @@ export const ENTITY_ICONS = {
   roles: KeyRound,
 } as const
 
-export const ENTITY_DESCRIPTIONS: Record<string, string> = {
-  announcements: '公告：置顶、定时发布',
-  banners: '首页轮播图与跳转链接',
-  cards: '商品主体：名称、编号、价格、图片、描述',
-  'bulk-cards': '一次上传多张卡图，批量新建卡牌',
-  'card-statuses': '卡牌状态及其展示顺序与徽章颜色',
-  'info-pages': '审核用静态信息页',
-  ips: '卡牌所属 IP / 大分类',
-  media: '图片素材（卡牌图、banner、门店照片）',
-  messages: '访客留言工单：新 / 已处理 / 已归档 / 垃圾',
-  'no-deduction-buyback': '不减额买取卡牌列表，拖动可调整首页展示顺序',
-  rarities: '稀有度及其展示顺序',
-  roles: '后台角色与模块权限',
-  series: 'IP 下的系列',
-  'site-settings': '站点名称、联系方式与全局文案',
-  shops: '门店：地址、营业时间、地图坐标',
-  'sub-series': '系列下的子系列',
-  users: '后台账号与角色',
+export const ENTITY_DESCRIPTION_KEYS: Record<string, AdminMessageKey> = {
+  announcements: 'entity.announcements',
+  banners: 'entity.banners',
+  cards: 'entity.cards',
+  'bulk-cards': 'entity.bulkCards',
+  'card-statuses': 'entity.cardStatuses',
+  'info-pages': 'entity.infoPages',
+  ips: 'entity.ips',
+  media: 'entity.media',
+  messages: 'entity.messages',
+  'no-deduction-buyback': 'entity.noDeduction',
+  rarities: 'entity.rarities',
+  roles: 'entity.roles',
+  series: 'entity.series',
+  'site-settings': 'entity.siteSettings',
+  shops: 'entity.shops',
+  'sub-series': 'entity.subSeries',
+  users: 'entity.users',
 }
 
 /** 找不到映射时的兜底图标。 */

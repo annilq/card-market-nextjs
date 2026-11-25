@@ -17,7 +17,7 @@ import { CatalogCard } from '@/components/catalog/CatalogCard'
 import { getCards, getFacets, getSiteSettings } from '@/lib/data'
 import { parseCardSearch, numOf, rawOf, csvOrNull, type CardSearchParams } from '@/lib/card-search'
 import { getTranslator } from '@/lib/i18n/t'
-import { LOCALES, localizeHref, type Locale } from '@/lib/i18n/locales'
+import { DEFAULT_LOCALE, LOCALES, localizeHref, type Locale } from '@/lib/i18n/locales'
 import { DEFAULT_CARD_SORT, type CardQuery } from '@/lib/types'
 import { getOrigin } from '@/lib/site-url'
 
@@ -122,7 +122,7 @@ export default async function CardsPage({ params, searchParams }: Props) {
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { locale: raw } = await params
   // 语言段非法时页面会 404；元数据这里不该先抛错，退回默认语言把标签发全。
-  const locale = (raw in LOCALES ? raw : 'zh') as Locale
+  const locale = (raw in LOCALES ? raw : DEFAULT_LOCALE) as Locale
 
   const t = getTranslator(locale)
   const sp = await searchParams

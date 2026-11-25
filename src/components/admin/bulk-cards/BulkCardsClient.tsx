@@ -20,6 +20,8 @@ import { CardDraftForm } from './CardDraftForm'
 import { CardSaveError, saveCard } from './cards-api'
 import { MediaUploadError, uploadMedia } from './media-uploader'
 
+import { useAdminT } from '@/lib/admin/i18n/use-admin-t'
+
 import '../admin-ui.css'
 
 export type { BulkCardsTaxonomy, TaxonomyOption } from './batch-state'
@@ -53,6 +55,7 @@ function hasEnteredDetails(draft: CardDraft): boolean {
 }
 
 export function BulkCardsClient({ adminRoute, apiRoute, taxonomy }: BulkCardsClientProps) {
+  const t = useAdminT()
   const [state, dispatch] = useReducer(batchReducer, initialState)
   const [error, setError] = useState<string | null>(null)
   const startedRef = useRef<Set<string>>(new Set())
@@ -69,7 +72,9 @@ export function BulkCardsClient({ adminRoute, apiRoute, taxonomy }: BulkCardsCli
           id: crypto.randomUUID(),
           file,
           previewUrl,
-          draft: createCardDraft(defaultAltFromFilename(file.name)),
+          draft: createCardDraft(
+            defaultAltFromFilename(file.name, t('bulk.unnamedImage')),
+          ),
           upload: { kind: 'queued' },
           save: { kind: 'idle' },
           savedSnapshot: null,
@@ -79,7 +84,7 @@ export function BulkCardsClient({ adminRoute, apiRoute, taxonomy }: BulkCardsCli
     if (items.length === 0) return
     setError(null)
     dispatch({ type: 'files/add', items })
-  }, [])
+  }, [t])
 
   const startUpload = useCallback(
     async (item: BatchItem) => {
@@ -92,6 +97,7 @@ export function BulkCardsClient({ adminRoute, apiRoute, taxonomy }: BulkCardsCli
           alt: item.draft.alt,
           apiRoute,
           signal: controller.signal,
+          t,
           onPhase: (phase) =>
             dispatch({ type: 'upload/phase', id: item.id, phase, total: item.file.size }),
           onProgress: (sent, total) =>
@@ -104,14 +110,14 @@ export function BulkCardsClient({ adminRoute, apiRoute, taxonomy }: BulkCardsCli
           type: 'upload/failed',
           id: item.id,
           phase: caught instanceof MediaUploadError ? caught.phase : 'upload',
-          message: caught instanceof Error ? caught.message : '上传失败',
+          message: caught instanceof Error ? caught.message : t('bulk.uploadFailed'),
         })
       } finally {
         startedRef.current.delete(item.id)
         controllersRef.current.delete(item.id)
       }
     },
-    [apiRoute],
+    [apiRoute, t],
   )
 
   useEffect(() => {
@@ -148,7 +154,7 @@ export function BulkCardsClient({ adminRoute, apiRoute, taxonomy }: BulkCardsCli
       if (
         savedCardId(item.save) == null &&
         hasEnteredDetails(item.draft) &&
-        !window.confirm('这张图片填写的信息尚未保存，确定移除？')
+        !window.confirm(t('bulk.removeConfirm'))
       ) {
         return
       }
@@ -161,7 +167,7 @@ export function BulkCardsClient({ adminRoute, apiRoute, taxonomy }: BulkCardsCli
           })
           if (!response.ok) throw new Error(`HTTP ${response.status}`)
         } catch {
-          setError('删除素材失败，请稍后重试')
+          setError(t('bulk.deleteMediaFailed'))
           return
         }
       } else {
@@ -175,7 +181,7 @@ export function BulkCardsClient({ adminRoute, apiRoute, taxonomy }: BulkCardsCli
       setError(null)
       dispatch({ type: 'item/remove', id })
     },
-    [apiRoute, state.items],
+    [apiRoute, state.items, t],
   )
 
   const retryUpload = useCallback((id: string) => {
@@ -202,6 +208,7 @@ export function BulkCardsClient({ adminRoute, apiRoute, taxonomy }: BulkCardsCli
           draft: item.draft,
           media: item.upload.media,
           existingCardId,
+          t,
         })
         dispatch({ type: 'save/succeeded', id, cardId })
         // 保存成功后给一条全局提示：右侧表单滚出视野时，列表里的状态变化不容易被注意到。
@@ -209,8 +216,8 @@ export function BulkCardsClient({ adminRoute, apiRoute, taxonomy }: BulkCardsCli
         const shortName = name.length > 16 ? `${name.slice(0, 16)}…` : name
         toast.success(
           existingCardId == null
-            ? `已保存「${shortName}」为卡牌 #${cardId}`
-            : `卡牌 #${cardId}「${shortName}」已更新`,
+            ? t('bulk.savedToast', { id: cardId, name: shortName })
+            : t('bulk.updatedToast', { id: cardId, name: shortName }),
         )
         // 更新已存在的卡牌不跳走，方便连续修改；新建才自动切到下一张待填图片。
         if (existingCardId == null) {
@@ -221,12 +228,12 @@ export function BulkCardsClient({ adminRoute, apiRoute, taxonomy }: BulkCardsCli
         dispatch({
           type: 'save/failed',
           id,
-          message: caught instanceof CardSaveError ? caught.message : '保存卡牌失败',
+          message: caught instanceof CardSaveError ? caught.message : t('bulk.saveFailed'),
           field: caught instanceof CardSaveError ? caught.field : 'card',
         })
       }
     },
-    [apiRoute, state.items],
+    [apiRoute, state.items, t],
   )
 
   const applyBulkChanges = useCallback(
@@ -289,13 +296,13 @@ export function BulkCardsClient({ adminRoute, apiRoute, taxonomy }: BulkCardsCli
     : null
 
   const missingTaxonomy: { label: string; slug: string }[] = []
-  if (taxonomy.ips.length === 0) missingTaxonomy.push({ label: 'IP / 大类', slug: 'ips' })
-  if (taxonomy.series.length === 0) missingTaxonomy.push({ label: '系列', slug: 'series' })
+  if (taxonomy.ips.length === 0) missingTaxonomy.push({ label: t('bulk.ip'), slug: 'ips' })
+  if (taxonomy.series.length === 0) missingTaxonomy.push({ label: t('bulk.series'), slug: 'series' })
   if (taxonomy.subSeries.length === 0)
-    missingTaxonomy.push({ label: '子系列', slug: 'sub-series' })
-  if (taxonomy.rarities.length === 0) missingTaxonomy.push({ label: '稀有程度', slug: 'rarities' })
+    missingTaxonomy.push({ label: t('bulk.subSeries'), slug: 'sub-series' })
+  if (taxonomy.rarities.length === 0) missingTaxonomy.push({ label: t('bulk.rarity'), slug: 'rarities' })
   if (taxonomy.cardStatuses.length === 0)
-    missingTaxonomy.push({ label: '卡牌状态', slug: 'card-statuses' })
+    missingTaxonomy.push({ label: t('bulk.cardStatus'), slug: 'card-statuses' })
 
   return (
     <div className="flex flex-col gap-3 mt-3" data-admin-ui="">
@@ -304,7 +311,7 @@ export function BulkCardsClient({ adminRoute, apiRoute, taxonomy }: BulkCardsCli
           className="rounded-md border border-dashed border-destructive/40 bg-destructive/5 px-4 py-2.5 text-xs text-destructive"
           role="alert"
         >
-          缺少分类数据：
+          {t('bulk.missingTaxonomy')}
           {missingTaxonomy.map((gap, index) => (
             <React.Fragment key={gap.slug}>
               {index > 0 ? '、' : null}
@@ -316,13 +323,13 @@ export function BulkCardsClient({ adminRoute, apiRoute, taxonomy }: BulkCardsCli
               </a>
             </React.Fragment>
           ))}
-          。请先新增并启用分类，否则卡牌必填项无法完成。
+          {t('bulk.missingTaxonomyAfter')}
         </p>
       ) : null}
 
       <div className="flex min-h-[520px] flex-col gap-4 lg:h-[calc(100vh-100px)] lg:flex-row">
       <aside
-        aria-label="待处理图片"
+        aria-label={t('bulk.pendingImages')}
         className="flex max-h-[45vh] min-h-[320px] flex-col overflow-hidden rounded-lg border border-border bg-card lg:max-h-none lg:min-h-0 lg:w-[360px] lg:shrink-0"
       >
         <BatchFileList
@@ -336,7 +343,7 @@ export function BulkCardsClient({ adminRoute, apiRoute, taxonomy }: BulkCardsCli
       </aside>
 
       <section
-        aria-label="卡牌信息"
+        aria-label={t('bulk.cardInfo')}
         className="flex min-h-[320px] flex-1 flex-col gap-4 overflow-y-auto rounded-lg border border-dashed border-border bg-card p-5 lg:min-h-0"
       >
         {error ? (
@@ -366,7 +373,7 @@ export function BulkCardsClient({ adminRoute, apiRoute, taxonomy }: BulkCardsCli
                       onClick={() => selectRelative(-1)}
                       type="button"
                     >
-                      上一张
+                      {t('bulk.prev')}
                     </button>
                     <span className="tabular px-1 text-xs text-muted-foreground">
                       {selectedIndex + 1} / {state.items.length}
@@ -377,7 +384,7 @@ export function BulkCardsClient({ adminRoute, apiRoute, taxonomy }: BulkCardsCli
                       onClick={() => selectRelative(1)}
                       type="button"
                     >
-                      下一张
+                      {t('bulk.next')}
                     </button>
                   </div>
                 </div>
@@ -385,8 +392,8 @@ export function BulkCardsClient({ adminRoute, apiRoute, taxonomy }: BulkCardsCli
                   {selected.upload.kind === 'ready'
                     ? selected.upload.media.width > 0 && selected.upload.media.height > 0
                       ? `${selected.upload.media.width} × ${selected.upload.media.height}`
-                      : '图片已上传'
-                    : '上传完成后自动填入图片尺寸'}
+                      : t('bulk.uploaded')
+                    : t('bulk.uploadHint')}
                 </p>
               </div>
             </div>
@@ -403,7 +410,7 @@ export function BulkCardsClient({ adminRoute, apiRoute, taxonomy }: BulkCardsCli
           </>
         ) : (
           <div className="flex flex-1 items-center justify-center text-center">
-            <p className="text-sm text-muted-foreground">选择左侧图片后填写卡牌信息</p>
+            <p className="text-sm text-muted-foreground">{t('bulk.selectImage')}</p>
           </div>
         )}
       </section>

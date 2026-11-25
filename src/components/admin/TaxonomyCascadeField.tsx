@@ -29,6 +29,8 @@ import {
 } from '@payloadcms/ui'
 import type { RelationshipFieldClientProps, StaticLabel } from 'payload'
 
+import { createAdminT } from '@/lib/admin/i18n'
+
 type Localized = string | { en: string; ja: string; zh: string }
 
 export type CascadePrerequisite = {
@@ -76,6 +78,7 @@ export function CascadingRelationshipField(props: CascadingRelationshipFieldProp
   const { cascade, ...fieldProps } = props
   const { i18n } = useTranslation()
   const lang = i18n.language
+  const t = createAdminT(lang)
 
   const formState = useFormFields(([fields]) => fields)
   const dispatchFields = useFormFields(([, dispatch]) => dispatch)
@@ -110,10 +113,10 @@ export function CascadingRelationshipField(props: CascadingRelationshipFieldProp
     ? labelText(prerequisites[prerequisites.length - 1].label, lang)
     : ''
   const hint = prerequisites.length
-    ? `仅显示所选「${lastParentLabel}」下的${fieldLabel}`
-    : `切换「${fieldLabel}」会自动清空已选的下级分类`
-  const reminder = `请先选择「${missingLabel}」，再选择「${fieldLabel}」`
-  const clearedMessage = `已切换「${fieldLabel}」，下级分类已清空，请重新选择`
+    ? t('taxonomy.filteredHint', { field: fieldLabel, parent: lastParentLabel })
+    : t('taxonomy.clearHint', { field: fieldLabel })
+  const reminder = t('taxonomy.chooseFirst', { field: fieldLabel, missing: missingLabel })
+  const clearedMessage = t('taxonomy.cleared', { field: fieldLabel })
 
   useEffect(() => {
     if (initializing) {

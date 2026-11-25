@@ -2,21 +2,25 @@ import { LogOut } from 'lucide-react'
 import type { Payload, SanitizedPermissions } from 'payload'
 import React from 'react'
 
+import { createAdminT, resolveAdminLanguage } from '@/lib/admin/i18n'
+
 import { AdminNavLinks, AdminNavShell, type AdminNavItem } from './AdminNavLinks'
 import { ENTITY_ICONS } from './entity-meta'
 
 type Props = {
+  i18n: { language: string }
   payload: Payload
   permissions: SanitizedPermissions
   visibleEntities: { collections: string[]; globals: string[] }
 }
 
 /** 集合标签可能是字符串，也可能是 { zh, en, ja }。取当前界面语言那一份。 */
-function toLabel(label: unknown, fallback: string): string {
+function toLabel(label: unknown, language: string, fallback: string): string {
   if (typeof label === 'string') return label
   if (label && typeof label === 'object') {
     const record = label as Record<string, unknown>
-    for (const key of ['zh', 'en', 'ja']) {
+    const lang = resolveAdminLanguage(language)
+    for (const key of [lang, 'ja', 'en', 'zh']) {
       if (typeof record[key] === 'string') return record[key] as string
     }
   }
@@ -36,8 +40,9 @@ const ICON_KEYS = Object.keys(ENTITY_ICONS) as (keyof typeof ENTITY_ICONS)[]
  * 这里把集合与全局摊成一条平铺列表（顺序 = 配置顺序），登出仍在底部。
  * 权限与 `visibleEntities` 的过滤与默认实现同一套规则，只是不再分组。
  */
-export function AdminNav({ payload, permissions, visibleEntities }: Props) {
+export function AdminNav({ i18n, payload, permissions, visibleEntities }: Props) {
   const { admin: adminRoute } = payload.config.routes
+  const t = createAdminT(i18n.language)
 
   // 工作台（仪表盘）不是集合也不是全局，所以 Payload 的 navGroups 里没有它——
   // 换成平铺菜单之后，回 /admin 的唯一路径成了面包屑里那个没有文字的首页图标。
@@ -51,7 +56,7 @@ export function AdminNav({ payload, permissions, visibleEntities }: Props) {
       // （前缀匹配会让它在所有页面上都亮着）。
       href: adminRoute,
       icon: 'dashboard',
-      label: '工作台',
+      label: t('nav.dashboard'),
       slug: 'dashboard',
       exact: true,
     },
@@ -70,7 +75,7 @@ export function AdminNav({ payload, permissions, visibleEntities }: Props) {
       icon: ICON_KEYS.includes(slug as keyof typeof ENTITY_ICONS)
         ? (slug as keyof typeof ENTITY_ICONS)
         : null,
-      label: toLabel(collection.labels?.plural, slug),
+      label: toLabel(collection.labels?.plural, i18n.language, slug),
       slug,
     })
 
@@ -79,7 +84,7 @@ export function AdminNav({ payload, permissions, visibleEntities }: Props) {
         items.push({
           href: `${adminRoute}/no-deduction-buyback`,
           icon: 'no-deduction-buyback',
-          label: '不减额买取',
+          label: t('nav.noDeduction'),
           slug: 'no-deduction-buyback',
           exact: true,
         })
@@ -88,7 +93,7 @@ export function AdminNav({ payload, permissions, visibleEntities }: Props) {
         items.push({
           href: `${adminRoute}/bulk-cards`,
           icon: 'bulk-cards',
-          label: '批量上架',
+          label: t('nav.bulkCards'),
           slug: 'bulk-cards',
           exact: true,
         })
@@ -105,7 +110,7 @@ export function AdminNav({ payload, permissions, visibleEntities }: Props) {
       icon: ICON_KEYS.includes(slug as keyof typeof ENTITY_ICONS)
         ? (slug as keyof typeof ENTITY_ICONS)
         : null,
-      label: toLabel(global.label, slug),
+      label: toLabel(global.label, i18n.language, slug),
       slug,
     })
   }
@@ -116,7 +121,7 @@ export function AdminNav({ payload, permissions, visibleEntities }: Props) {
   items.push({
     href: `${adminRoute}/help`,
     icon: 'help',
-    label: '帮助',
+    label: t('nav.help'),
     slug: 'help',
   })
 
@@ -130,7 +135,7 @@ export function AdminNav({ payload, permissions, visibleEntities }: Props) {
         <div className="nav__controls">
           <a className="admin-nav__logout" href={`${adminRoute}/logout`}>
             <LogOut className="admin-nav__icon" />
-            登出
+            {t('nav.logout')}
           </a>
         </div>
       </nav>

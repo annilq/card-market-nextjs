@@ -2,6 +2,8 @@ import { getTranslation } from '@payloadcms/translations'
 import type { DefaultServerCellComponentProps } from 'payload'
 import React from 'react'
 
+import { createAdminT } from '@/lib/admin/i18n'
+
 import { AdminLocalDateTime } from './AdminLocalDateTime'
 import { StatusQuickSelect, type StatusOption } from './StatusQuickSelect'
 
@@ -32,6 +34,7 @@ const TONE: Record<string, string> = {
 }
 
 export function StatusCell({ cellData, collectionSlug, field, i18n, rowData }: DefaultServerCellComponentProps) {
+  const t = createAdminT(i18n.language)
   const value = typeof cellData === 'string' ? cellData : undefined
   if (value == null) return null
 
@@ -84,7 +87,8 @@ export function StatusCell({ cellData, collectionSlug, field, i18n, rowData }: D
       )}
       {scheduledAt ? (
         <span className="admin-status admin-status--scheduled">
-          定时 · <AdminLocalDateTime value={scheduledAt} />
+          {t('status.scheduledPrefix')}
+          <AdminLocalDateTime value={scheduledAt} />
         </span>
       ) : null}
     </span>

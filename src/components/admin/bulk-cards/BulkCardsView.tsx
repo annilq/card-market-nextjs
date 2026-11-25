@@ -20,6 +20,7 @@ export async function BulkCardsView({
   params,
   searchParams,
   user,
+  viewActions,
 }: AdminViewServerProps) {
   const { permissions, req } = initPageResult
   const canCreateCards = permissions.collections?.cards?.create === true
@@ -75,6 +76,7 @@ export async function BulkCardsView({
       req={initPageResult.req}
       searchParams={searchParams}
       user={user}
+      viewActions={viewActions}
       visibleEntities={initPageResult.visibleEntities}
     >
       <Gutter className="admin-bulk-cards">

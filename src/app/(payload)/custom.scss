@@ -1189,6 +1189,11 @@ label.field-label:not(.unstyled) .required {
 }
 
 .admin-login {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
   margin-bottom: 20px;
 }
 
@@ -1207,6 +1212,73 @@ label.field-label:not(.unstyled) .required {
   font-size: 13px;
   line-height: 1.6;
   color: var(--theme-elevation-600);
+}
+
+/* 登录页语言切换。选项高度写死 24px、字号 12px，中 / 日 / EN 三种标签
+   宽度接近，切语言时按钮不会伸缩。焦点环不裁切，所以容器不用 overflow:hidden，
+   改成给首尾选项补圆角。 */
+.admin-lang-switch {
+  display: inline-flex;
+  flex: 0 0 auto;
+  border: 1px solid var(--theme-border-color);
+  border-radius: var(--style-radius-s);
+  background-color: var(--theme-elevation-50);
+}
+
+.admin-lang-switch__option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 24px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  color: var(--theme-elevation-700);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+}
+
+.admin-lang-switch__option:first-child {
+  border-top-left-radius: calc(var(--style-radius-s) - 1px);
+  border-bottom-left-radius: calc(var(--style-radius-s) - 1px);
+}
+
+.admin-lang-switch__option:last-child {
+  border-top-right-radius: calc(var(--style-radius-s) - 1px);
+  border-bottom-right-radius: calc(var(--style-radius-s) - 1px);
+}
+
+.admin-lang-switch__option + .admin-lang-switch__option {
+  border-left: 1px solid var(--theme-border-color);
+}
+
+.admin-lang-switch__option:not([aria-pressed='true']):not(:disabled):hover {
+  background-color: var(--theme-elevation-100);
+  color: var(--theme-elevation-1000);
+}
+
+.admin-lang-switch__option[aria-pressed='true'] {
+  background-color: var(--color-brand);
+  color: #fff;
+  /* 活动项左侧那条分隔线落进红底里，留灰边会像脏点。 */
+  border-left-color: transparent;
+}
+
+.admin-lang-switch__option:focus-visible {
+  outline: var(--accessibility-outline);
+  outline-offset: var(--accessibility-outline-offset);
+}
+
+/* 切换中整组禁用，只改光标。不降透明度是因为透明度会把红底和白字
+   一起向容器底色合成，12px 文字的对比度会掉到 4.5:1 以下。 */
+.admin-lang-switch__option:disabled {
+  cursor: default;
 }
 
 /* ---------- 9a. 登录页：一层极淡的红晕 ----------

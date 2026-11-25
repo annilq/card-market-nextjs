@@ -114,7 +114,7 @@ export default async function AnnouncementDetailPage({ params }: Props) {
         {t('backToAnnouncementsArrow')}
       </Link>
 
-      <ContentLanguageNotice locale={locale} />
+      {/*<ContentLanguageNotice locale={locale} />*/}
 
       {/* 标题 ~28px：参考图里公告标题实测约 29px，比 24px 更接近。
           置顶徽章前置到标题同一行，日期另起一行右对齐——这是参考图的排版。 */}

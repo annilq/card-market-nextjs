@@ -1,11 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
-import { LOCALES } from '@/lib/i18n/locales'
+import { DEFAULT_LOCALE, LOCALES } from '@/lib/i18n/locales'
 
 /**
- * 界面语言是 URL 的可选第一段：默认语言 zh 不带前缀（`/cards`），其余语言带（`/ja/cards`）。
- * 这里做两件事：
- *   1. 把不带前缀的请求 rewrite 到 `/zh/...`（Next 的动态段 `[locale]` 始终存在）；
+ * 界面语言是 URL 的可选第一段：默认语言 ja 不带前缀（`/cards`），其余语言带
+ * （`/zh/cards`、`/en/cards`）。这里做两件事：
+ *   1. 把不带前缀的请求 rewrite 到 `/ja/...`（Next 的动态段 `[locale]` 始终存在）；
  *   2. 把解析出的语言写进 `x-locale` 请求头——根布局拿不到 `[locale]` 参数，
  *      靠它才能正确输出 `<html lang>`。
  * 形如 `/de/cards` 的两字母未知语言段不做 rewrite，交给 `[locale]` 路由返回 404。
@@ -34,20 +34,16 @@ export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl
 
   if (pathname === '/admin' || pathname.startsWith('/admin/')) {
-    // 后台界面语言：默认中文，但仍允许在「账户 → 设置」里手动切到日/英。
+    // 后台界面语言：默认日语，仍允许在登录页或顶栏手动切到中文 / 英文。
     //
     // Payload 的 getRequestLanguage（payload/dist/utilities/getRequestLanguage.js）按
     //   payload-lng cookie > Accept-Language > fallbackLanguage
-    // 逐级挑选，且 supportedLanguages 里有 ja / en。所以日文 / 英文系统的浏览器
-    // 会把后台整页渲染成日语 / 英语，中文系统则是中文——客户反馈的「有时候日语、
-    // 有时候中文」就是这么来的：语言是按请求、按浏览器决定的，跟账号无关，
-    // 登录接口也不会写入任何语言设置（只发 payload-token）。
-    //
-    // 这里把后台请求的 Accept-Language 归一成 zh，首屏直接是中文，不会闪一帧日文；
-    // 由于 cookie 优先级高于请求头，用户手动选过语言时 payload-lng 仍然生效。
-    // 同时也消除了 CDN 按 Accept-Language 缓存出不同语言页面的隐患。
+    // 逐级挑选。这里把 /admin 请求的 Accept-Language 归一成 ja，首屏直接是日语，
+    // 不会因为浏览器是中文 / 英文而闪一帧别的语言；由于 cookie 优先级高于请求头，
+    // 用户手动选过语言时 payload-lng 仍然生效。同时也消除了 CDN 按
+    // Accept-Language 缓存出不同语言页面的隐患。
     const requestHeaders = new Headers(request.headers)
-    requestHeaders.set('Accept-Language', 'zh-CN,zh;q=0.9')
+    requestHeaders.set('Accept-Language', 'ja-JP,ja;q=0.9')
     const response = NextResponse.next({ request: { headers: requestHeaders } })
     if (!request.cookies.get(ADMIN_THEME_INIT_COOKIE)) {
       const currentTheme = request.cookies.get(ADMIN_THEME_COOKIE)?.value
@@ -74,7 +70,7 @@ export function middleware(request: NextRequest) {
 
   const first = pathname.split('/')[1] ?? ''
 
-  const locale = first in LOCALES ? first : 'zh'
+  const locale = first in LOCALES ? first : DEFAULT_LOCALE
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set('x-locale', locale)
 
@@ -82,6 +78,15 @@ export function middleware(request: NextRequest) {
   // 否则 /high_price.png 会被改写成 /zh/high_price.png 然后 404。
   if (/\.[a-zA-Z0-9]+$/.test(pathname)) {
     return NextResponse.next({ request: { headers: requestHeaders } })
+  }
+
+  // 默认语言的显式前缀（`/ja/...`）不是规范地址：跳到不带前缀的同路径。
+  // 否则 `/cards` 与 `/ja/cards` 会同时渲染日语页，形成重复内容。
+  if (first === DEFAULT_LOCALE) {
+    const url = request.nextUrl.clone()
+    const rest = pathname.slice(DEFAULT_LOCALE.length + 1)
+    url.pathname = rest || '/'
+    return NextResponse.redirect(url, 308)
   }
 
   if (first === '' || !LANGUAGE_SEGMENT.test(first)) {

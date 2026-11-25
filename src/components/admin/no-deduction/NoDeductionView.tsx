@@ -11,6 +11,7 @@ export async function NoDeductionView({
   params,
   searchParams,
   user,
+  viewActions,
 }: AdminViewServerProps) {
   const { permissions, req } = initPageResult
   const canRead = permissions.collections?.cards?.read === true
@@ -43,6 +44,7 @@ export async function NoDeductionView({
       req={initPageResult.req}
       searchParams={searchParams}
       user={user}
+      viewActions={viewActions}
       visibleEntities={initPageResult.visibleEntities}
     >
       <Gutter className="admin-bulk-cards">

@@ -40,9 +40,11 @@ function normalizeCardId(value: number | null | undefined): number | null {
 
 export async function submitMessage(input: SubmitMessageInput): Promise<SubmitMessageResult> {
   const content = (input?.content ?? '').toString().trim()
-  if (!content) return { ok: false, error: '留言内容不能为空' }
+  // 返回的是机器可读的错误码，不是文案：表单只展示按当前语言翻译过的通用失败提示，
+  // 错误码只进控制台。界面文案统一走 i18n，服务端不写死某一种语言。
+  if (!content) return { ok: false, error: 'empty_content' }
   if (content.length > MAX_CONTENT_LENGTH) {
-    return { ok: false, error: `留言内容不能超过 ${MAX_CONTENT_LENGTH} 个字符` }
+    return { ok: false, error: 'content_too_long' }
   }
 
   const requestedCardId = normalizeCardId(input?.cardId)

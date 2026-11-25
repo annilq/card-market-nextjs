@@ -98,7 +98,7 @@ export function CatalogCard({
               {status}
             </span>
           )}
-          <span className="min-w-0 truncate tabular-nums">{card.code || '无'}</span>
+          <span className="min-w-0 truncate tabular-nums">{card.code || t('noCode')}</span>
         </div>
         <div className="mt-1 text-right text-sm font-bold leading-none tabular-nums text-price md:mt-2 md:text-xl">
           {card.stopBuyback

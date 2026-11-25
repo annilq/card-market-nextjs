@@ -7,6 +7,8 @@
 // 返回值是**不带语言前缀**的路径（如 `/cards/12`）。前台会用 localizeHref 自动
 // 补上 /ja、/en，所以这里不拼语言段，否则 banner 在日语站会跳到中文页。
 
+import type { AdminMessageKey } from '@/lib/admin/i18n'
+
 /** 有公开前台页面的集合。其它集合（media、users、维度表）没有可复制的链接。 */
 export type LinkableCollection =
   | 'announcements'
@@ -74,7 +76,8 @@ export function publicPathFor(slug: string, doc: RowDoc): string | null {
  * 不是「它所在的页面」（那永远是首页 `/`）。所以这里对 banner 特判：
  *
  * - link 有值 → 原样返回（站内路径或外链都可能是运营填的）。
- * - link 为空 → href 为 null，label 给一句「未设置」，避免显示空单元格让人以为漏看。
+ * - link 为空 → href 与 label 都是 null；「未设置」那句话由 LinkCell 按语言补，
+ *   这里不写死中文。
  *
  * 其它集合沿用 publicPathFor；拼不出来时 href 与 label 都是 null（不渲染）。
  */
@@ -87,7 +90,7 @@ export function linkCellModel(
     const value = typeof link === 'string' ? link.trim() : ''
     return value
       ? { href: value, label: value, isBannerLink: true }
-      : { href: null, label: '未设置跳转', isBannerLink: true }
+      : { href: null, label: null, isBannerLink: true }
   }
   const path = publicPathFor(slug, doc)
   return { href: path, label: path, isBannerLink: false }
@@ -97,15 +100,17 @@ export function linkCellModel(
  * 帮助页要展示的「有哪些链接可填」清单。顺序刻意按运营最常填的顺序排。
  * 从同一张登记表衍生的说明文本，避免帮助页写死后与代码不一致。
  */
-export function explainLinkPatterns(origin: string): { example: string; label: string }[] {
+export function explainLinkPatterns(
+  origin: string,
+): { example: string; labelKey: AdminMessageKey }[] {
   return [
-    { label: '首页', example: `${origin}/` },
-    { label: '卡牌列表（可带筛选，见下方）', example: `${origin}/cards` },
-    { label: '某张卡详情', example: `${origin}/cards/123` },
-    { label: '公告列表', example: `${origin}/announcements` },
-    { label: '某条公告', example: `${origin}/announcements/45` },
-    { label: '店铺列表', example: `${origin}/shops` },
-    { label: '留言页', example: `${origin}/message` },
-    { label: '信息页（四个固定标识）', example: `${origin}/info/terms` },
+    { labelKey: 'pattern.home', example: `${origin}/` },
+    { labelKey: 'pattern.cards', example: `${origin}/cards` },
+    { labelKey: 'pattern.card', example: `${origin}/cards/123` },
+    { labelKey: 'pattern.announcements', example: `${origin}/announcements` },
+    { labelKey: 'pattern.announcement', example: `${origin}/announcements/45` },
+    { labelKey: 'pattern.shops', example: `${origin}/shops` },
+    { labelKey: 'pattern.message', example: `${origin}/message` },
+    { labelKey: 'pattern.info', example: `${origin}/info/terms` },
   ]
 }

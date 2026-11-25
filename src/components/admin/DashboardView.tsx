@@ -15,8 +15,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { adminDateLocale, createAdminT, type AdminMessageKey, type AdminT } from '@/lib/admin/i18n'
+
 import { AdminLocalDateTime } from './AdminLocalDateTime'
-import { ENTITY_DESCRIPTIONS, ENTITY_FALLBACK_ICON, ENTITY_ICONS } from './entity-meta'
+import { ENTITY_DESCRIPTION_KEYS, ENTITY_FALLBACK_ICON, ENTITY_ICONS } from './entity-meta'
 import { formatYen } from '@/lib/format'
 import type { Card as CardDoc, Message } from '@/payload-types'
 
@@ -26,6 +28,7 @@ type NavGroup = {
 }
 
 type Props = {
+  i18n: { language: string }
   locale?: string
   navGroups?: NavGroup[]
   payload: Payload
@@ -41,21 +44,20 @@ async function safe<T>(promise: Promise<T>): Promise<T | null> {
   }
 }
 
-function toLabel(label: unknown, fallback: string): string {
+function toLabel(label: unknown, language: string, fallback: string): string {
   if (typeof label === 'string') return label
   if (label && typeof label === 'object') {
     const record = label as Record<string, unknown>
-    const zh = record.zh ?? record.en ?? record.ja
-    if (typeof zh === 'string') return zh
+    for (const key of [language, 'ja', 'en', 'zh']) {
+      if (typeof record[key] === 'string') return record[key] as string
+    }
   }
   return fallback
 }
 
-const numberFormatter = new Intl.NumberFormat('zh-CN')
-
-function formatCount(value: number | null | undefined): string {
+function formatCount(value: number | null | undefined, locale: string): string {
   if (typeof value !== 'number') return '—'
-  return numberFormatter.format(value)
+  return new Intl.NumberFormat(locale).format(value)
 }
 
 function formatMoney(value: number | null | undefined): string {
@@ -63,7 +65,7 @@ function formatMoney(value: number | null | undefined): string {
   return `¥${formatYen(value)}`
 }
 
-function formatRelative(value: string | null | undefined, locale = 'zh-CN'): React.ReactNode {
+function formatRelative(value: string | null | undefined, locale: string): React.ReactNode {
   if (!value) return '—'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '—'
@@ -80,16 +82,22 @@ function formatRelative(value: string | null | undefined, locale = 'zh-CN'): Rea
 
 type StatusValue = 'archived' | 'draft' | 'published'
 
-const STATUS_META: Record<StatusValue, { label: string; variant: 'muted' | 'outline' | 'success' }> =
-  {
-    published: { label: '已发布', variant: 'success' },
-    draft: { label: '草稿', variant: 'muted' },
-    archived: { label: '已归档', variant: 'outline' },
-  }
+const STATUS_META: Record<
+  StatusValue,
+  { labelKey: AdminMessageKey; variant: 'muted' | 'outline' | 'success' }
+> = {
+  published: { labelKey: 'status.published', variant: 'success' },
+  draft: { labelKey: 'status.draft', variant: 'muted' },
+  archived: { labelKey: 'status.archived', variant: 'outline' },
+}
 
-function StatusBadge({ status }: { status?: StatusValue | null }) {
+function StatusBadge({ status, t }: { status?: StatusValue | null; t: AdminT }) {
   const meta = status ? STATUS_META[status] : undefined
-  return <Badge variant={meta?.variant ?? 'outline'}>{meta?.label ?? '未知'}</Badge>
+  return (
+    <Badge variant={meta?.variant ?? 'outline'}>
+      {meta ? t(meta.labelKey) : t('status.unknown')}
+    </Badge>
+  )
 }
 
 type Stat = {
@@ -106,7 +114,7 @@ type Stat = {
  * 分隔线不用 `divide-*`（两列布局时它会画在错误的位置），而是用
  * `gap-px` + 容器底色：底色从格子的缝隙里透出来，一行排几列都对。
  */
-function StatStrip({ stats }: { stats: Stat[] }) {
+function StatStrip({ locale, stats }: { locale: string; stats: Stat[] }) {
   return (
     <Card className="admin-stat-strip">
       <CardContent className="p-0">
@@ -126,7 +134,7 @@ function StatStrip({ stats }: { stats: Stat[] }) {
                       stat.emphasis ? 'text-primary' : 'text-foreground',
                     ].join(' ')}
                   >
-                    {formatCount(stat.value)}
+                    {formatCount(stat.value, locale)}
                   </span>
                   <span className="mt-1.5 block text-[12px] text-muted-foreground">
                     {stat.hint}
@@ -158,7 +166,9 @@ function StatStrip({ stats }: { stats: Stat[] }) {
  * 服务端组件：数据在服务端取（走 Local API，不受前台 read 权限限制），
  * 页面不发任何客户端查询。
  */
-export async function DashboardView({ locale = 'zh-CN', navGroups = [], payload, user }: Props) {
+export async function DashboardView({ i18n, navGroups = [], payload, user }: Props) {
+  const t = createAdminT(i18n.language)
+  const dateLocale = adminDateLocale(i18n.language)
   const [cardsTotal, cardsPublished, announcementsTotal, announcementsPublished, messagesNew, messagesTotal, shopsTotal, shopsPublished, recentCards, recentMessages] =
     await Promise.all([
       safe(payload.count({ collection: 'cards', overrideAccess: true })),
@@ -220,28 +230,36 @@ export async function DashboardView({ locale = 'zh-CN', navGroups = [], payload,
 
   const stats: Stat[] = [
     {
-      hint: `${formatCount(cardsPublished?.totalDocs)} 张已发布`,
+      hint: t('dashboard.stats.cardsHint', {
+        count: formatCount(cardsPublished?.totalDocs, dateLocale),
+      }),
       icon: Package,
-      label: '卡牌',
+      label: t('dashboard.stats.cards'),
       value: cardsTotal?.totalDocs ?? null,
     },
     {
-      hint: `${formatCount(announcementsPublished?.totalDocs)} 篇已发布`,
+      hint: t('dashboard.stats.announcementsHint', {
+        count: formatCount(announcementsPublished?.totalDocs, dateLocale),
+      }),
       icon: Megaphone,
-      label: '公告',
+      label: t('dashboard.stats.announcements'),
       value: announcementsTotal?.totalDocs ?? null,
     },
     {
       emphasis: (pending ?? 0) > 0,
-      hint: `共 ${formatCount(messagesTotal?.totalDocs)} 条，处理完改为「已处理」`,
+      hint: t('dashboard.stats.pendingHint', {
+        count: formatCount(messagesTotal?.totalDocs, dateLocale),
+      }),
       icon: Inbox,
-      label: '待处理留言',
+      label: t('dashboard.stats.pending'),
       value: pending,
     },
     {
-      hint: `${formatCount(shopsPublished?.totalDocs)} 家已发布`,
+      hint: t('dashboard.stats.shopsHint', {
+        count: formatCount(shopsPublished?.totalDocs, dateLocale),
+      }),
       icon: Store,
-      label: '门店',
+      label: t('dashboard.stats.shops'),
       value: shopsTotal?.totalDocs ?? null,
     },
   ]
@@ -253,61 +271,63 @@ export async function DashboardView({ locale = 'zh-CN', navGroups = [], payload,
       <div className="mx-auto w-full max-w-[1180px] py-8" data-admin-ui="">
         <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-[24px] leading-tight font-semibold tracking-[-0.02em]">概览</h1>
-            <p className="mt-1.5 text-[13px] text-muted-foreground">
-              卡牌、分类、banner、公告、门店与访客留言的运维入口。
-            </p>
+            <h1 className="text-[24px] leading-tight font-semibold tracking-[-0.02em]">
+              {t('dashboard.overview')}
+            </h1>
+            <p className="mt-1.5 text-[13px] text-muted-foreground">{t('dashboard.lead')}</p>
           </div>
           <div className="flex items-center gap-2">
             <Button asChild size="sm" variant="outline">
               <a href="/" rel="noreferrer" target="_blank">
                 <Eye />
-                查看前台
+                {t('dashboard.viewSite')}
               </a>
             </Button>
             <Button asChild size="sm">
               <Link href="/admin/collections/cards/create">
                 <Plus />
-                新建卡牌
+                {t('dashboard.newCard')}
               </Link>
             </Button>
           </div>
         </header>
 
-        <StatStrip stats={stats} />
+        <StatStrip locale={dateLocale} stats={stats} />
 
         <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between gap-3">
-                <CardTitle>最近更新</CardTitle>
+                <CardTitle>{t('dashboard.recent')}</CardTitle>
                 <Button asChild size="sm" variant="ghost">
                   <Link href="/admin/collections/cards">
-                    全部卡牌
+                    {t('dashboard.allCards')}
                     <ArrowRight />
                   </Link>
                 </Button>
               </div>
-              <CardDescription>按更新时间倒序，点名称直接进编辑页。</CardDescription>
+              <CardDescription>{t('dashboard.recentDesc')}</CardDescription>
             </CardHeader>
             <CardContent className="px-5 pb-4">
               {cards.length === 0 ? (
                 <p className="text-[13px] text-muted-foreground">
-                  还没有卡牌。先去
+                  {t('dashboard.noCardsBefore')}
                   <Link className="mx-1 text-primary underline underline-offset-4" href="/admin/collections/cards/create">
-                    新建一张
+                    {t('dashboard.noCardsAction')}
                   </Link>
-                  。
+                  {t('dashboard.noCardsAfter')}
                 </p>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>卡牌</TableHead>
-                      <TableHead>编号</TableHead>
-                      <TableHead className="text-right">价格</TableHead>
-                      <TableHead>状态</TableHead>
-                      <TableHead className="whitespace-nowrap">更新时间</TableHead>
+                      <TableHead>{t('dashboard.table.card')}</TableHead>
+                      <TableHead>{t('dashboard.table.code')}</TableHead>
+                      <TableHead className="text-right">{t('dashboard.table.price')}</TableHead>
+                      <TableHead>{t('dashboard.table.status')}</TableHead>
+                      <TableHead className="whitespace-nowrap">
+                        {t('dashboard.table.updated')}
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -328,7 +348,7 @@ export async function DashboardView({ locale = 'zh-CN', navGroups = [], payload,
                           {formatMoney(card.price)}
                         </TableCell>
                         <TableCell>
-                          <StatusBadge status={card.status as StatusValue} />
+                          <StatusBadge status={card.status as StatusValue} t={t} />
                         </TableCell>
                         <TableCell className="tabular whitespace-nowrap text-muted-foreground">
                           <AdminLocalDateTime value={card.updatedAt} />
@@ -345,14 +365,20 @@ export async function DashboardView({ locale = 'zh-CN', navGroups = [], payload,
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between gap-3">
-                  <CardTitle>待处理留言</CardTitle>
-                  {pending ? <Badge variant="default">{formatCount(pending)} 条</Badge> : null}
+                  <CardTitle>{t('dashboard.pendingTitle')}</CardTitle>
+                  {pending ? (
+                    <Badge variant="default">
+                      {t('dashboard.pendingBadge', { count: formatCount(pending, dateLocale) })}
+                    </Badge>
+                  ) : null}
                 </div>
-                <CardDescription>状态为「新」的访客留言。</CardDescription>
+                <CardDescription>{t('dashboard.pendingDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="px-5 pb-4">
                 {messages.length === 0 ? (
-                  <p className="text-[13px] text-muted-foreground">没有待处理留言。</p>
+                  <p className="text-[13px] text-muted-foreground">
+                    {t('dashboard.pendingEmpty')}
+                  </p>
                 ) : (
                   <ul className="flex flex-col">
                     {messages.map((message, index) => (
@@ -364,10 +390,10 @@ export async function DashboardView({ locale = 'zh-CN', navGroups = [], payload,
                         >
                           <div className="flex items-baseline justify-between gap-3">
                             <span className="truncate text-[13px] font-medium text-foreground group-hover:text-primary">
-                              {message.contactName?.trim() || '匿名访客'}
+                              {message.contactName?.trim() || t('dashboard.anonymous')}
                             </span>
                             <span className="tabular shrink-0 text-[11px] text-muted-foreground">
-                              {formatRelative(message.createdAt, locale)}
+                              {formatRelative(message.createdAt, dateLocale)}
                             </span>
                           </div>
                           <p className="mt-1 line-clamp-2 text-[13px] text-muted-foreground">
@@ -383,26 +409,28 @@ export async function DashboardView({ locale = 'zh-CN', navGroups = [], payload,
 
             <Card>
               <CardHeader>
-                <CardTitle>快捷操作</CardTitle>
-                <CardDescription>高频动作，少点两层菜单。</CardDescription>
+                <CardTitle>{t('dashboard.quick')}</CardTitle>
+                <CardDescription>{t('dashboard.quickDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-wrap gap-2 px-5 pb-5">
                 <Button asChild size="sm" variant="secondary">
-                  <Link href="/admin/collections/cards/create">新建卡牌</Link>
+                  <Link href="/admin/collections/cards/create">{t('dashboard.quick.newCard')}</Link>
                 </Button>
                 <Button asChild size="sm" variant="secondary">
-                  <Link href="/admin/collections/announcements/create">写公告</Link>
-                </Button>
-                <Button asChild size="sm" variant="secondary">
-                  <Link href="/admin/collections/media/create">上传素材</Link>
-                </Button>
-                <Button asChild size="sm" variant="secondary">
-                  <Link href="/admin/collections/messages?where[or][0][and][0][status][equals]=new">
-                    处理留言
+                  <Link href="/admin/collections/announcements/create">
+                    {t('dashboard.quick.announcement')}
                   </Link>
                 </Button>
                 <Button asChild size="sm" variant="secondary">
-                  <Link href="/admin/globals/site-settings">站点设置</Link>
+                  <Link href="/admin/collections/media/create">{t('dashboard.quick.media')}</Link>
+                </Button>
+                <Button asChild size="sm" variant="secondary">
+                  <Link href="/admin/collections/messages?where[or][0][and][0][status][equals]=new">
+                    {t('dashboard.quick.messages')}
+                  </Link>
+                </Button>
+                <Button asChild size="sm" variant="secondary">
+                  <Link href="/admin/globals/site-settings">{t('dashboard.quick.settings')}</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -412,12 +440,14 @@ export async function DashboardView({ locale = 'zh-CN', navGroups = [], payload,
         <section className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>内容集合</CardTitle>
-              <CardDescription>按分组排列的全部集合与全局设置。</CardDescription>
+              <CardTitle>{t('dashboard.collections')}</CardTitle>
+              <CardDescription>{t('dashboard.collectionsDesc')}</CardDescription>
             </CardHeader>
             <CardContent className="px-5 pb-5">
               {groups.length === 0 ? (
-                <p className="text-[13px] text-muted-foreground">当前账号没有可读的集合。</p>
+                <p className="text-[13px] text-muted-foreground">
+                  {t('dashboard.collectionsEmpty')}
+                </p>
               ) : (
                 <div className="flex flex-col gap-5">
                   {groups.map((group) => (
@@ -443,11 +473,11 @@ export async function DashboardView({ locale = 'zh-CN', navGroups = [], payload,
                                     className="block truncate text-[13px] font-medium text-foreground no-underline hover:text-primary hover:underline hover:underline-offset-4"
                                     href={base}
                                   >
-                                    {toLabel(entity.label, entity.slug)}
+                                    {toLabel(entity.label, i18n.language, entity.slug)}
                                   </Link>
-                                  {ENTITY_DESCRIPTIONS[entity.slug] ? (
+                                  {ENTITY_DESCRIPTION_KEYS[entity.slug] ? (
                                     <p className="mt-0.5 truncate text-[12px] text-muted-foreground">
-                                      {ENTITY_DESCRIPTIONS[entity.slug]}
+                                      {t(ENTITY_DESCRIPTION_KEYS[entity.slug])}
                                     </p>
                                   ) : null}
                                 </div>
@@ -461,7 +491,7 @@ export async function DashboardView({ locale = 'zh-CN', navGroups = [], payload,
                                   >
                                     <Link href={`${base}/create`}>
                                       <Plus />
-                                      新建
+                                      {t('dashboard.create')}
                                     </Link>
                                   </Button>
                                 ) : null}
@@ -480,7 +510,7 @@ export async function DashboardView({ locale = 'zh-CN', navGroups = [], payload,
 
         {user?.email ? (
           <p className="mt-6 text-[12px] text-muted-foreground">
-            当前登录：{user.email}
+            {t('dashboard.signedInAs', { email: user.email })}
           </p>
         ) : null}
       </div>

@@ -1,15 +1,15 @@
 // 语言注册表：一条记录对应一种界面语言。新增语言只需在这里加一行，
 // 并在 messages.ts 里补齐 Record<MessageKey, string>（类型系统会强制补全）。
 //
-// DEFAULT_LOCALE 是「无前缀」的那一种：`/cards` 服务 zh，`/ja/cards` 服务 ja。
-// 因此 zh 的 URL 不带段，其余语言都带。
+// DEFAULT_LOCALE 是「无前缀」的那一种：`/cards` 服务 ja，`/zh/cards` 服务 zh。
+// 因此 ja 的 URL 不带段，其余语言都带。
 
 export const LOCALES = {
   zh: {
     label: '中文',
     htmlLang: 'zh-CN',
     intl: 'zh-CN',
-    prefix: '',
+    prefix: 'zh',
     title: '卡牌展示与回购信息',
     description: 'TCG 卡牌展示与高价回购信息站：按 IP、系列筛选，查看门店与公告。',
   },
@@ -17,7 +17,7 @@ export const LOCALES = {
     label: '日本語',
     htmlLang: 'ja-JP',
     intl: 'ja-JP',
-    prefix: 'ja',
+    prefix: '',
     title: 'カード展示・買取情報',
     description: 'TCG カードの展示と高価買取情報。IP・シリーズで絞り込み、店舗とお知らせを確認できます。',
   },
@@ -33,7 +33,14 @@ export const LOCALES = {
 
 export type Locale = keyof typeof LOCALES
 
-export const DEFAULT_LOCALE: Locale = 'zh'
+export const DEFAULT_LOCALE: Locale = 'ja'
+
+/**
+ * 后台内容的语言。CMS 里的卡牌名、公告、门店信息只有中文一份，
+ * 与「界面默认语言」是两件事：界面默认日语，内容仍然是中文。
+ * 内容语言说明（ContentLanguageNotice）按这个常量判断是否展示、原文链接指向哪里。
+ */
+export const CONTENT_LOCALE: Locale = 'zh'
 
 const BY_PREFIX = new Map<string, Locale>(
   Object.entries(LOCALES)
@@ -55,9 +62,9 @@ export function isDefaultLocale(locale: Locale): boolean {
 }
 
 /**
- * 从路径的首段读出界面语言。默认语言由 middleware rewrite 成 `/zh/...`，
- * 因此首段可能是 `zh`（rewrite 后的内部路径），也可能整段缺失（浏览器地址 `/`）；
- * `ja` / `en` 不 rewrite，首段就是它们自己。未知段（如 `/de/cards`）返回 null，
+ * 从路径的首段读出界面语言。默认语言由 middleware rewrite 成 `/ja/...`，
+ * 因此首段可能是 `ja`（rewrite 后的内部路径），也可能整段缺失（浏览器地址 `/`）；
+ * `zh` / `en` 不 rewrite，首段就是它们自己。未知段（如 `/de/cards`）返回 null，
  * 由调用方回退到 middleware 已归一化的语言，避免 404 页把非法段拼进链接。
  */
 export function localeFromPathname(pathname: string): Locale | null {
@@ -75,6 +82,7 @@ export function localizeHref(href: string, locale: Locale): string {
   const prefix = LOCALES[locale].prefix
   if (!prefix) return href
   const firstSegment = href.split('/')[1] ?? ''
-  if (BY_PREFIX.has(firstSegment)) return href
+  // 任何受支持的语言段都算「已经带过语言」，包括默认语言自己的键名（如 `/ja/...`）。
+  if (firstSegment in LOCALES) return href
   return href === '/' ? `/${prefix}` : `/${prefix}${href}`
 }

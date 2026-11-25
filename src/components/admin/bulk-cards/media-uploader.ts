@@ -1,3 +1,5 @@
+import type { AdminT } from '@/lib/admin/i18n'
+
 import type { MediaRef } from './batch-state'
 
 export type MediaUploadPhase = 'requesting' | 'uploading' | 'processing'
@@ -6,6 +8,7 @@ export type MediaUploadOptions = {
   alt: string
   apiRoute: string
   signal: AbortSignal
+  t: AdminT
   onPhase?: (phase: MediaUploadPhase) => void
   onProgress?: (sent: number, total: number) => void
 }
@@ -55,8 +58,8 @@ function displayUrl(url: string | null | undefined): string {
   }
 }
 
-function parseSignedUpload(value: unknown): SignedUpload {
-  const invalid = () => new MediaUploadError('request', '上传地址响应格式不正确')
+function parseSignedUpload(value: unknown, t: AdminT): SignedUpload {
+  const invalid = () => new MediaUploadError('request', t('bulk.err.badSigned'))
   if (!isRecord(value)) throw invalid()
   const context = value.clientUploadContext
   const { filename, url } = value
@@ -89,9 +92,14 @@ function parseSignedUpload(value: unknown): SignedUpload {
   }
 }
 
-function parseMediaRef(value: unknown, fallbackAlt: string, fallbackFilename: string): MediaRef {
+function parseMediaRef(
+  value: unknown,
+  fallbackAlt: string,
+  fallbackFilename: string,
+  t: AdminT,
+): MediaRef {
   if (!isRecord(value) || typeof value.id !== 'number') {
-    throw new MediaUploadError('create', '素材创建响应格式不正确')
+    throw new MediaUploadError('create', t('bulk.err.badMedia'))
   }
 
   const url = typeof value.url === 'string' ? value.url : ''
@@ -113,12 +121,16 @@ function parseMediaRef(value: unknown, fallbackAlt: string, fallbackFilename: st
   }
 }
 
-async function readJson(response: Response, phase: MediaUploadFailurePhase): Promise<unknown> {
+async function readJson(
+  response: Response,
+  phase: MediaUploadFailurePhase,
+  t: AdminT,
+): Promise<unknown> {
   try {
     return await response.json()
   } catch (error) {
     if (isAbortError(error)) throw error
-    throw new MediaUploadError(phase, '响应格式不正确')
+    throw new MediaUploadError(phase, t('bulk.err.badJson'))
   }
 }
 
@@ -126,6 +138,7 @@ async function requestSignedUpload(
   file: File,
   apiRoute: string,
   signal: AbortSignal,
+  t: AdminT,
 ): Promise<SignedUpload> {
   let response: Response
   try {
@@ -143,20 +156,20 @@ async function requestSignedUpload(
     })
   } catch (error) {
     if (isAbortError(error)) throw error
-    throw new MediaUploadError('request', '获取上传地址失败，请检查网络')
+    throw new MediaUploadError('request', t('bulk.err.signedNetwork'))
   }
 
   if (!response.ok) {
     const message =
       response.status === 404
-        ? '当前环境未启用对象存储直传，请联系管理员配置 S3'
+        ? t('bulk.err.noS3')
         : response.status === 401 || response.status === 403
-          ? '没有上传权限或登录状态已失效，请重新登录'
-          : `获取上传地址失败（HTTP ${response.status}）`
+          ? t('bulk.err.uploadAuth')
+          : t('bulk.err.signedHttp', { status: response.status })
     throw new MediaUploadError('request', message)
   }
 
-  return parseSignedUpload(await readJson(response, 'request'))
+  return parseSignedUpload(await readJson(response, 'request', t), t)
 }
 
 function putFile(args: {
@@ -164,6 +177,7 @@ function putFile(args: {
   file: File
   headers: Record<string, string> | null
   signal: AbortSignal
+  t: AdminT
   onProgress?: (sent: number, total: number) => void
 }): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -188,13 +202,17 @@ function putFile(args: {
     xhr.onload = () => {
       cleanup()
       if (xhr.status >= 200 && xhr.status < 300) resolve()
-      else reject(new MediaUploadError('upload', `图片上传失败（HTTP ${xhr.status}）`))
+      else
+        reject(
+          new MediaUploadError(
+            'upload',
+            args.t('bulk.err.uploadHttp', { status: xhr.status }),
+          ),
+        )
     }
     xhr.onerror = () => {
       cleanup()
-      reject(
-        new MediaUploadError('upload', '图片上传失败，请检查网络或对象存储的 CORS 配置'),
-      )
+      reject(new MediaUploadError('upload', args.t('bulk.err.uploadNetwork')))
     }
     xhr.onabort = () => {
       cleanup()
@@ -212,6 +230,7 @@ async function createMedia(
   apiRoute: string,
   signed: SignedUpload,
   signal: AbortSignal,
+  t: AdminT,
 ): Promise<MediaRef> {
   const form = new FormData()
   form.append('_payload', JSON.stringify({ alt }))
@@ -239,33 +258,33 @@ async function createMedia(
     })
   } catch (error) {
     if (isAbortError(error)) throw error
-    throw new MediaUploadError('create', '创建素材失败，请检查网络')
+    throw new MediaUploadError('create', t('bulk.err.createNetwork'))
   }
 
   if (!response.ok) {
     const message =
       response.status === 401 || response.status === 403
-        ? '没有创建素材的权限或登录状态已失效，请重新登录'
-        : `创建素材失败（HTTP ${response.status}）`
+        ? t('bulk.err.createAuth')
+        : t('bulk.err.createHttp', { status: response.status })
     throw new MediaUploadError('create', message)
   }
 
-  const body = await readJson(response, 'create')
+  const body = await readJson(response, 'create', t)
   const doc = isRecord(body) ? (body.doc ?? body) : body
-  return parseMediaRef(doc, alt, file.name)
+  return parseMediaRef(doc, alt, file.name, t)
 }
 
 export async function uploadMedia(file: File, options: MediaUploadOptions): Promise<MediaRef> {
-  const { alt, apiRoute, signal, onPhase, onProgress } = options
+  const { alt, apiRoute, signal, t, onPhase, onProgress } = options
 
   onPhase?.('requesting')
-  const signed = await requestSignedUpload(file, apiRoute, signal)
+  const signed = await requestSignedUpload(file, apiRoute, signal, t)
   if (signal.aborted) throw abortError()
 
   onPhase?.('uploading')
-  await putFile({ url: signed.url, file, headers: signed.headers, signal, onProgress })
+  await putFile({ url: signed.url, file, headers: signed.headers, signal, t, onProgress })
   if (signal.aborted) throw abortError()
 
   onPhase?.('processing')
-  return createMedia(file, alt, apiRoute, signed, signal)
+  return createMedia(file, alt, apiRoute, signed, signal, t)
 }

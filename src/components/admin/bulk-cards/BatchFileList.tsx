@@ -3,6 +3,9 @@
 import { Check, Loader2, Plus, RotateCcw, Upload, X } from 'lucide-react'
 import React, { useRef, useState } from 'react'
 
+import type { AdminT } from '@/lib/admin/i18n'
+import { useAdminT } from '@/lib/admin/i18n/use-admin-t'
+
 import { isItemDirty, savedCardId, type BatchItem, type UploadState } from './batch-state'
 
 export type BatchFileListProps = {
@@ -32,30 +35,37 @@ type ItemStatus = {
 }
 
 /** 每条图片只有一种「现在该做什么」的状态；列表里用同一枚胶囊表达。 */
-function itemStatus(item: BatchItem): ItemStatus {
+function itemStatus(item: BatchItem, t: AdminT): ItemStatus {
   const cardId = savedCardId(item.save)
-  if (item.save.kind === 'updating') return { label: '更新中', tone: 'busy', spinning: true }
-  if (item.save.kind === 'saving') return { label: '保存中', tone: 'busy', spinning: true }
-  if (item.save.kind === 'failed' && cardId != null) return { label: '更新失败', tone: 'failed' }
+  if (item.save.kind === 'updating')
+    return { label: t('bulk.file.updating'), tone: 'busy', spinning: true }
+  if (item.save.kind === 'saving')
+    return { label: t('bulk.file.saving'), tone: 'busy', spinning: true }
+  if (item.save.kind === 'failed' && cardId != null)
+    return { label: t('bulk.file.updateFailed'), tone: 'failed' }
   if (cardId != null) {
     return isItemDirty(item)
-      ? { label: '有修改', tone: 'dirty' }
-      : { label: '已保存', tone: 'saved' }
+      ? { label: t('bulk.file.dirty'), tone: 'dirty' }
+      : { label: t('bulk.file.saved'), tone: 'saved' }
   }
-  if (item.save.kind === 'failed') return { label: '保存失败', tone: 'failed' }
+  if (item.save.kind === 'failed') return { label: t('bulk.file.saveFailed'), tone: 'failed' }
 
   switch (item.upload.kind) {
     case 'queued':
     case 'requesting':
-      return { label: '排队中', tone: 'queued' }
+      return { label: t('bulk.file.queued'), tone: 'queued' }
     case 'uploading':
-      return { label: `上传 ${progressPercent(item.upload)}%`, tone: 'busy', spinning: true }
+      return {
+        label: t('bulk.file.uploading', { percent: progressPercent(item.upload) }),
+        tone: 'busy',
+        spinning: true,
+      }
     case 'processing':
-      return { label: '处理中', tone: 'busy', spinning: true }
+      return { label: t('bulk.file.processing'), tone: 'busy', spinning: true }
     case 'ready':
-      return { label: '未填写', tone: 'pending' }
+      return { label: t('bulk.file.empty'), tone: 'pending' }
     case 'failed':
-      return { label: '上传失败', tone: 'failed' }
+      return { label: t('bulk.file.uploadFailed'), tone: 'failed' }
   }
 }
 
@@ -110,6 +120,7 @@ export function BatchFileList({
   onRetry,
   onAddFiles,
 }: BatchFileListProps) {
+  const t = useAdminT()
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -121,7 +132,7 @@ export function BatchFileList({
   const acceptFiles = (files: File[]): void => {
     if (files.length === 0) return
     const images = files.filter((file) => file.type.startsWith('image/'))
-    setError(images.length === files.length ? null : '只能上传图片文件')
+    setError(images.length === files.length ? null : t('bulk.file.imagesOnly'))
     if (images.length > 0) onAddFiles(images)
   }
 
@@ -155,14 +166,16 @@ export function BatchFileList({
     >
       <header className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
         <div className="min-w-0">
-          <h1 className="text-[15px] font-semibold leading-6">批量上架</h1>
+          <h1 className="text-[15px] font-semibold leading-6">{t('bulk.file.title')}</h1>
           <p className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-muted-foreground">
-            <span className="tabular">{items.length} 张图片</span>
+            <span className="tabular">
+              {t('bulk.file.countImages', { count: items.length })}
+            </span>
             {savedCount > 0 ? (
               <span className="inline-flex items-center gap-1">
                 <span aria-hidden className="size-1.5 rounded-full bg-emerald-600" />
                 <span className="tabular text-emerald-700 dark:text-emerald-400">
-                  {savedCount} 已保存
+                  {t('bulk.file.savedCount', { count: savedCount })}
                 </span>
               </span>
             ) : null}
@@ -170,7 +183,7 @@ export function BatchFileList({
               <span className="inline-flex items-center gap-1">
                 <span aria-hidden className="size-1.5 rounded-full bg-amber-500" />
                 <span className="tabular text-amber-700 dark:text-amber-400">
-                  {pendingCount} 未填写
+                  {t('bulk.file.pendingCount', { count: pendingCount })}
                 </span>
               </span>
             ) : null}
@@ -182,7 +195,7 @@ export function BatchFileList({
           type="button"
         >
           <Plus aria-hidden className="size-3.5" strokeWidth={2.5} />
-          添加文件
+          {t('bulk.file.addFiles')}
         </button>
         <input
           ref={inputRef}
@@ -206,18 +219,18 @@ export function BatchFileList({
             <Upload className="size-6 text-muted-foreground" />
           </span>
           <div>
-            <p className="text-sm font-medium text-foreground">把卡图拖到这里</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">或点击「添加文件」多选上传</p>
+            <p className="text-sm font-medium text-foreground">{t('bulk.file.dropHere')}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">{t('bulk.file.dropHint')}</p>
           </div>
         </div>
       ) : (
-        <ul aria-label="待处理图片列表" className="flex-1 list-none overflow-y-auto pl-0">
+        <ul aria-label={t('bulk.file.listLabel')} className="flex-1 list-none overflow-y-auto pl-0">
           {items.map((item) => {
             const selected = item.id === selectedId
             const uploading = item.upload.kind === 'uploading' ? item.upload : null
             const cardId = savedCardId(item.save)
             const saved = cardId != null
-            const status = itemStatus(item)
+            const status = itemStatus(item, t)
             const failure = failureMessage(item)
             return (
               <li
@@ -272,7 +285,9 @@ export function BatchFileList({
                         <span className="tabular flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
                           {cardId != null ? (
                             <>
-                              <span title={`卡牌 #${cardId}`}>#{cardId}</span>
+                              <span title={t('bulk.file.cardTitle', { id: cardId })}>
+                                #{cardId}
+                              </span>
                               <span aria-hidden className="text-border">
                                 ·
                               </span>
@@ -294,16 +309,16 @@ export function BatchFileList({
                       type="button"
                     >
                       <RotateCcw aria-hidden className="size-3" strokeWidth={2.5} />
-                      重试
+                      {t('bulk.file.retry')}
                     </button>
                   ) : null}
 
                   {saved ? null : (
                     <button
-                      aria-label={`移除 ${item.file.name}`}
+                      aria-label={t('bulk.file.removeAria', { name: item.file.name })}
                       className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                       onClick={() => onRemove(item.id)}
-                      title="移除"
+                      title={t('bulk.file.remove')}
                       type="button"
                     >
                       <X aria-hidden className="size-3.5" strokeWidth={2.5} />

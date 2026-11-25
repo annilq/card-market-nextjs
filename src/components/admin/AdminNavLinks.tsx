@@ -15,7 +15,9 @@ import { Hamburger, Link, useNav } from '@payloadcms/ui'
 import { usePathname } from 'next/navigation'
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { ENTITY_DESCRIPTIONS, ENTITY_FALLBACK_ICON, ENTITY_ICONS } from './entity-meta'
+import { useAdminT } from '@/lib/admin/i18n/use-admin-t'
+
+import { ENTITY_DESCRIPTION_KEYS, ENTITY_FALLBACK_ICON, ENTITY_ICONS } from './entity-meta'
 
 export type AdminNavItem = {
   /** 只按完全匹配判当前项（工作台用：它的路径是所有页面的前缀）。 */
@@ -27,6 +29,7 @@ export type AdminNavItem = {
 }
 
 export function AdminNavLinks({ items }: { items: AdminNavItem[] }) {
+  const t = useAdminT()
   const pathname = usePathname()
   // 13 项平铺在 248px 里是一面墙：只靠一个 2px 红条区分，找东西得逐行读。
   // 与其把它重新折成二级菜单（文档里论证过那是另一种成本），不如给一个
@@ -38,13 +41,14 @@ export function AdminNavLinks({ items }: { items: AdminNavItem[] }) {
     if (!q) return items
     // 名称、slug、仪表盘里那句说明都能命中：运营更可能记得「放图片的」
     // 而不是集合的技术名。
-    return items.filter((item) =>
-      [item.label, item.slug, ENTITY_DESCRIPTIONS[item.slug] ?? '']
+    return items.filter((item) => {
+      const description = ENTITY_DESCRIPTION_KEYS[item.slug]
+      return [item.label, item.slug, description ? t(description) : '']
         .join(' ')
         .toLowerCase()
-        .includes(q),
-    )
-  }, [items, query])
+        .includes(q)
+    })
+  }, [items, query, t])
 
   return (
     <div className="admin-nav-wrap">
@@ -68,15 +72,15 @@ export function AdminNavLinks({ items }: { items: AdminNavItem[] }) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="筛选集合"
-            aria-label="筛选集合"
+            placeholder={t('nav.filter')}
+            aria-label={t('nav.filter')}
             className="admin-nav__search-input"
           />
         </div>
       )}
 
       {visible.length === 0 ? (
-        <p className="admin-nav__empty">没有匹配的集合</p>
+        <p className="admin-nav__empty">{t('nav.noMatches')}</p>
       ) : (
         <ul className="admin-nav">
           {visible.map((item) => {

@@ -18,6 +18,8 @@ const zh = {
   viewAll: '全部 →',
   priceTag: '¥{price}',
   cardCodeShort: '编号 {code}',
+  noCode: '无',
+  loading: '加载中',
 
   // 根布局 / 导航
   defaultSiteName: 'Card Shop',
@@ -42,6 +44,7 @@ const zh = {
   footerHelpCenter: '帮助中心',
   preferences: '偏好设置',
   xAccountLabel: '在 X 上关注我们',
+  lineQrLabel: 'LINE 二维码（占位）',
   infoOperation: '运营信息',
   infoPersonalInfo: '个人信息收集',
   infoTerms: '利用规则',
@@ -182,6 +185,8 @@ const ja: Record<MessageKey, string> = {
   viewAll: 'すべて →',
   priceTag: '¥{price}',
   cardCodeShort: '型番 {code}',
+  noCode: 'なし',
+  loading: '読み込み中',
 
   defaultSiteName: 'カードショップ',
   navCards: 'カード',
@@ -204,6 +209,7 @@ const ja: Record<MessageKey, string> = {
   footerHelpCenter: 'ヘルプセンター',
   preferences: '表示設定',
   xAccountLabel: 'X でフォロー',
+  lineQrLabel: 'LINE 二次元コード（仮）',
   infoOperation: '運営情報',
   infoPersonalInfo: '個人情報の収集',
   infoTerms: '利用規約',
@@ -332,6 +338,8 @@ const en: Record<MessageKey, string> = {
   viewAll: 'View all →',
   priceTag: '¥{price}',
   cardCodeShort: 'No. {code}',
+  noCode: 'None',
+  loading: 'Loading',
 
   defaultSiteName: 'Card Shop',
   navCards: 'Cards',
@@ -354,6 +362,7 @@ const en: Record<MessageKey, string> = {
   footerHelpCenter: 'Help Center',
   preferences: 'Preferences',
   xAccountLabel: 'Follow us on X',
+  lineQrLabel: 'LINE QR code placeholder',
   infoOperation: 'Operations',
   infoPersonalInfo: 'Personal data we collect',
   infoTerms: 'Terms of use',

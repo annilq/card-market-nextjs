@@ -4,8 +4,6 @@ import type { ReactNode } from 'react'
 
 import './globals.css'
 
-import { SiteFooter } from '@/components/layout/SiteFooter'
-import { SiteHeader } from '@/components/layout/SiteHeader'
 import { getSiteSettings } from '@/lib/data'
 import { I18nProvider } from '@/lib/i18n/client'
 import { DEFAULT_LOCALE, LOCALES, type Locale } from '@/lib/i18n/locales'
@@ -112,7 +110,6 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function FrontendLayout({ children }: { children: ReactNode }) {
   const locale = await getLocaleFromHeaders()
-  const settings = await loadSiteSettings()
 
   return (
     // suppressHydrationWarning：无闪烁脚本会在 React 之前改动 <html> 的 class。
@@ -125,12 +122,13 @@ export default async function FrontendLayout({ children }: { children: ReactNode
         )}
       </head>
       <body className="flex min-h-screen flex-col">
-        <I18nProvider>
-          <SiteHeader settings={settings} />
-          {/* 1232 = 设计图内容列 1200 + 两侧各 16 的留白（px-4）。 */}
-          <main className="mx-auto w-full max-w-[1232px] flex-1 px-4 py-3 md:py-6">{children}</main>
-          <SiteFooter settings={settings} />
-        </I18nProvider>
+        {/*
+         * 顶栏 / 内容列 / 页脚放在 `[locale]/layout.tsx`，而不是这里：
+         * 根布局位于 [locale] 段之上，客户端切换语言时不会重渲染；若把文案写死在这里，
+         * 从 `/` 切到 `/zh` 时页面主体变了、顶栏和页脚却停在旧语言（实测的 bug）。
+         * `[locale]/layout` 的参数会随语言段变化，Next 会重新渲染它。
+         */}
+        <I18nProvider>{children}</I18nProvider>
       </body>
     </html>
   )

@@ -4,6 +4,8 @@ import { Eye, EyeOff } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
+import { useAdminT } from '@/lib/admin/i18n/use-admin-t'
+
 /**
  * 登录页密码框的明文 / 密文切换。
  *
@@ -25,6 +27,7 @@ function applyType(input: HTMLInputElement, visible: boolean) {
 }
 
 export function LoginPasswordVisibility() {
+  const t = useAdminT()
   const [visible, setVisible] = useState(false)
   const [slot, setSlot] = useState<HTMLDivElement | null>(null)
   const visibleRef = useRef(false)
@@ -107,8 +110,8 @@ export function LoginPasswordVisibility() {
       type="button"
       className="admin-password-eye"
       onClick={() => setVisible((v) => !v)}
-      aria-label={visible ? '隐藏密码' : '显示密码'}
-      title={visible ? '隐藏密码' : '显示密码'}
+      aria-label={t(visible ? 'password.hide' : 'password.show')}
+      title={t(visible ? 'password.hide' : 'password.show')}
       aria-pressed={visible}
     >
       {visible ? <EyeOff size={18} strokeWidth={2} /> : <Eye size={18} strokeWidth={2} />}

@@ -112,9 +112,9 @@ export type BatchAction =
   | { type: 'save/succeeded'; id: string; cardId: number }
   | { type: 'save/failed'; id: string; message: string; field?: SaveField }
 
-export function defaultAltFromFilename(name: string): string {
+export function defaultAltFromFilename(name: string, fallback: string): string {
   const withoutExtension = name.replace(/\.[^.]+$/, '').trim()
-  return withoutExtension || '未命名图片'
+  return withoutExtension || fallback
 }
 
 export function createCardDraft(alt: string): CardDraft {

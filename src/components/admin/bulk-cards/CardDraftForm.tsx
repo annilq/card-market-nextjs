@@ -5,13 +5,9 @@ import React, { useEffect, useRef, useState } from 'react'
 import type { BatchItem, BulkCardsTaxonomy, CardDraft } from './batch-state'
 import { draftEquals, savedCardId } from './batch-state'
 import { hasDraftErrors, validateCardDraft } from './card-draft'
-import { TaxonomySelect } from './TaxonomySelect'
+import { useAdminT } from '@/lib/admin/i18n/use-admin-t'
 
-const STATUS_OPTIONS: { value: CardDraft['status']; label: string }[] = [
-  { value: 'draft', label: '草稿' },
-  { value: 'published', label: '已发布' },
-  { value: 'archived', label: '已归档' },
-]
+import { TaxonomySelect } from './TaxonomySelect'
 
 const INPUT_CLASS =
   'h-9 w-full rounded-md border bg-background px-2.5 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring'
@@ -24,6 +20,12 @@ export type CardDraftFormProps = {
 }
 
 export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFormProps) {
+  const t = useAdminT()
+  const statusOptions: { value: CardDraft['status']; label: string }[] = [
+    { value: 'draft', label: t('status.draft') },
+    { value: 'published', label: t('status.published') },
+    { value: 'archived', label: t('status.archived') },
+  ]
   const [submitted, setSubmitted] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
   const { draft, save } = item
@@ -32,7 +34,7 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
   const updating = save.kind === 'updating'
   const busy = saving || updating
   const dirty = cardId != null && item.savedSnapshot != null && !draftEquals(draft, item.savedSnapshot)
-  const validation = submitted ? validateCardDraft(draft) : {}
+  const validation = submitted ? validateCardDraft(draft, t) : {}
   const saveError = save.kind === 'failed' ? save : null
 
   const errorFor = (field: keyof CardDraft): string | undefined =>
@@ -57,7 +59,7 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
     event.preventDefault()
     if (busy || item.upload.kind !== 'ready') return
     setSubmitted(true)
-    if (hasDraftErrors(validateCardDraft(draft))) return
+    if (hasDraftErrors(validateCardDraft(draft, t))) return
     onSave()
   }
 
@@ -119,10 +121,14 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
     <form className="flex flex-col gap-4" onSubmit={handleSubmit} ref={formRef}>
       <fieldset className="flex flex-col gap-4" disabled={busy}>
         <div className="grid gap-3 sm:grid-cols-2">
-          {textField('name', '卡牌名称', { required: true, placeholder: '如 皮卡丘' })}
+          {textField('name', t('bulk.cardName'), {
+            required: true,
+            placeholder: t('bulk.cardNamePlaceholder'),
+          })}
           <label className="flex min-w-0 flex-col gap-1.5" htmlFor="bulk-alt">
             <span className="text-xs font-medium text-muted-foreground">
-              替代文本<span className="ml-0.5 text-primary-soft-fg">*</span>
+              {t('bulk.alt')}
+              <span className="ml-0.5 text-primary-soft-fg">*</span>
             </span>
             <input
               className={`${INPUT_CLASS} ${errorFor('alt') ? 'border-destructive' : 'border-input'}`}
@@ -140,28 +146,28 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
         <div className="grid gap-3 sm:grid-cols-3">
           <TaxonomySelect
             error={selectErrorFor('ipId')}
-            label="IP / 大类"
+            label={t('bulk.ip')}
             onChange={(ipId) => onChange({ ipId, seriesId: null, subSeriesId: null })}
             options={taxonomy.ips}
-            placeholder="请选择"
+            placeholder={t('common.pleaseSelect')}
             value={draft.ipId}
           />
           <TaxonomySelect
             disabled={draft.ipId == null}
             error={selectErrorFor('seriesId')}
-            label="系列"
+            label={t('bulk.series')}
             onChange={(seriesId) => onChange({ seriesId, subSeriesId: null })}
             options={seriesOptions}
-            placeholder={draft.ipId == null ? '先选 IP' : '请选择'}
+            placeholder={draft.ipId == null ? t('common.selectIpFirst') : t('common.pleaseSelect')}
             value={draft.seriesId}
           />
           <TaxonomySelect
             disabled={draft.seriesId == null}
             error={selectErrorFor('subSeriesId')}
-            label="子系列"
+            label={t('bulk.subSeries')}
             onChange={(subSeriesId) => onChange({ subSeriesId })}
             options={subSeriesOptions}
-            placeholder={draft.seriesId == null ? '先选系列' : '请选择'}
+            placeholder={draft.seriesId == null ? t('common.selectSeriesFirst') : t('common.pleaseSelect')}
             value={draft.subSeriesId}
           />
         </div>
@@ -169,28 +175,31 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
         <div className="grid gap-3 sm:grid-cols-3">
           <TaxonomySelect
             error={selectErrorFor('rarityId')}
-            label="稀有程度"
+            label={t('bulk.rarity')}
             onChange={(rarityId) => onChange({ rarityId })}
             options={taxonomy.rarities}
-            placeholder="请选择"
+            placeholder={t('common.pleaseSelect')}
             value={draft.rarityId}
           />
-          {textField('code', '编号', { placeholder: '如 123/197' })}
-          {textField('price', '卖价', { placeholder: '如 320', type: 'number' })}
+          {textField('code', t('bulk.code'), { placeholder: t('bulk.codePlaceholder') })}
+          {textField('price', t('bulk.price'), {
+            placeholder: t('bulk.pricePlaceholder'),
+            type: 'number',
+          })}
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">
           <TaxonomySelect
             error={selectErrorFor('cardStatusId')}
-            label="卡牌状态"
+            label={t('bulk.cardStatus')}
             onChange={(cardStatusId) => onChange({ cardStatusId })}
             options={taxonomy.cardStatuses}
-            placeholder="请选择"
+            placeholder={t('common.pleaseSelect')}
             value={draft.cardStatusId}
           />
           <div className="flex min-w-0 flex-col gap-1.5">
             <label className="text-xs font-medium text-muted-foreground" htmlFor="bulk-status">
-              发布状态
+              {t('bulk.publishStatus')}
             </label>
             <select
               className={`${INPUT_CLASS} border-input`}
@@ -199,7 +208,7 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
               onChange={(event) => onChange({ status: event.target.value as CardDraft['status'] })}
               value={draft.status}
             >
-              {STATUS_OPTIONS.map((option) => (
+              {statusOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -219,7 +228,7 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
               }
               type="checkbox"
             />
-            <span className="text-sm">高价买取</span>
+            <span className="text-sm">{t('bulk.highValue')}</span>
           </label>
           <label className="flex items-center gap-2 self-end pb-1.5" htmlFor="bulk-no-deduction">
             <input
@@ -234,7 +243,7 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
               }
               type="checkbox"
             />
-            <span className="text-sm">不减额买取</span>
+            <span className="text-sm">{t('bulk.noDeduction')}</span>
           </label>
           <label className="flex items-center gap-2 self-end pb-1.5" htmlFor="bulk-stop-buyback">
             <input
@@ -249,13 +258,13 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
               }
               type="checkbox"
             />
-            <span className="text-sm">停止买取</span>
+            <span className="text-sm">{t('bulk.stopBuyback')}</span>
           </label>
         </div>
 
-        {textField('description', '描述', {
+        {textField('description', t('bulk.description'), {
           multiline: true,
-          placeholder: '可选，支持换行分段。',
+          placeholder: t('bulk.descriptionPlaceholder'),
         })}
       </fieldset>
 
@@ -266,12 +275,12 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
           type="submit"
         >
           {updating
-            ? '更新中…'
+            ? t('bulk.updating')
             : saving
-              ? '保存中…'
+              ? t('bulk.saving')
               : cardId != null
-                ? '更新卡牌'
-                : '保存卡牌'}
+                ? t('bulk.updateCard')
+                : t('bulk.saveCard')}
         </button>
 
         {saveError ? (
@@ -281,16 +290,14 @@ export function CardDraftForm({ item, taxonomy, onChange, onSave }: CardDraftFor
         ) : cardId != null ? (
           <p className="text-xs text-muted-foreground">
             {dirty
-              ? `卡牌 #${cardId} 有未保存的修改，点击「更新卡牌」保存。`
-              : `已保存为卡牌 #${cardId}。`}
+              ? t('bulk.dirty', { id: cardId })
+              : t('bulk.savedAs', { id: cardId })}
           </p>
         ) : item.upload.kind !== 'ready' ? (
-          <p className="text-xs text-muted-foreground">图片上传完成后才能保存。</p>
+          <p className="text-xs text-muted-foreground">{t('bulk.uploadFirst')}</p>
         ) : null}
 
-        <p className="ml-auto text-[11px] text-muted-foreground">
-          ⌘/Ctrl + Enter 保存 · Alt + ←/→ 切换
-        </p>
+        <p className="ml-auto text-[11px] text-muted-foreground">{t('bulk.shortcuts')}</p>
       </div>
     </form>
   )

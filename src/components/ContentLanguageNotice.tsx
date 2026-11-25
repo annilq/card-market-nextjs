@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import { DEFAULT_LOCALE, LOCALES, localizeHref, type Locale } from '@/lib/i18n/locales'
+import { CONTENT_LOCALE, LOCALES, localizeHref, type Locale } from '@/lib/i18n/locales'
 import { getTranslator } from '@/lib/i18n/t'
 
 /** 剥掉可能的语言段：`/ja/cards/1` → `/cards/1`。 */
@@ -39,19 +39,20 @@ function showsCmsContent(bare: string): boolean {
 export function ContentLanguageNotice({ locale, pathname }: { locale: Locale; pathname?: string }) {
   const t = getTranslator(locale)
 
-  if (locale === DEFAULT_LOCALE) return null
+  // 内容语言（中文）本身就是原文，不需要再解释「内容是中文」。
+  if (locale === CONTENT_LOCALE) return null
 
   const given = pathname?.trim() ?? ''
   const bare = given ? stripLocalePrefix(given) : '/'
   if (given && !showsCmsContent(bare)) return null
 
-  // 切到默认语言的同一路径。查询串不跟过去——这条链接的用途是「看原文」。
-  const target = localizeHref(bare, DEFAULT_LOCALE)
+  // 切到内容语言的同一路径。查询串不跟过去——这条链接的用途是「看原文」。
+  const target = localizeHref(bare, CONTENT_LOCALE)
 
   return (
     <p className="mb-6 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted">
       {t('contentLanguageNotice')}{' '}
-      <Link href={target} hrefLang={LOCALES[DEFAULT_LOCALE].htmlLang} className="underline hover:text-fg">
+      <Link href={target} hrefLang={LOCALES[CONTENT_LOCALE].htmlLang} className="underline hover:text-fg">
         {t('contentLanguageSwitch')}
       </Link>
     </p>

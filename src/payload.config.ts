@@ -64,7 +64,9 @@ export default buildConfig({
   admin: {
     user: Users.slug,
     meta: {
-      titleSuffix: '卡牌回购站 | Payload',
+      // meta 只接受普通字符串，没有按语言求值的入口；后台默认语言是日语，
+      // 所以品牌后缀固定用日语。界面正文由 src/lib/admin/i18n 按语言渲染。
+      titleSuffix: 'カード買取サイト | Payload',
       // public/ 下已有从原项目复制的图标
       icons: { icon: '/favicon.ico' },
       openGraph: { images: ['/logo_header.png'] },
@@ -89,31 +91,38 @@ export default buildConfig({
       providers: ['@/components/admin/AdminProviders#AdminProviders'],
       // 登录页标题（原来的四色条已删，只留站名）
       beforeLogin: ['@/components/admin/LoginIntro#LoginIntro'],
-      // 顶栏右侧 actions 区：把「后台深色模式切换」从账户下拉里拎出来，直接放右上角。
-      // 注意这是后台主题（data-theme + payload-theme cookie），与前台 dark class 无关。
-      actions: ['@/components/admin/AdminThemeToggle#AdminThemeToggle'],
+      // 顶栏右侧 actions 区：界面语言与深色模式并排，直接放右上角。
+      // 主题是后台自己的（data-theme + payload-theme cookie），与前台 dark class 无关。
+      // getRouteData 渲染前会把 actions 反转，所以这里写的顺序与画面顺序相反：
+      // 主题按钮写在前面，画面上它在右边。
+      actions: [
+        '@/components/admin/AdminThemeToggle#AdminThemeToggle',
+        '@/components/admin/AdminLanguageSwitcher#AdminLanguageSwitcher',
+      ],
       // 侧栏换成自定义的一级菜单：集合与全局平铺，不再按 admin.group 折成二级
       Nav: '@/components/admin/AdminNav#AdminNav',
       views: {
         // 替换默认的「集合卡片墙」：规模 / 最近更新 / 待处理留言 / 集合索引
         dashboard: { Component: '@/components/admin/DashboardView#DashboardView' },
         // 帮助页：/admin/help，侧栏有入口。给运营的一份操作说明。
+        // meta.title 是 Payload 在路由层写进文档标题的静态字符串，拿不到请求语言；
+        // 页面内的标题与正文按当前界面语言渲染（AdminTitleLocalizer 负责改写标签页标题）。
         help: {
           Component: '@/components/admin/HelpView#HelpView',
           path: '/help',
-          meta: { title: '后台操作帮助' },
+          meta: { title: '管理画面ヘルプ' },
         },
         bulkCards: {
           Component: '@/components/admin/bulk-cards/BulkCardsView#BulkCardsView',
           path: '/bulk-cards',
           exact: true,
-          meta: { title: '批量上架' },
+          meta: { title: '一括出品' },
         },
         noDeductionBuyback: {
           Component: '@/components/admin/no-deduction/NoDeductionView#NoDeductionView',
           path: '/no-deduction-buyback',
           exact: true,
-          meta: { title: '不减额买取' },
+          meta: { title: '減額なし買取' },
         },
       },
     },
@@ -194,11 +203,10 @@ export default buildConfig({
     process.env.VERCEL === '1' || process.env.NODE_ENV === 'production'
       ? ''
       : process.env.SITE_URL || 'http://localhost:3100',
-  // 后台界面语言：默认中文（src/middleware.ts 把 /admin 请求的 Accept-Language 归一为 zh）。
-  // 保留 en / ja，运营仍可在「账户 → 设置」里手动切换（写入 payload-lng cookie，优先级最高）。
-  // 注意 fallbackLanguage 只是兜底，不是默认值：只要 supportedLanguages 里有 ja / en，
-  // 日文 / 英文浏览器的 Accept-Language 就会直接命中，中文浏览器才会走到 zh。
-  i18n: { supportedLanguages: { en, ja, zh }, fallbackLanguage: 'zh' },
+  // 后台界面语言：默认日语（src/middleware.ts 把 /admin 请求的 Accept-Language 归一为 ja）。
+  // 保留 zh / en，运营仍可在登录页或顶栏手动切换（写入 payload-lng cookie，优先级最高）。
+  // 项目自有界面的文案在 src/lib/admin/i18n 里同一份字典按语言取值。
+  i18n: { supportedLanguages: { en, ja, zh }, fallbackLanguage: 'ja' },
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
   graphQL: { schemaOutputFile: path.resolve(dirname, '../schema.graphql') },
   // 上传：默认写本地 media/ 目录；配了 S3_* 就走 S3 兼容对象存储（R2 / S3 / Spaces）。

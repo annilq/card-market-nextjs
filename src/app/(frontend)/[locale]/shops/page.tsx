@@ -62,7 +62,7 @@ export default async function ShopsPage({ params }: Props) {
         <link rel="preload" as="image" href={lcpShopImg} fetchPriority="high" />
       )}
       {/* 内容语言说明：只有非默认语言的页面上才会出现（组件内部自行决定）。 */}
-      <ContentLanguageNotice locale={locale} pathname={PATHNAME} />
+      {/*<ContentLanguageNotice locale={locale} pathname={PATHNAME} />*/}
       <ShopList shops={shops} />
     </>
   )

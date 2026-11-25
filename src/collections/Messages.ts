@@ -1,6 +1,7 @@
 import { APIError, type CollectionConfig } from 'payload'
 
 import { moduleRead, roleAction, roleActionField } from '@/access/roles'
+import { createAdminT } from '@/lib/admin/i18n'
 
 const MESSAGE_STATUS = [
   { label: { zh: '新', en: 'New', ja: '新規' }, value: 'new' },
@@ -37,9 +38,11 @@ export const Messages: CollectionConfig = {
       ({ data, req }) => {
         // 未登录（访客）提交：只保留允许字段，状态强制为「新」
         if (!req.user) {
+          const t = createAdminT(req.i18n?.language)
           const content = (data?.content ?? '').toString().trim()
-          if (!content) throw new APIError('留言内容不能为空', 400, { field: 'content' }, true)
-          if (content.length > 2000) throw new APIError('留言内容过长', 400, { field: 'content' }, true)
+          if (!content) throw new APIError(t('validation.messageEmpty'), 400, { field: 'content' }, true)
+          if (content.length > 2000)
+            throw new APIError(t('validation.messageTooLong'), 400, { field: 'content' }, true)
           return {
             content,
             contactName: (data?.contactName ?? '').toString().trim().slice(0, 120) || null,

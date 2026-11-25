@@ -36,8 +36,8 @@ export function LocaleSwitcher() {
    * 当前路径换成目标语言的地址。
    *
    * usePathname() 的返回值取决于 rewrite 有没有被还原：可能是带语言的
-   * `/ja/cards`，也可能是不带的 `/cards`（默认语言由 middleware rewrite 到
-   * `/zh/...`）。两种都先把第一段按「已知语言」剥掉，再重新补，就不会叠成
+   * `/zh/cards`，也可能是不带的 `/cards`（默认语言由 middleware rewrite 到
+   * `/ja/...`）。两种都先把第一段按「已知语言」剥掉，再重新补，就不会叠成
    * `/ja/zh/cards`；反过来，第一段不是已知语言（如 `cards`）时也不动它。
    */
   const hrefFor = (target: Locale): string => {
