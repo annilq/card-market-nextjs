@@ -178,6 +178,17 @@ html.dark {
   }
 }
 
+/* 顶栏 LINE 图标：桌面悬停弹二维码，触屏设备上永远不弹（点图标直接跳好友链接）。
+   手机 / 平板不报 hover，`group-hover` 本就不会触发；但触摸会让链接获得焦点，
+   `group-focus-within` 仍会把浮层闪出来，所以这里显式兜底。
+   用 !important 是因为它要和 group-hover:flex / group-focus-within:flex 这两个
+   工具类抢优先级，而工具类层在普通声明之后。 */
+@media (hover: none) {
+  .line-qr {
+    display: none !important;
+  }
+}
+
 /* iOS WebKit 兜底：Chrome / Firefox / 微信内嵌页在 iOS 上同样是 WKWebView，
    Safari 能命中的媒体查询在它们那里不保证一致。`-webkit-touch-callout` 只在
    iOS WebKit 中存在，用它把 iOS 上的搜索框无条件锁到 16px，不再依赖媒体查询。 */
