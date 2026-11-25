@@ -36,9 +36,10 @@ function XIcon() {
 }
 
 // Line 图标：桌面（可 hover）悬停显示二维码；触屏设备上二维码永不出现，
-// 点图标直接跳 LINE 官方好友链接（LINE_URL）。Tailwind 的 hover 变体自带
-// `@media (hover: hover)`，触屏本来就不会触发；再叠加 pointer-coarse:hidden
-// 兜住「接了鼠标的触屏设备」这类 hover 可用的混合指针场景。
+// 点图标直接跳 LINE 官方好友链接（LINE_URL）。二维码浮层靠 globals.css 里的
+// `.line-qr` 媒体查询在触屏上强制隐藏——Tailwind 的 hover 变体本身带
+// `@media (hover: hover)`，但触摸会让链接获得焦点、触发 focus-within，
+// 单靠变体顺序压不住，用 !important 才稳。
 function LineIcon({ qrLabel, linkLabel }: { qrLabel: string; linkLabel: string }) {
   return (
     <a
@@ -59,7 +60,7 @@ function LineIcon({ qrLabel, linkLabel }: { qrLabel: string; linkLabel: string }
         className="h-auto w-4 md:h-7 md:w-auto"
       />
       <span
-        className="pointer-events-none absolute right-0 top-full z-50 mt-2 hidden w-40 flex-col items-center gap-2 rounded-lg bg-white p-3 text-center text-xs text-neutral-800 shadow-lg group-hover/line:flex group-focus-within/line:flex pointer-coarse:hidden"
+        className="line-qr pointer-events-none absolute right-0 top-full z-50 mt-2 hidden w-40 flex-col items-center gap-2 rounded-lg bg-white p-3 text-center text-xs text-neutral-800 shadow-lg group-hover/line:flex group-focus-within/line:flex"
         role="img"
         aria-label={qrLabel}
       >
@@ -85,13 +86,6 @@ function ShopIcon() {
     />
   );
 }
-
-// 顶栏图标按钮共用同一套外壳尺寸，保证右侧一组在所有宽度下等高。
-// 375 设计稿（2x 出图）折算后字形 16px、外壳 24px；24px 也正好是 WCAG 2.5.8
-// 的最小点击区，md 起恢复桌面尺寸。
-const iconBtn =
-  "inline-flex h-6 shrink-0 items-center justify-center rounded text-white transition hover:bg-white/15 hover:text-white md:h-9";
-const iconBtnSquare = `${iconBtn} w-6 md:w-9`;
 
 /**
  * 站点顶栏（服务端组件）。
@@ -135,7 +129,7 @@ export function SiteHeader({ settings, locale }: { settings: SiteSettingsView; l
     </a>
   ) : null;
 
-  const lineLink = <LineIcon qrLabel={t("lineQrLabel")} />;
+  const lineLink = <LineIcon qrLabel={t("lineQrLabel")} linkLabel={t("lineFollowLabel")} />;
 
   return (
     <header className="md:sticky top-0 z-99 bg-brand text-white">
